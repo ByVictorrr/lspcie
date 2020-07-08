@@ -15,6 +15,7 @@
 
 /* Options */
 
+int table;          /* Show table of IO card */
 int verbose;				/* Show detailed information */
 static int opt_hex;			/* Show contents of config space as hexadecimal numbers */
 struct pci_filter filter;		/* Device filter */
@@ -39,6 +40,7 @@ static char help_msg[] =
 "Basic display modes:\n"
 "-mm\t\tProduce machine-readable output (single -m for an obsolete format)\n"
 "-t\t\tShow bus tree\n"
+"-T\t\tShow table of IO card (-TT for more info; -TTT for even more info)"
 "\n"
 "Display options:\n"
 "-v\t\tBe verbose (-vv or -vvv for higher verbosity)\n"
@@ -1007,8 +1009,7 @@ show(void)
 
 /* Main */
 
-int
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
   int i;
   char *msg;
@@ -1032,6 +1033,9 @@ main(int argc, char **argv)
       case 'v':
 	verbose++;
 	break;
+    case 'T':
+    table++;
+  break;
       case 'b':
 	pacc->buscentric = 1;
 	break;
