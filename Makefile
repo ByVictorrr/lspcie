@@ -2,7 +2,7 @@
 # (c) 1998--2020 Martin Mares <mj@ucw.cz>
 
 OPT=-O2
-CFLAGS=$(OPT) -Wall -W -Wno-parentheses -Wstrict-prototypes -Wmissing-prototypes
+CFLAGS=$(OPT) -Wall -W -Wno-parentheses -Wstrict-prototypes -Wmissing-prototypes -g
 
 VERSION=3.7.0
 DATE=2020-05-31
