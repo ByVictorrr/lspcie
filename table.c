@@ -25,6 +25,9 @@ static locn_file locn_open(char * fname){
     }
     return NULL;
 }
+static void parse_locnf(){
+    
+}
 
 // loads the slots for every device in pacc
 void load_locn(struct pacc *pacc){
