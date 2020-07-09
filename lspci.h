@@ -42,6 +42,8 @@ struct device {
   unsigned int config_cached, config_bufsize;
   byte *config;				/* Cached configuration space data */
   byte *present;			/* Maps which configuration bytes are present */
+  /* Location */
+  char *locn;
 };
 
 extern struct device *first_dev;
