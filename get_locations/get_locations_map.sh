@@ -1,46 +1,40 @@
 #!/bin/sh
 
-TMP_FILE='tmp.txt'
-topology --io | sed -r '/^\s*$/d' | tail -n +3 | awk '{print $2 "," $4}' > $TMP_FILE
+PRE_PARSED_FILE='tmp.txt'
+topology --io | sed -r '/^\s*$/d' | tail -n +3 | awk '{print $4","$2}' > $PRE_PARSED_FILE
 # we need to asssociate the missing location with the one above it
-:'
-r001i01s00,0000:00:11.5
-.,0000:00:14.0
-.,0000:00:17.0
-.,0000:00:1f.5
-.,0000:01:00.0
-.,0000:02:00.0
-.,0000:02:01.0
-r001i01s02,0000:41:00.0
-r001i01s03,0000:81:00.0
-.,0000:81:00.1
-r001i01s01,0000:82:00.0
-.,0000:82:00.1
-r001i01s00,0000:c3:00.0
-.,0000:c3:00.1
-.,0000:c3:00.2
-.,0000:c3:00.3
-r001i01s05,0000:c5:00.0
-.,0000:c5:00.1
-r001i01s07,0001:41:00.0
-.,0001:41:00.1
-r001i01s06,0001:81:00.0
-.,0001:81:00.1
-r001i01s08,0001:83:00.0
-.,0001:83:00.1
-r001i01s04,0001:c1:00.0
-.,0001:c1:00.1
-r001i01s10,0002:41:00.0
-.,0002:41:00.1
-r001i01s11,0002:81:00.0
-r001i01s09,0002:82:00.0
-.,0002:82:00.1
-r001i01s13,0002:c1:00.0
-r001i01s15,0003:41:00.0
-r001i01s14,0003:81:00.0
-.,0003:81:00.1
-r001i01s16,0003:83:00.0
-.,0003:83:00.1
-r001i01s12,0003:c1:00.0
 
-'
+
+# $1 = str, $2 = deliminator
+function split_str(){
+    IN=$1
+    ADDR=(${IN//,/ })
+}
+
+pci_addr=''
+loc=''
+last_loc=''
+ADDR=
+
+# main()
+while IFS= read -r line
+do
+    split_str $line ,
+    pci_addr=${ADDR[0]}
+    loc=${ADDR[1]}
+
+    # first iteration
+    if [ -z $last_loc ]
+    then
+        last_loc="$loc"
+    fi
+
+    # what if loc= '.'
+    if [ $loc = '.' ]
+    then
+        loc=$last_loc
+    else
+        last_loc=$loc
+    fi
+    echo "$pci_addr,$loc" >> loc_map.txt
+done < $PRE_PARSED_FILE
