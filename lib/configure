@@ -171,6 +171,7 @@ else
 	fi
 	echo "$ZLIB (auto-detected)"
 fi
+# changed zlib = no
 if [ "$ZLIB" = yes ] ; then
 	echo >>$c '#define PCI_COMPRESSED_IDS'
 	echo >>$c '#define PCI_IDS "pci.ids.gz"'
@@ -179,7 +180,8 @@ if [ "$ZLIB" = yes ] ; then
 else
 	echo >>$c '#define PCI_IDS "pci.ids"'
 fi
-echo >>$c "#define PCI_PATH_IDS_DIR \"$IDSDIR\""
+#echo >>$c "#define PCI_PATH_IDS_DIR \"$IDSDIR\""
+echo >>$c '#define PCI_PATH_IDS_DIR "/usr/share"'
 
 echo_n "Checking for DNS support... "
 if [ "$DNS" = yes -o "$DNS" = no ] ; then
