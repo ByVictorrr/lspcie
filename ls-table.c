@@ -15,7 +15,7 @@
 typedef FILE * locn_file;
 
 char t_hdr[]=
-"PCI Address\tSlot#\t\tCard_info\t\t\tVendor\tDriver";
+"PCI Address\tSlot#\t\tCard_info\t\t\t\t\t\t\tVendor\tDriver\t\tDevice_info";
 
 
 /* Wrapper structure to point to the next io device (excluding internal PCI)*/
@@ -143,6 +143,43 @@ build_io_devs(struct device * first_dev){
     return head;
 }
 
+static void
+show_card_info(struct device *d){
+  struct pci_dev *dev = d->dev;
+  char namebuf[1024], *name;
+  name = pci_lookup_name(pacc, namebuf, sizeof(namebuf), PCI_LOOKUP_DEVICE, dev->vendor_id, dev->device_id);
+  printf("%s",name);
+       
+}
+/* Come back to */
+static void
+show_dev_info(struct device *d){
+    word subsys_v, subsys_d;
+    char ssnamebuf[256];
+    get_subid(d, &subsys_v, &subsys_d);
+    if (subsys_v && subsys_v != 0xffff)
+	    printf("\tSubsystem: %s\n",
+		pci_lookup_name(pacc, ssnamebuf, sizeof(ssnamebuf),
+			PCI_LOOKUP_SUBSYSTEM,
+			subsys_v, subsys_d));
+}
+static void
+show_vendor(struct device *d){
+  struct pci_dev *dev = d->dev;
+  char namebuf[1024], *name;
+  name = pci_lookup_name(pacc, namebuf, sizeof(namebuf), PCI_LOOKUP_VENDOR, dev->vendor_id);
+  printf("\t\t%s",name);
+
+}
+static void
+show_driver(struct device *d){
+    
+    char buf[DRIVER_BUF_SIZE];
+    const char *driver;
+    if (driver = find_driver(d, buf))
+        printf("\t\t%s", driver);
+}
+
 
 static void 
 show_device_entry(struct io_dev *i)
@@ -151,21 +188,15 @@ show_device_entry(struct io_dev *i)
     show_slot_name(i->dev);
     // Slot # (envoke topology command)
     printf("\t%s\t", i->locn);
-    
     // Card_info (name of card or device id if DNE)
+    show_card_info(i->dev);
     // Vendor (name of vender)
-
+    show_vendor(i->dev);
     // Driver (driver name)
+    show_driver(i->dev);
     // Device_info
+    //show_dev_info(i->dev);
     printf("\n");
-}
-void 
-show_io(struct io_dev *head){
-    int i=0;
-    if (i==0){
-        printf("hi");
-    }
-
 }
 static void 
 print_hdr(){

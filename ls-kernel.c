@@ -214,9 +214,9 @@ show_kernel_cleanup(void)
 
 #endif
 
-#define DRIVER_BUF_SIZE 1024
 
-static char *
+
+char *
 find_driver(struct device *d, char *buf)
 {
   struct pci_dev *dev = d->dev;
