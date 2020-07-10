@@ -33,8 +33,7 @@ build_io_dev(struct device *d, char *locn){
     struct io_dev *i = xmalloc(sizeof(struct io_dev));
     i->dev = d;
     i->next = NULL;
-    i->locn = xmalloc(sizeof(char)*(LOCN_SIZE+1));
-    strcpy(i->locn, locn);
+    i->locn = locn;
     return i;
 }
 
@@ -125,7 +124,6 @@ build_io_devs(struct device * first_dev){
         for (d=first_dev; d; d=d->next){
             if ((locn = get_loc(d->dev, f))!=NULL){
                 next = build_io_dev(d, locn);
-                free(locn);
                 // first iteration 
                 if(head== NULL){
                     head=curr=next;
@@ -156,11 +154,12 @@ static void
 show_dev_info(struct device *d){
     word subsys_v, subsys_d;
     char ssnamebuf[256];
+    struct pci_dev *p = d->dev;
     get_subid(d, &subsys_v, &subsys_d);
     if (subsys_v && subsys_v != 0xffff)
-	    printf("\tSubsystem: %s\n",
+	    printf("\t%s\n",
 		pci_lookup_name(pacc, ssnamebuf, sizeof(ssnamebuf),
-			PCI_LOOKUP_SUBSYSTEM,
+			PCI_LOOKUP_SUBSYSTEM | PCI_LOOKUP_DEVICE, p->vendor_id, p->device_id,
 			subsys_v, subsys_d));
 }
 static void
@@ -195,13 +194,30 @@ show_device_entry(struct io_dev *i)
     // Driver (driver name)
     show_driver(i->dev);
     // Device_info
-    //show_dev_info(i->dev);
+    show_dev_info(i->dev);
     printf("\n");
 }
 static void 
-print_hdr(){
-    printf("%s\n", t_hdr);
-    printf("------------------------------------------------------------------\n");
+print_hdr(int line_width){
+    int i;
+    printf("%10s %10s %30s %10s %10s %30s\n", 
+            "PCI_Address", "Slot#", "Card_info",
+            "Vendor", "Driver", "Device_info");
+    
+    for(i=0; i<line_width; i++){
+        putchar('-');
+    }
+    putchar('\n');
+}
+static void 
+cleanup_io(struct io_dev *i){
+    struct io_dev *p=i, *next;
+    while(p){
+        next=p->next;
+        free(p->locn);
+        free(p);
+        p=next;
+    }
 }
 void 
 show_table(struct device *first_dev)
@@ -209,11 +225,13 @@ show_table(struct device *first_dev)
     struct io_dev *p; 
     struct io_dev *head;
     int i;
-    print_hdr();
+    print_hdr(150);
 
     head=build_io_devs(first_dev);
     for(p=head; p; p=p->next){
         show_device_entry(p);
     }
+
+    cleanup_io(head);
 }
 
