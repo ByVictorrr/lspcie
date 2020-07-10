@@ -87,7 +87,7 @@ void show_kernel_cleanup(void);
 
 /* ls-table.c */
 
-void show_table(struct pci_access *a);
+void show_table(struct device *first_dev);
 
 /* ls-tree.c */
 

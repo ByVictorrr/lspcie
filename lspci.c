@@ -1129,7 +1129,7 @@ int main(int argc, char **argv)
       if (opt_tree)
 	show_forest(opt_filter ? &filter : NULL);
       if (table)
-  show_table(pacc);
+  show_table(first_dev);
       else
 	show();
     }

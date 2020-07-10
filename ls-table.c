@@ -21,7 +21,7 @@ char t_hdr[]=
 /* Wrapper structure to point to the next io device (excluding internal PCI)*/
 struct io_dev{
     struct io_dev *next;
-    struct pci_dev *dev;
+    struct device *dev;
     char *locn;
 };
 
@@ -29,7 +29,7 @@ struct io_dev{
 * Desc: THis function setups a io_dev structure and returns it
 */
 static struct io_dev *
-build_io_dev(struct pci_dev *d, char *locn){
+build_io_dev(struct device *d, char *locn){
     struct io_dev *i = xmalloc(sizeof(struct io_dev));
     i->dev = d;
     i->next = NULL;
@@ -108,9 +108,9 @@ get_loc(struct pci_dev *d, locn_file f){
 * Desc: Loads the slots for every device in pacc
 */
 static struct io_dev *
-build_io_devs(struct pci_access *pacc){
+build_io_devs(struct device * first_dev){
     #define LOCATION_FILE_MAP "get_locations/loc_map.txt"
-    struct pci_dev *d;
+    struct device *d;
     char *locn;
     locn_file f;
     struct io_dev *head = NULL, *curr = NULL;
@@ -121,8 +121,8 @@ build_io_devs(struct pci_access *pacc){
     }else{
         f = locn_open(LOCATION_FILE_MAP);
         // Step 3 - read the file and associate the PCI_ADDRESS with locate
-        for (d=pacc->devices; d; d=d->next){
-            if ((locn = get_loc(d, f))!=NULL){
+        for (d=first_dev; d; d=d->next){
+            if ((locn = get_loc(d->dev, f))!=NULL){
                 curr = build_io_dev(d, locn);
                 free(locn);
                 // first iteration 
@@ -160,15 +160,13 @@ show_io(struct io_dev *head){
 
 }
 void 
-show_table(struct pci_access *a)
+show_table(struct device *first_dev)
 {
     struct io_dev *p; 
     struct io_dev *head;
     int i;
     printf("%s\n", t_hdr);
-    head=build_io_devs(a);
-    // debugging
-    show_io(head);
+    head=build_io_devs(first_dev);
     for(p=head; p; p=p->next){
         show_device_entry(p);
     }
