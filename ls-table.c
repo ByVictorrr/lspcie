@@ -15,7 +15,7 @@
 typedef FILE * locn_file;
 
 char t_hdr[]=
-"PCI Address\tSlot#\tCard_info\t\t\tVendor\tDriver";
+"PCI Address\tSlot#\t\tCard_info\t\t\tVendor\tDriver";
 
 
 /* Wrapper structure to point to the next io device (excluding internal PCI)*/
@@ -80,7 +80,6 @@ get_loc(struct pci_dev *d, locn_file f){
     char pci_addr[13] = {'\0'};
     char loc[11] = {'\0'};
     int found_loc=0;
-    struct io_dev *i = NULL;
     char *locn = NULL;
 
     // Step 1 - read through each line of the file 
@@ -99,8 +98,10 @@ get_loc(struct pci_dev *d, locn_file f){
     /* This means that it is an (IO device) */
     if (found_loc){
         locn = xmalloc(strlen(loc)+1);
-        strcpy(i->locn, loc);
+        strcpy(locn, loc);
     }
+    /* reset the file pointer */
+    fseek(f, 0, SEEK_SET);
     return locn;
 }
 
@@ -113,7 +114,7 @@ build_io_devs(struct device * first_dev){
     struct device *d;
     char *locn;
     locn_file f;
-    struct io_dev *head = NULL, *curr = NULL;
+    struct io_dev *head = NULL, *curr = NULL, *next= NULL;
     // Step 1 - create file with PCI map to location( use file as buffer)
     if (system("bash get_locations/get_location_map.sh") == -1){
         //perror("Not able to run topology");
@@ -123,15 +124,20 @@ build_io_devs(struct device * first_dev){
         // Step 3 - read the file and associate the PCI_ADDRESS with locate
         for (d=first_dev; d; d=d->next){
             if ((locn = get_loc(d->dev, f))!=NULL){
-                curr = build_io_dev(d, locn);
+                next = build_io_dev(d, locn);
                 free(locn);
                 // first iteration 
                 if(head== NULL){
-                    head=curr;
+                    head=curr=next;
+                // After first iteration
+                }else{
+                    curr->next=next;
+                    curr=next;
                 }
-                curr=curr->next;
+                
             }
         }
+        fclose(f);
     }
 
     return head;
@@ -144,12 +150,14 @@ show_device_entry(struct io_dev *i)
     // PCI Adress Ouput
     show_slot_name(i->dev);
     // Slot # (envoke topology command)
-    printf("%s", i->locn);
+    printf("\t%s\t", i->locn);
+    
     // Card_info (name of card or device id if DNE)
     // Vendor (name of vender)
 
     // Driver (driver name)
     // Device_info
+    printf("\n");
 }
 void 
 show_io(struct io_dev *head){
@@ -159,13 +167,19 @@ show_io(struct io_dev *head){
     }
 
 }
+static void 
+print_hdr(){
+    printf("%s\n", t_hdr);
+    printf("------------------------------------------------------------------\n");
+}
 void 
 show_table(struct device *first_dev)
 {
     struct io_dev *p; 
     struct io_dev *head;
     int i;
-    printf("%s\n", t_hdr);
+    print_hdr();
+
     head=build_io_devs(first_dev);
     for(p=head; p; p=p->next){
         show_device_entry(p);
