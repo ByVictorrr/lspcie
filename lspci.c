@@ -12,7 +12,6 @@
 #include <stdarg.h>
 
 #include "lspci.h"
-
 /* Options */
 
 int table;          /* Show table of IO card */
@@ -277,7 +276,7 @@ show_slot_path(struct device *d)
   printf("%02x:%02x.%d", p->bus, p->dev, p->func);
 }
 
-static void
+void
 show_slot_name(struct device *d)
 {
   struct pci_dev *p = d->dev;
@@ -1024,6 +1023,8 @@ int main(int argc, char **argv)
   pacc->error = die;
   pci_filter_init(pacc, &filter);
 
+  //while ((i = getopt(argc, argv, options)) != -1)
+
   while ((i = getopt(argc, argv, options)) != -1)
     switch (i)
       {
@@ -1031,7 +1032,8 @@ int main(int argc, char **argv)
 	pacc->numeric_ids++;
 	break;
       case 'v':
-	verbose++;
+  table++;
+	//verbose++;
 	break;
     case 'T':
     table++;
@@ -1126,6 +1128,8 @@ int main(int argc, char **argv)
 	grow_tree();
       if (opt_tree)
 	show_forest(opt_filter ? &filter : NULL);
+      if (table)
+  show_table(pacc);
       else
 	show();
     }

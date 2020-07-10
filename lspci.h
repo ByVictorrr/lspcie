@@ -42,8 +42,6 @@ struct device {
   unsigned int config_cached, config_bufsize;
   byte *config;				/* Cached configuration space data */
   byte *present;			/* Maps which configuration bytes are present */
-  /* Location */
-  char *locn;
 };
 
 extern struct device *first_dev;
@@ -87,6 +85,10 @@ void show_kernel_machine(struct device *d UNUSED);
 void show_kernel(struct device *d UNUSED);
 void show_kernel_cleanup(void);
 
+/* ls-table.c */
+
+void show_table(struct pci_access *a);
+
 /* ls-tree.c */
 
 struct bridge {
@@ -114,3 +116,6 @@ void show_forest(struct pci_filter *filter);
 /* ls-map.c */
 
 void map_the_bus(void);
+
+/* lspci.c */
+void show_slot_name(struct device *d);

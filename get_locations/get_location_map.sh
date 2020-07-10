@@ -1,7 +1,14 @@
 #!/bin/sh
-
-PRE_PARSED_FILE='tmp.txt'
+CWD="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+O_FILE=$CWD/loc_map.txt
+PRE_PARSED_FILE=$CWD/tmp.txt
 topology --io | sed -r '/^\s*$/d' | tail -n +3 | awk '{print $4","$2}' > $PRE_PARSED_FILE
+
+if [ -f "$O_FILE" ]
+then
+    rm "$O_FILE"
+fi
+
 # we need to asssociate the missing location with the one above it
 
 
@@ -36,5 +43,5 @@ do
     else
         last_loc=$loc
     fi
-    echo "$pci_addr,$loc" >> loc_map.txt
+    echo "$pci_addr,$loc" >> $O_FILE
 done < $PRE_PARSED_FILE
