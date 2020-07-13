@@ -31,7 +31,7 @@ char *opt_pcimap;			/* Override path to Linux modules.pcimap */
 
 const char program_name[] = "lspci";
 
-static char options[] = "nvbxs:d:tPi:mgp:qkMDQ" GENERIC_OPTIONS ;
+static char options[] = "Tnvbxs:d:tPi:mgp:qkMDQ" GENERIC_OPTIONS ;
 
 static char help_msg[] =
 "Usage: lspci [<switches>]\n"
@@ -254,9 +254,10 @@ sort_them(void)
 /*** Normal output ***/
 
 static void
-show_slot_path(struct device *d)
+show_slot_path(struct device *d, char *buf)
 {
   struct pci_dev *p = d->dev;
+  int pos;
 
   if (opt_path)
     {
@@ -265,25 +266,40 @@ show_slot_path(struct device *d)
 
       if (br && br->br_dev)
 	{
-	  show_slot_path(br->br_dev);
-	  if (opt_path > 1)
-	    printf("/%02x:%02x.%d", p->bus, p->dev, p->func);
-	  else
-	    printf("/%02x.%d", p->dev, p->func);
-	  return;
+	  show_slot_path(br->br_dev, buf);
+	  if (opt_path > 1){
+      if (table)
+	      pos = sprintf(buf,"/%02x:%02x.%d", p->bus, p->dev, p->func);
+      else
+	      printf("/%02x:%02x.%d", p->bus, p->dev, p->func);
+    }else{
+      if (table)
+	      pos = sprintf(buf,"/%02x.%d", p->dev, p->func);
+      else
+	      printf("/%02x.%d", p->dev, p->func);
+    }
+	  return pos;
 	}
     }
-  printf("%02x:%02x.%d", p->bus, p->dev, p->func);
+    if(table)
+      pos = sprintf(buf,"%02x:%02x.%d", p->bus, p->dev, p->func);
+    else
+      printf("%02x:%02x.%d", p->bus, p->dev, p->func);
+
+  return pos; 
 }
 
 void
-show_slot_name(struct device *d)
+show_slot_name(struct device *d, char *buf)
 {
   struct pci_dev *p = d->dev;
-
-  if (!opt_machine ? opt_domains : (p->domain || opt_domains >= 2))
-    printf("%04x:", p->domain);
-  show_slot_path(d);
+  int pos;
+  if (!opt_machine ? opt_domains : (p->domain || opt_domains >= 2)){
+    if(table) pos = sprintf(buf, "%04x:", p->domain);
+    else printf("%04x:", p->domain);
+  }
+  if(table) show_slot_path(d, buf+pos);
+  else show_slot_path(d, NULL);
 }
 
 void
@@ -312,7 +328,7 @@ show_terse(struct device *d)
   struct pci_dev *p = d->dev;
   char classbuf[128], devbuf[128];
 
-  show_slot_name(d);
+  show_slot_name(d, NULL);
   printf(" %s: %s",
 	 pci_lookup_name(pacc, classbuf, sizeof(classbuf),
 			 PCI_LOOKUP_CLASS,
@@ -923,7 +939,7 @@ show_machine(struct device *d)
     {
       pci_fill_info(p, PCI_FILL_PHYS_SLOT | PCI_FILL_NUMA_NODE | PCI_FILL_DT_NODE | PCI_FILL_IOMMU_GROUP);
       printf((opt_machine >= 2) ? "Slot:\t" : "Device:\t");
-      show_slot_name(d);
+      show_slot_name(d, NULL);
       putchar('\n');
       printf("Class:\t%s\n",
 	     pci_lookup_name(pacc, classbuf, sizeof(classbuf), PCI_LOOKUP_CLASS, p->device_class));
@@ -953,9 +969,12 @@ show_machine(struct device *d)
       if (iommu_group = pci_get_string_property(p, PCI_FILL_IOMMU_GROUP))
 	printf("IOMMUGroup:\t%s\n", iommu_group);
     }
+    else if (table){
+
+    }
   else
     {
-      show_slot_name(d);
+      show_slot_name(d, NULL);
       print_shell_escaped(pci_lookup_name(pacc, classbuf, sizeof(classbuf), PCI_LOOKUP_CLASS, p->device_class));
       print_shell_escaped(pci_lookup_name(pacc, vendbuf, sizeof(vendbuf), PCI_LOOKUP_VENDOR, p->vendor_id, p->device_id));
       print_shell_escaped(pci_lookup_name(pacc, devbuf, sizeof(devbuf), PCI_LOOKUP_DEVICE, p->vendor_id, p->device_id));
@@ -1023,7 +1042,6 @@ int main(int argc, char **argv)
   pacc->error = die;
   pci_filter_init(pacc, &filter);
 
-  //while ((i = getopt(argc, argv, options)) != -1)
 
   while ((i = getopt(argc, argv, options)) != -1)
     switch (i)
@@ -1032,8 +1050,7 @@ int main(int argc, char **argv)
 	pacc->numeric_ids++;
 	break;
       case 'v':
-  table++;
-	//verbose++;
+  verbose++;
 	break;
     case 'T':
     table++;

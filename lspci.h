@@ -8,7 +8,7 @@
 
 #define PCIUTILS_LSPCI
 #include "pciutils.h"
-
+#include <stdio.h>
 /*
  *  If we aren't being compiled by GCC, use xmalloc() instead of alloca().
  *  This increases our memory footprint, but only slightly since we don't
@@ -26,6 +26,7 @@
 /*** Options ***/
 
 extern int verbose;
+extern int table;
 extern struct pci_filter filter;
 extern char *opt_pcimap;
 
@@ -124,4 +125,4 @@ void show_forest(struct pci_filter *filter);
 void map_the_bus(void);
 
 /* lspci.c */
-void show_slot_name(struct device *d);
+void show_slot_name(struct device *d, char *buff);

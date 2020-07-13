@@ -9,13 +9,34 @@
 #include <string.h>
 #include <errno.h>
 
+/* Indents for table */
+#define SLOT_IND 10
+#define C_IND 20
+#define V_IND 30
+#define DR_IND 50
+#define DEV_IND 60
+
+/* Max String length for each entry */
 /* Location string is 10 */
 #define LOCN_SIZE 10
+#define PCI_ADDR_SIZE 12
+#define CARD_INFO_SIZE 30
+#define VENDOR_INFO_SIZE 15
+#define DRIVER_SIZE 11
+#define DEVICE_INFO_SIZE 35
 
-typedef FILE * locn_file;
 
-char t_hdr[]=
-"PCI Address\tSlot#\t\tCard_info\t\t\t\t\t\t\tVendor\tDriver\t\tDevice_info";
+
+
+struct tab_entry{
+    char pci_addr[PCI_ADDR_SIZE+1];
+    char loc_num[LOCN_SIZE+1];
+    char card_info[CARD_INFO_SIZE+1];
+    char vendor[VENDOR_INFO_SIZE+1];
+    char driver[DRIVER_SIZE+1];
+    char dev_info[DEVICE_INFO_SIZE+1];
+};
+typedef FILE* locn_file;
 
 
 /* Wrapper structure to point to the next io device (excluding internal PCI)*/
@@ -24,6 +45,7 @@ struct io_dev{
     struct device *dev;
     char *locn;
 };
+
 
 /*
 * Desc: THis function setups a io_dev structure and returns it
@@ -141,72 +163,107 @@ build_io_devs(struct device * first_dev){
     return head;
 }
 
-static void
-show_card_info(struct device *d){
-  struct pci_dev *dev = d->dev;
-  char namebuf[1024], *name;
-  name = pci_lookup_name(pacc, namebuf, sizeof(namebuf), PCI_LOOKUP_DEVICE, dev->vendor_id, dev->device_id);
-  printf("%s",name);
-       
-}
 /* Come back to */
 static void
-show_dev_info(struct device *d){
+show_card_info(struct device *d, char *buff){
     word subsys_v, subsys_d;
     char ssnamebuf[256];
     struct pci_dev *p = d->dev;
     get_subid(d, &subsys_v, &subsys_d);
     if (subsys_v && subsys_v != 0xffff)
-	    printf("\t%s\n",
+	    sprintf(buff,"%s",
 		pci_lookup_name(pacc, ssnamebuf, sizeof(ssnamebuf),
 			PCI_LOOKUP_SUBSYSTEM | PCI_LOOKUP_DEVICE, p->vendor_id, p->device_id,
 			subsys_v, subsys_d));
+    else
+	    sprintf(buff,"%s", "?");
+
+}
+static int
+show_dev_info(struct device *d, char *buff){
+  struct pci_dev *p = d->dev;
+  char namebuf[1024], *name;
+  int c;
+  word sv_id, sd_id;
+  char classbuf[128], vendbuf[128], devbuf[128], svbuf[128], sdbuf[128];
+  char *dt_node;
+  name = pci_lookup_name(pacc, namebuf, sizeof(namebuf), PCI_LOOKUP_DEVICE, p->vendor_id, p->device_id);
+  return sprintf(buff, "%s", name);
+       
 }
 static void
-show_vendor(struct device *d){
-  struct pci_dev *dev = d->dev;
+show_vendor(struct device *d, char *buff){
+  struct pci_dev *p = d->dev;
   char namebuf[1024], *name;
-  name = pci_lookup_name(pacc, namebuf, sizeof(namebuf), PCI_LOOKUP_VENDOR, dev->vendor_id);
-  printf("\t\t%s",name);
+  name = pci_lookup_name(pacc, namebuf, sizeof(namebuf), PCI_LOOKUP_VENDOR, p->vendor_id);
+  sprintf(buff, "%s", name);
 
 }
 static void
-show_driver(struct device *d){
+show_driver(struct device *d, char * buff){
     
     char buf[DRIVER_BUF_SIZE];
     const char *driver;
     if (driver = find_driver(d, buf))
-        printf("\t\t%s", driver);
+        sprintf(buff, "%s", driver);
 }
 
 
 static void 
 show_device_entry(struct io_dev *i)
 {
-    // PCI Adress Ouput
-    show_slot_name(i->dev);
-    // Slot # (envoke topology command)
-    printf("\t%s\t", i->locn);
-    // Card_info (name of card or device id if DNE)
-    show_card_info(i->dev);
-    // Vendor (name of vender)
-    show_vendor(i->dev);
-    // Driver (driver name)
-    show_driver(i->dev);
-    // Device_info
-    show_dev_info(i->dev);
+
+    struct tab_entry e = {'\0'};
+    int pos;
+    char dev_info_num[10]={'\0'};
+    // Setting tab_entry
+    // 1. PCI Adress Ouput
+    show_slot_name(i->dev, e.pci_addr);
+    // 2. LOCATION
+    strcpy(e.loc_num, i->locn);
+    // 3. Card info
+    show_card_info(i->dev, e.card_info);
+    // 4. Vendor (name of vender)
+    show_vendor(i->dev, e.vendor);
+    // 5. Driver (driver name)
+    show_driver(i->dev, e.driver);
+    // 6. Device_info
+    if (table > 0)
+        pos = show_dev_info(i->dev, e.dev_info);
+    if (table > 1)
+        sprintf(dev_info_num,"[%4.4x:%4.4x]", i->dev->dev->vendor_id, i->dev->dev->device_id);
+        //sprintf(e.dev_info+pos,"[%4.4x:%4.4x]", i->dev->dev->vendor_id, i->dev->dev->device_id);
+    
+
+    printf("%-12.12s\t%-12.12s\t%-40.40s\t%-12.12s\t%-12.12s", 
+            e.pci_addr, 
+            e.loc_num, 
+            e.card_info,
+            e.vendor,
+            e.driver);
+    if(table > 1)
+        printf("\t%-40.40s",e.dev_info);
+    if(table > 2)
+        printf("%s",dev_info_num);
+
     printf("\n");
 }
 static void 
 print_hdr(int line_width){
     int i;
-    printf("%10s %10s %30s %10s %10s %30s\n", 
-            "PCI_Address", "Slot#", "Card_info",
-            "Vendor", "Driver", "Device_info");
-    
-    for(i=0; i<line_width; i++){
+    printf("%-12.12s\t%-12.12s\t%-40.40s\t%-12.12s\t%-12.12s", 
+            "PCI_Address", 
+            "Slot#", 
+            "Card_info",
+            "Vendor",
+            "Driver");
+    if(table > 1)
+        printf("\t%-40.40s", "Device_info");
+    printf("\n");
+
+
+    for(i=0; i<line_width; i++)
         putchar('-');
-    }
     putchar('\n');
 }
 static void 
