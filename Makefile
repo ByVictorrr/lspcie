@@ -59,7 +59,7 @@ PCIINC_INS=lib/config.h lib/header.h lib/pci.h lib/types.h
 
 export
 
-all: lib/$(PCILIB) lspci setpci example lspci.8 setpci.8 pcilib.7 pci.ids.5 update-pciids update-pciids.8 $(PCI_IDS)
+all: lib/$(PCILIB) lspci setpci example lspci.8 setpci.8 pcilib.7 pci.ids.5 update-pciids update-pciids.8 $(PCI_IDS) get_fw_v
 
 lib/$(PCILIB): $(PCIINC) force
 	$(MAKE) -C lib all
@@ -95,6 +95,12 @@ update-pciids: update-pciids.sh
 # The example of use of libpci
 example: example.o lib/$(PCILIB)
 example.o: example.c $(PCIINC)
+
+# get fw vrsion
+
+get_fw_v: get_fw_v.o lib/$(PCILIB)
+get_fw_v.o: get_fw_v.c lib/$(PCILIB)
+
 
 %: %.o
 	$(CC) $(LDFLAGS) $(TARGET_ARCH) $^ $(LDLIBS) -o $@
