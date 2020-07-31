@@ -6,6 +6,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <unistd.h>
 
 
 
@@ -27,9 +28,37 @@ static int get_hdr_type(const struct device * d){
     return -1;
 }
 
-struct erom_hdr ehdr;
+int memfd;
 struct erom_data edata;
-uint64_t rom_bar;
+
+static 
+long get_page_size(){
+
+    long page_size;
+    if((page_size = sysconf(_SC_PAGE_SIZE))==-1){
+        printf(stderr, "Wrong variable name for sysconf");
+    }
+    return page_size;
+}
+static 
+uint64_t align_offset(uint64_t phy_addr){
+    long page_size;
+    uint64_t aligned;
+    if((page_size=get_page_size())==-1){
+        return page_size;
+    }
+    // else align
+    aligned = ((uint64_t)(phy_addr/page_size))*page_size;
+
+    return aligned;
+}
+static 
+void read_erom_data(struct erom_data * dest, uint64_t rom_bar){
+    unsigned char *shmem;
+    shmem = mmap(0, sizeof(*dest), PROT_READ, MAP_SHARED, memfd, rom_bar);            
+    memcpy(dest, &shmem, sizeof(*dest));
+}
+
 
 void get_fw_v(struct device *first_d){
 
@@ -37,32 +66,31 @@ void get_fw_v(struct device *first_d){
         
     /* For erom testing */
     int hdr_type;
-    int rom_addr;
-    int memfd;
-    unsigned char *shmem;
-    #define MMIO_LEN 18
+    uint64_t rom_hdr_addr, rom_bar, aligned;
 
 
-    //int pci_read_block(struct pci_dev *, int pos, u8 *buf, int len) PCI_ABI;
+    
+    if((memfd = open("/dev/mem", O_RDWR))==-1){
+        return;
+    }
     for(d=first_d; d; d=d->next){
-        // dev->rom_base_addr (type = pciaddr_t = uint64)
-        //show_rom(dev, PCI_ROM_ADDRESS);
         if((hdr_type = get_hdr_type(d)) == PCI_HEADER_TYPE_NORMAL){
-            rom_addr=PCI_ROM_ADDRESS;
-            memcpy(&rom_bar, d->config+rom_addr, sizeof(rom_bar));
-            memfd = open("/dev/mem", O_RDWR);
-            // map the range [MMIO_ADDR, MMIO_ADDR+MMIO_LEN] into your virtual address space
-            shmem = mmap(0, MMIO_LEN, PROT_WRITE | PROT_READ, MAP_SHARED, memfd, rom_bar);            
-            memcpy(&edata, &shmem, MMIO_LEN);
+            rom_hdr_addr=PCI_ROM_ADDRESS;
+            memcpy(&rom_bar, &d->config[rom_hdr_addr], sizeof(rom_bar));
+            if ((aligned = align_offset(rom_bar)) == - 1){
+                continue;
+            }
 
-
-
+            read_erom_data(&edata, aligned);
+            
         }else if (hdr_type == PCI_HEADER_TYPE_BRIDGE){
-            rom_addr=PCI_ROM_ADDRESS1;
-            memcpy(&rom_bar, d->config+rom_addr, sizeof(rom_bar));
-            memfd = open("/dev/mem", O_RDWR);
-            shmem = mmap(0, MMIO_LEN, PROT_WRITE | PROT_READ, MAP_SHARED, memfd, rom_bar);            
-            memcpy(&edata, &shmem, MMIO_LEN);
+            rom_hdr_addr=PCI_ROM_ADDRESS1;
+            memcpy(&rom_bar, &d->config[rom_hdr_addr], sizeof(rom_bar));
+            if ((aligned = align_offset(rom_bar)) == - 1){
+                continue;
+            }
+
+            read_erom_data(&edata, aligned);
 
         }else if(hdr_type == PCI_HEADER_TYPE_CARDBUS){
             ;
