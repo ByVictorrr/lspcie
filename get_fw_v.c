@@ -3,6 +3,11 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/mman.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
+
 
 static int get_hdr_type(const struct device * d){
     switch((d->config[PCI_HEADER_TYPE] & 0x7f)){
@@ -23,6 +28,7 @@ static int get_hdr_type(const struct device * d){
 }
 
 struct erom_hdr ehdr;
+struct erom_data edata;
 uint64_t rom_bar;
 
 void get_fw_v(struct device *first_d){
@@ -34,7 +40,7 @@ void get_fw_v(struct device *first_d){
     int rom_addr;
     int memfd;
     unsigned char *shmem;
-    #define MIMO_LEN 18
+    #define MMIO_LEN 18
 
 
     //int pci_read_block(struct pci_dev *, int pos, u8 *buf, int len) PCI_ABI;
@@ -47,7 +53,8 @@ void get_fw_v(struct device *first_d){
             memfd = open("/dev/mem", O_RDWR);
             // map the range [MMIO_ADDR, MMIO_ADDR+MMIO_LEN] into your virtual address space
             shmem = mmap(0, MMIO_LEN, PROT_WRITE | PROT_READ, MAP_SHARED, memfd, rom_bar);            
-            
+            memcpy(&edata, &shmem, MMIO_LEN);
+
 
 
         }else if (hdr_type == PCI_HEADER_TYPE_BRIDGE){
@@ -55,6 +62,7 @@ void get_fw_v(struct device *first_d){
             memcpy(&rom_bar, d->config+rom_addr, sizeof(rom_bar));
             memfd = open("/dev/mem", O_RDWR);
             shmem = mmap(0, MMIO_LEN, PROT_WRITE | PROT_READ, MAP_SHARED, memfd, rom_bar);            
+            memcpy(&edata, &shmem, MMIO_LEN);
 
         }else if(hdr_type == PCI_HEADER_TYPE_CARDBUS){
             ;

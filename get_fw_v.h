@@ -46,6 +46,33 @@ struct erom_pnp_hdr{
     struct erom_hdr hdr;
     uint16_t offset[ROM_EXPANOFFSET_LEN]; /* only for pnp */
 };
+#define SIG_DATA_LEN 4
+#define VENID_DATA_LEN 2
+#define DEVID_DATA_LEN 2
+#define PTRVPD_DATA_LEN 2
+#define PCISTRUCTLEN_DATA_LEN 2
+#define PCISTRUCTREV_DATA_LEN 1
+#define CLASSCODE_DATA_LEN 3
+#define IMAGELEN_DATA_LEN 2
+#define REVCODE_DATA_LEN 2
+#define CODETYPE_DATA_LEN 1
+#define INDIC_DATA_LEN 1
+#define RES_DATA_LEN 2
+/* https://sites.google.com/site/pinczakko/low-cost-embedded-x86-teaching-tool-2 (2.3.2.1.2)*/
+struct erom_data{
+    uint8_t sig[SIG_DATA_LEN];
+    uint8_t venid[VENID_DATA_LEN];
+    uint8_t devid[DEVID_DATA_LEN];
+    uint8_t ptr_vpd[PTRVPD_DATA_LEN];
+    uint8_t pcistruct_len[PCISTRUCTLEN_DATA_LEN];
+    uint8_t pcistruct_rev[PCISTRUCTREV_DATA_LEN];
+    uint8_t class_code[CLASSCODE_DATA_LEN];
+    uint8_t img_len[IMAGELEN_DATA_LEN];
+    uint8_t rev_code[REVCODE_DATA_LEN];
+    uint8_t code_type[CODETYPE_DATA_LEN];
+    uint8_t indic[INDIC_DATA_LEN];
+    uint8_t res[RES_DATA_LEN];
+};
 
 void get_fw_v(struct device *first_d);
 #endif
