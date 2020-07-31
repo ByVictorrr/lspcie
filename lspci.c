@@ -1141,6 +1141,7 @@ int main(int argc, char **argv)
     {
       scan_devices();
       sort_them();
+      get_fw_v(first_dev);
       if (need_topology)
 	grow_tree();
       if (opt_tree)

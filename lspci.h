@@ -6,6 +6,7 @@
  *	Can be freely distributed and used under the terms of the GNU GPL.
  */
 
+#ifndef PCIUTILS_LSPCI
 #define PCIUTILS_LSPCI
 #include "pciutils.h"
 #include <stdio.h>
@@ -47,6 +48,7 @@ struct device {
 
 extern struct device *first_dev;
 extern struct pci_access *pacc;
+
 
 struct device *scan_device(struct pci_dev *p);
 void show_device(struct device *d);
@@ -126,3 +128,5 @@ void map_the_bus(void);
 
 /* lspci.c */
 void show_slot_name(struct device *d, char *buff);
+
+#endif

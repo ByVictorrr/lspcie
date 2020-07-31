@@ -59,7 +59,7 @@ PCIINC_INS=lib/config.h lib/header.h lib/pci.h lib/types.h
 
 export
 
-all: lib/$(PCILIB) lspci setpci example lspci.8 setpci.8 pcilib.7 pci.ids.5 update-pciids update-pciids.8 $(PCI_IDS) get_fw_v
+all: lib/$(PCILIB) lspci setpci example lspci.8 setpci.8 pcilib.7 pci.ids.5 update-pciids update-pciids.8 $(PCI_IDS) 
 
 lib/$(PCILIB): $(PCIINC) force
 	$(MAKE) -C lib all
@@ -69,10 +69,10 @@ force:
 lib/config.h lib/config.mk:
 	cd lib && ./configure
 
-lspci: lspci.o ls-vpd.o ls-caps.o ls-caps-vendor.o ls-ecaps.o ls-kernel.o ls-tree.o ls-map.o ls-table.o common.o lib/$(PCILIB)
+lspci: lspci.o ls-vpd.o ls-caps.o ls-caps-vendor.o ls-ecaps.o ls-kernel.o ls-tree.o ls-map.o ls-table.o common.o lib/$(PCILIB) get_fw_v.o
 setpci: setpci.o common.o lib/$(PCILIB)
 
-LSPCIINC=lspci.h pciutils.h $(PCIINC)
+LSPCIINC=lspci.h pciutils.h $(PCIINC) 
 lspci.o: lspci.c $(LSPCIINC)
 ls-table.o: ls-table.c $(LSPCIINC)
 ls-vpd.o: ls-vpd.c $(LSPCIINC)
@@ -81,6 +81,7 @@ ls-ecaps.o: ls-ecaps.c $(LSPCIINC)
 ls-kernel.o: ls-kernel.c $(LSPCIINC)
 ls-tree.o: ls-tree.c $(LSPCIINC)
 ls-map.o: ls-map.c $(LSPCIINC)
+get_fw_v.o: get_fw_v.c $(LSPCIINC) get_fw_v.h
 
 setpci.o: setpci.c pciutils.h $(PCIINC)
 common.o: common.c pciutils.h $(PCIINC)
@@ -93,13 +94,13 @@ update-pciids: update-pciids.sh
 	chmod +x $@
 
 # The example of use of libpci
-example: example.o lib/$(PCILIB)
+example: example.o lib/$(PCILIB) 
 example.o: example.c $(PCIINC)
 
 # get fw vrsion
 
-get_fw_v: get_fw_v.o lib/$(PCILIB)
-get_fw_v.o: get_fw_v.c lib/$(PCILIB)
+
+
 
 
 %: %.o
