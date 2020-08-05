@@ -45,6 +45,37 @@ struct io_dev{
     struct device *dev;
     char *locn;
 };
+struct pci_class_dev{
+    char *dr_v;
+    char *fw_v;
+    struct io_dev
+};
+
+/* =====Get class and subclass ======*/
+
+
+#define PCI_CLASS_MASK 0xFF00
+#define PCI_SUBCLASS_MASK 0x00FF
+
+struct pci_fw_v_methods={
+
+};
+static inline 
+uint8_t get_class(struct pci_dev * d){
+    return (d->device_class & PCI_CLASS_MASK) >> 8;
+}
+static inline
+uint8_t get_subclass(struct pci_dev *d){
+    return (d->device_class & PCI_SUBCLASS_MASK);
+}
+
+
+
+
+
+
+
+/* =======================*/
 
 
 /*
