@@ -11,7 +11,7 @@ struct pci_class_methods{
 
 struct pci_class_methods[PCI_CLASS_MAX][PCI_SCLASS_MAX] = {
     {NULL}, /* Unclassified devices */
-    {scsci, ide, floppy, ipi, raid, ata, sata, sas}, /* Mass storage controllers */
+    {scsi, ide, floppy, ipi, raid, ata, sata, sas}, /* Mass storage controllers */
     {eth},
     {},
     {},
