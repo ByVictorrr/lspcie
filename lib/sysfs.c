@@ -32,7 +32,7 @@ sysfs_config(struct pci_access *a)
   pci_define_param(a, "sysfs.path", PCI_PATH_SYS_BUS_PCI, "Path to the sysfs device tree");
 }
 
-static inline char *
+inline char *
 sysfs_name(struct pci_access *a)
 {
   return pci_get_param(a, "sysfs.path");

@@ -7,7 +7,8 @@ OBJS=init access generic dump names filter names-hash names-parse names-net name
 INCL=internal.h pci.h config.h header.h sysdep.h types.h
 
 ifdef PCI_HAVE_PM_LINUX_SYSFS
-OBJS += sysfs sysfs-class
+OBJS += sysfs
+OBJS += sysfs-class
 endif
 
 ifdef PCI_HAVE_PM_LINUX_PROC

@@ -39,25 +39,27 @@ struct tab_entry{
     char vendor[VENDOR_INFO_SIZE+1];
     char driver[DRIVER_SIZE+1];
     char dev_info[DEVICE_INFO_SIZE+1];
-    char dr_v[]
+    char dr_v[VERSION_SIZE+1];
+    char fw_v[VERSION_SIZE+1];
 };
 
 /*===============LOCATION MAP======================*/
 typedef FILE* locn_map_t;
-typedef char[LOCN_SIZE] locn_t;
+typedef char locn_t[LOCN_SIZE];
 /** 
 * Desc: location map is just a file pointer 
 * @return a locn map resource used to map pci bus -> locn
 */
 static locn_map_t 
 build_locn_map(){
+    #define LOCN_MAP_FNAME "get_locations/loc_map.txt"
     locn_map_t f;
     // Step 1 - create file that maps PCI bus to location
     if (system("bash get_locations/get_location_map.sh") == -1){
         fprintf(stderr, "Cannot create the location map");
         return NULL;
     }
-    if(!(f=fopen(fname, "r"))){
+    if(!(f=fopen(LOCN_MAP_FNAME, "r"))){
         fprintf(stderr, "Not able to open location map");
         return NULL;
     }
@@ -116,7 +118,7 @@ get_locn(struct pci_dev *d, locn_map_t f, char *locn){
     // Step 1 - read through each line of the file 
     while((read = getline(&line, &len, f)) != -1){
         // step 2 - Seperate line string
-        get_loc_pair(line, ",", pci_addr, loc);
+        get_loc_pair(line, pci_addr, loc);
         if (sscanf(pci_addr, "%x:%x:%x.%d", &dom, &bus, &dev, &func) < 4)
             fprintf(stderr,"get_loc: Couldn't parse entry name %s", pci_addr);
         // step 3 - look for a does this device match the pci_addr?
@@ -188,19 +190,18 @@ show_device_entry(struct device *d, locn_map_t *f)
 
     char dev_info_num[10]={'\0'};
     char locn[LOCN_SIZE] = {'\0'};
-    char fw_v[VERSION_SIZE]={'\0'}, dr_v[VERSION_SIZE]={'\0'};
     int pos;
  
     struct tab_entry e = {'\0'};
     // Step 0 - See if the device if found in the locn map (dont print out device)
-    if(get_locn(d->dev, f, loc) == NOT_FOUND){
+    if(get_locn(d->dev, f, locn) == NOT_FOUND){
         return;
     }
     // Setting tab_entry
     // 1. PCI Adress Ouput
     show_slot_name(d, e.pci_addr);
     // 2. LOCATION
-    strcpy(e.loc_num, loc);
+    strcpy(e.loc_num, locn);
     // 3. Card info
     show_card_info(d, e.card_info);
     // 4. Vendor (name of vender)
@@ -215,7 +216,7 @@ show_device_entry(struct device *d, locn_map_t *f)
         //sprintf(e.dev_info+pos,"[%4.4x:%4.4x]", i->dev->dev->vendor_id, i->dev->dev->device_id);
 
     // 7. Driver/fw version (TODO: handle the ret value)
-    d->methods->read_vers(d, e.dr_v, e.fw_v);
+    pci_read_vers(d->dev, e.dr_v, e.fw_v);
     
 
     printf("%-12.12s\t%-12.12s\t%-40.40s\t%-12.12s\t%-12.12s", 
@@ -264,9 +265,8 @@ show_table(struct device *first_dev)
         return;
     }
 
-    p->dev->methods->
     for(p=head; p; p=p->next){
-        show_device_entry(p);
+        show_device_entry(p, f);
     }
     clean_locn_map(f);
 

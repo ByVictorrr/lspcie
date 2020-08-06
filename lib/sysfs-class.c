@@ -252,3 +252,19 @@ struct pci_class_methods fc = {
 
 
 /*=========================================================*/
+struct pci_class_methods *pcm_vers_map[PCI_CLASS_MAX][PCI_SCLASS_MAX] = {
+    {NULL}, /* Unclassified devices */
+    {&scsi, &ide, &floppy, &ipi, &raid, &ata, &sata, &sas, &nvm}, /* Mass storage controllers */
+    {&eth, NULL, NULL, NULL, NULL, NULL, NULL, &ib, NULL},
+    {NULL},
+    {NULL},
+    {NULL},
+    {NULL},
+    {NULL},
+    {NULL},
+    {NULL},
+    {NULL},
+    {NULL},
+    {NULL, NULL, NULL, NULL, &fc, NULL, NULL, NULL, NULL} // Serial bus controller
+};
+
