@@ -103,6 +103,8 @@ int sas_read_versions(struct pci_dev *dev, char *dr_v, char *fw_v){
             strcpy(dr_v, line);
         else if(index == 1)
             strcpy(fw_v, line);
+
+        index++;
     }
     fclose(fp);
     return 1;

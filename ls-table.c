@@ -51,15 +51,16 @@ typedef char locn_t[LOCN_SIZE];
 * @return a locn map resource used to map pci bus -> locn
 */
 static locn_map_t 
-build_locn_map(){
+build_locn_map(void){
     #define LOCN_MAP_FNAME "get_locations/loc_map.txt"
+    //
     locn_map_t f;
     // Step 1 - create file that maps PCI bus to location
     if (system("bash get_locations/get_location_map.sh") == -1){
         fprintf(stderr, "Cannot create the location map");
         return NULL;
     }
-    if(!(f=fopen(LOCN_MAP_FNAME, "r"))){
+    if((f=fopen(LOCN_MAP_FNAME, "r")) == NULL){
         fprintf(stderr, "Not able to open location map");
         return NULL;
     }
@@ -185,7 +186,7 @@ show_driver(struct device *d, char * buff){
 
 
 static void 
-show_device_entry(struct device *d, locn_map_t *f)
+show_device_entry(struct device *d, locn_map_t f)
 {
 
     char dev_info_num[10]={'\0'};
@@ -230,6 +231,8 @@ show_device_entry(struct device *d, locn_map_t *f)
     if(table > 2)
         printf("%s",dev_info_num);
     // TODO : add for -4T dr & fw versions
+    if (table > 3)
+        printf("\t %s, %s", e.dr_v, e.fw_v);
     
 
     printf("\n");
