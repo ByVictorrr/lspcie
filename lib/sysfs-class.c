@@ -29,6 +29,7 @@ get_dev_folder(struct pci_dev *d, char *buff, char * object)
   if (object != NULL && strlen(object)+strlen(buff)+1 <= MAX_PATH){
       // check return value
       strcat(buff, object);
+      strcat(buff, "/");
   }
 
    return 1;
@@ -109,6 +110,39 @@ int sas_read_versions(struct pci_dev *dev, char *dr_v, char *fw_v){
     fclose(fp);
     return 1;
 }
+int nvm_read_versions(struct pci_dev *dev, char *dr_v, char *fw_v){
+    // Step 1 - get base folder
+    char buff[MAX_PATH] = {'\0'};
+    char nvme[MAX_PATH/2] = {'\0'};
+
+    FILE *fp;
+    // step 1 - build path base path of device
+    if(!get_dev_folder(dev, buff, "nvme"))
+        return 0;
+
+    // Step 2 - read folder (buff)
+    if (!find_file_in_folder(buff, "nvme*",nvme))
+       return 0;
+
+    strcat(buff, nvme);
+    strcat(buff, "/firmware_rev");
+
+    // step 4 - open up file version if doesnt exists then return null
+    if(!(fp=fopen(buff, "r"))){
+        fprintf(stderr, "Not able to open file %s", buff);
+        return 0;
+    }
+    char * line = NULL;
+    size_t len = 0;
+    ssize_t read;
+    int index = 0;  
+    getline(&line, &len, fp);
+    strcpy(fw_v, line);
+    // memset(dr_v, "")
+    fclose(fp);
+    return 1;
+}
+
 struct pci_class_methods scsi = {
     "SCSI storage controller",
      NULL // scsi_read_versions
@@ -143,7 +177,7 @@ struct pci_class_methods sas = {
 };
 struct pci_class_methods nvm = {
     "Non-Volatile memory controller",
-    NULL // nvm_read_versions
+    nvm_read_versions
 };
 
 
