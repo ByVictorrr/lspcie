@@ -1,0 +1,57 @@
+LOOKED through(no version file / or trace of fw):
+   0 r001i01s00   0002  0000:00:11.5   Intel C620 Family SSATA Controller [AHCI] (sata)
+    .          .      .  0000:00:17.0   Intel C600/X79 SATA RAID Controller (raid)
+    .          .      .  0000:00:14.0   Intel C620 Family USB 3.0 xHCI Controller (USB controller)
+    .          .      .  0000:00:1f.5   Intel C620 Family SPI Controller ()
+    .          .      .  0000:01:00.0   Emulex x1 PCIe Gen2 Bridge[Pilot4]
+    .          .      .  0000:02:00.0   Matrox MGA G200e [Pilot] ServerEngines (SEP1)
+    .          .      .  0000:02:01.0   Emulex ServerView iRMC HTI
+
+    2 r001i01s11   0006  0002:81:00.0   Intel NVMe Datacenter SSD [Optane]
+        * nvme/nvme0n1/{nvme0n1p{1..4}}
+        * couldnt find any driver/fw version
+
+------------------------------------------------------------------------------------------
+LOOKED through:
+    0 r001i01s02   0002  0000:41:00.0   Intel Omni-Path HFI Silicon 100 [discrete] (ib4)
+    0 r001i01s03   0002  0000:81:00.0   QLogic ISP2722-based 16/32Gb Fibre to PCIe Adapter:
+        ./host1/scsi_host/host1/{driver_version, fw_version, optrom_{bios, efi, fcode, fw, gold}_version}
+            * option_rom_{*} : "all numbers"
+            * driver_version : "all number string"
+    0 r001i01s00   0002  0000:c3:00.0   Intel Ethernet Connection X722 for 10GBASE-T (eth0)
+
+    1 r001i01s07   0000    0001:41:00.0   Emulex Lancer Gen6: LPe32000 Fibre Host Adapter(fc)
+        ./host14/scsi_host/host14/{lpfc_drvr_version, option_rom_version}
+            * lpfc_drvr_version : "string followed by 2d.d.d.2dA
+            * option_rom_version : "all number"
+
+      1 r001i01s06   0000  0001:81:00.0   Solarflare XtremeScale SFC9250 10/25/40/50/100G Ethernet
+        * no version files 
+        * vpd file exists
+        * cant find interface
+        * looked through all ethtool -i eth{0,..15} couldnt find a matching pci address
+            * Found 00001:81:00.1 -> eth15 ( 0001:81:00.1   Solarflare XtremeScale SFC9250 10/25/40/50/100G Ethernet)
+
+
+
+    /===========================ETHTOOL SHOWED the interface's for the below devices=================//
+    1 r001i01s08   0000  0001:83:00.0   QLogic FastLinQ QL41000 10/25/40/50GbE Controller
+    .          .      .  0001:83:00.1   QLogic FastLinQ QL41000 10/25/40/50GbE Controller
+    1 r001i01s04   0000  0001:c1:00.0   Intel Ethernet Controller 10G X550T
+    .          .      .  0001:c1:00.1   Intel Ethernet Controller 10G X550T
+    2 r001i01s10   0006  0002:41:00.0   Mellanox MT28908 Family [ConnectX-6] (ib)
+    .          .      .  0002:41:00.1   Mellanox MT28908 Family [ConnectX-6]
+    2 r001i01s09   0006  0002:82:00.0   Broadcom BCM57414 NetXtreme-E 10Gb/25Gb RDMA Ethernet
+    .          .      .  0002:82:00.1   Broadcom BCM57414 NetXtreme-E 10Gb/25Gb RDMA Ethernet
+    //=============================================================================================//
+
+
+    2 r001i01s13   0006  0002:c1:00.0   Smart Storage PQI 12G SAS/PCIe 3
+        * /sys/bus/pci/devices/0002:c1:00.0/host15/scsi_host/host15/version
+    
+    3 r001i01s15   0004  0003:41:00.0   Mellanox MT28908 Family [ConnectX-6] (ib2)
+        
+
+
+
+Currently looking through

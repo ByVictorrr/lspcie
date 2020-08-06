@@ -96,9 +96,6 @@ update-pciids: update-pciids.sh
 example: example.o lib/$(PCILIB) 
 example.o: example.c $(PCIINC)
 
-# get fw vrsion
-
-
 
 
 

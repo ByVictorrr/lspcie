@@ -45,9 +45,21 @@ struct pci_methods {
   int (*read)(struct pci_dev *, int pos, byte *buf, int len);
   int (*write)(struct pci_dev *, int pos, byte *buf, int len);
   int (*read_vpd)(struct pci_dev *, int pos, byte *buf, int len);
+  int (*read_vers)(struct pci_dev *, char *dr_v, char *fw_v);
   void (*init_dev)(struct pci_dev *);
   void (*cleanup_dev)(struct pci_dev *);
 };
+
+/*====================ADDED=============================*/
+
+
+struct pci_class_methods{
+    char *name;
+    int (*read_versions)(struct pci_dev *, char *dr_v, char *fw_v); 
+};
+
+
+/*=======================================================*/
 
 /* generic.c */
 void pci_generic_scan_bus(struct pci_access *, byte *busmap, int bus);

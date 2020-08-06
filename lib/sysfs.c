@@ -18,9 +18,13 @@
 #include <dirent.h>
 #include <fcntl.h>
 #include <sys/types.h>
-
 #include "internal.h"
 #include "pread.h"
+
+// TODO : expand for other distros
+#ifdef PCI_LINUX_OS_DISTRO_SLES
+  #include "sysfs-class.h"
+#endif
 
 static void
 sysfs_config(struct pci_access *a)
@@ -492,6 +496,28 @@ static int sysfs_read_vpd(struct pci_dev *d, int pos, byte *buf, int len)
 
 #endif /* PCI_HAVE_DO_READ */
 
+
+
+// TODO put a sys
+static int sysfs_read_vers(struct pci_dev *d, char *dr_v, char *fw_v){
+  // int fd = sysfs_setup(d, SETUP_READ_VERS);
+  u8 class, sclass;
+  struct pci_class_methods *pcm;
+  // Step 1 - sub class and class 
+  class = get_class(d);
+  sclass = get_subclass(d);
+  // Step 2 - Get the function that is used to get version info
+  if ((pcm = pcm_vers_map[class][sclass]) == NULL){
+    d->access->warning("sysfs_read_vers: class not supported to read version info");
+    return 0;
+  }
+  /* Step 3 - Use this get_vers function to read versions
+  * Also used to check if the function exists in the pcm structure
+  */
+  return pcm->read_versions ?  pcm->read_versions(d, dr_v, fw_v) : 0;
+}
+
+
 static void sysfs_cleanup_dev(struct pci_dev *d)
 {
   struct pci_access *a = d->access;
@@ -512,6 +538,7 @@ struct pci_methods pm_linux_sysfs = {
   sysfs_read,
   sysfs_write,
   sysfs_read_vpd,
+  sysfs_read_vers,
   NULL,					/* init_dev */
   sysfs_cleanup_dev
 };

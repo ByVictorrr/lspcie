@@ -135,7 +135,15 @@ pci_read_vpd(struct pci_dev *d, int pos, byte *buf, int len)
 {
   return d->methods->read_vpd ? d->methods->read_vpd(d, pos, buf, len) : 0;
 }
+/* =========================ADDED =============*/
+int 
+pci_read_vers(struct pci_dev *d, char *dr_v, char *fw_v)
+{
+  // if the read_vers != NULL; then call sysfs_read_vers
+  return d->methods->read_vers ? d->methods->read_vers(d, dr_v, fw_v) : 0;
+}
 
+/* ==============================================*/
 static inline int
 pci_write_data(struct pci_dev *d, void *buf, int pos, int len)
 {

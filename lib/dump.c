@@ -184,6 +184,7 @@ struct pci_methods pm_dump = {
   dump_read,
   dump_write,
   NULL,					/* read_vpd */
+  NULL,         /* read_vers */
   NULL,					/* init_dev */
   dump_cleanup_dev
 };

@@ -98,6 +98,10 @@ void pci_free_dev(struct pci_dev *) PCI_ABI;
 int pci_lookup_method(char *name) PCI_ABI;	/* Returns -1 if not found */
 char *pci_get_method_name(int index) PCI_ABI;	/* Returns "" if unavailable, NULL if index out of range */
 
+/* ADDED TO get class and subclass */
+inline u8 get_class(struct pci_dev * d);
+inline u8 get_subclass(struct pci_dev *d);
+
 /*
  *	Named parameters
  */
