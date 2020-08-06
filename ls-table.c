@@ -217,7 +217,11 @@ show_device_entry(struct device *d, locn_map_t f)
         //sprintf(e.dev_info+pos,"[%4.4x:%4.4x]", i->dev->dev->vendor_id, i->dev->dev->device_id);
 
     // 7. Driver/fw version (TODO: handle the ret value)
-    pci_read_vers(d->dev, e.dr_v, e.fw_v);
+    if (!pci_read_vers(d->dev, e.dr_v, e.fw_v)) {
+        // have the function return {dr_v_NOT FOUND, fw_v_NOT FOUND, both not found, both found}
+        memset(e.dr_v, '\0',VERSION_SIZE);
+        memset(e.dr_v, '\0',VERSION_SIZE);
+    }
     
 
     printf("%-12.12s\t%-12.12s\t%-40.40s\t%-12.12s\t%-12.12s", 

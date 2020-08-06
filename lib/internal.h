@@ -55,6 +55,7 @@ struct pci_methods {
 
 struct pci_class_methods{
     char *name;
+    char *relpath_v;
     int (*read_versions)(struct pci_dev *, char *dr_v, char *fw_v); 
 };
 
