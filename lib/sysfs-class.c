@@ -278,23 +278,89 @@ get_vfiles(DIR *v_dir, const char *fpattn, FILE **files_buff){
     return i;
 }
 
+/**
+* Desc: looks for string in vfile
+* @return the line number the string is on (-1 if didnt find it)
+*/
 static int
-read_files(DIR *v_dir, const char *fpattn, char *vbuff){
+line_string_in_vfile(const char *string, FILE *vfile){
+    char * line = NULL;
+    size_t len = 0;
+    ssize_t read;
+    int line_num = 0;  
+
+    // Step 1 - start of a file
+    rewind(vfile); 
+    while((read = getline(&line, &len, fp)) != -1){
+        if(strstr(string, line)){
+            return line_num;
+        }
+        line_num++;
+    }
+    rewind(vfile); 
+    return -1;
+
+}
+/* TODO : HOW DO WE DETERMINE TO LOOK FOR "FIRMWARE/VERSION" ?*/
+static int
+read_vfile(FILE *vfile, char *vbuff, char *string){
+    char * line = NULL;
+    size_t len = 0;
+    ssize_t read;
+    int is_empty = 0, str_linenum, linenum=0;  
+
+    // Step 1 - search for in file the string "Firmware" or "Driver"
+    // if no string firmware read the full file and store it into buffer
+    str_linenum = line_string_in_vfile(string, vfile);
+    // is "firmware or driver in the string"
+    #define VERSION_SIZE 1024
+    memset(vbuff, '\0', VERSION_SIZE);
+
+    while((read = getline(&line, &len, fp)) != -1){
+        // check to see if file is empty
+        if(!read){
+            is_empty=1;
+        }
+        if(str_linenum == -1){
+            // dont look for "firmware or driver in vfile"
+            strcat(vbuff, line);
+            int n = snprintf(vbuff, VERSION_SIZE, "%s %s",vbuff, line);
+        }else{
+            // look for "firmware or driver in vfile"
+            if(linenum==str_linenum){
+                int n = snprintf(vbuff, VERSION_SIZE, "%s %s",vbuff, line);
+            }
+
+        }
+        linenum++;
+    }
+
+    if(is_empty)
+        return 0;
+
+    return 1; 
+
+}
+static int
+read_vfiles(DIR *v_dir, const char *fpattn, char *vbuff, const char *string){
     #define MAX_V_FILES 20
-    FILE *v_files[MAX_V_FILES];
+    FILE *vfiles[MAX_V_FILES], *vfile;
     int num_vfiles, i;
     char *fwv_buff;
     // error occured
-    if((num_vfiles = get_vfiles(v_dir, fpattn)) == -1){
+    if((num_vfiles = get_vfiles(v_dir, fpattn, vfiles)) == -1){
         return -1;
     }else if(num_vfiles == 0){
         return 0;
     }
     // Can start reading 
     for(i=0; i< num_vfiles; i++){
-       // Step 1 - search for in file the string "Firmware"
-       // if no string firmware read the full file and store it into buffer
-    }
+        vfile = vfiles[i];
+        if(!read_vfile(vfile, vbuff, string)){
+            continue;
+        }
+        fclose(file);
+     }
     return i+1;
 }
 
@@ -305,11 +371,12 @@ read_files(DIR *v_dir, const char *fpattn, char *vbuff){
 * @return {1 on sucess, 0 on failure}
 */
 int sas_read_versions(struct pci_dev *dev, char *dr_v, char *fw_v){
-    char buff[MAX_PATH] = {'\0'};
-    char host[MAX_PATH/2] = {'\0'};
     FILE *fp;
     DIR *v_dir;
     struct pci_class_methods *pcm;
+    int num_vfiles;
+    u16 ven_id = dev->vendor_id;
+    char *drv_fpattn, *fwv_fpattn;
     // step 0 - get pcm
     if (!(pcm = pcm_vers_map[get_class(dev)][get_subclass(dev)])){
         dev->warning("sas_read_version: sas (struct pci_class_methods) not instantiated");
@@ -320,26 +387,45 @@ int sas_read_versions(struct pci_dev *dev, char *dr_v, char *fw_v){
         dev->warning("sas_read_version: not able to find/open version directory");
         return 0;
     }
-    // Step 2 - use file patterns to read files
-
-    // step 4 - open up file version if doesnt exists then return null
-    if(!(fp=fopen(buff, "r"))){
-        fprintf(stderr, "Not able to open file %s", buff);
+    // Step 2 - get pattns from pcm (use vendor_id )
+    if(!(pcm->drv_file_pattns)){
+        dev->warning("sas_read_version: sas (struct pcm) driver file pattn not installed");
         return 0;
     }
-    char * line = NULL;
-    size_t len = 0;
-    ssize_t read;
-    int index = 0;  
-    while((read = getline(&line, &len, fp)) != -1){
-        if (index == 0)
-            strcpy(dr_v, line);
-        else if(index == 1)
-            strcpy(fw_v, line);
-
-        index++;
+     if(!(pcm->fwv_file_pattns)){
+        dev->warning("sas_read_version: sas (struct pcm) driver file pattn not installed");
+        return 0;
     }
-    fclose(fp);
+    // need only one of the pattns to get here (need logic to get her)
+    if(!(drv_fpattn = pcm->drv_file_pattns[ven_id])){
+        // throw error
+    }
+    if(!(fwv_fpattn = pcm->fwv_file_pattns[ven_id])){
+        // throw error
+    }
+
+    // both of them are installed (need flag)
+    if(read_files(v_dir, drv_fpattn, dr_v)){
+        // condition based on return
+    }
+    if(read_files(v_dir, fwv_fpattn, fw_v)){
+        // condition based on return
+    }
+
+
+    return 1;
+}
+
+
+   }
+
+ 
+
+    // Step 3 - use file patterns to read files( first dr_v)
+    if((num_vfiles = read_files(v_dir, const char *fpattn, fw_v))== -1 ){
+        dev->warning("sas_read_version: error reading driver firmware files");
+        return 0;
+    }
     return 1;
 }
 int nvm_read_versions(struct pci_dev *dev, char *dr_v, char *fw_v){
