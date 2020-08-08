@@ -170,13 +170,39 @@ find_pci_dev_vers_dir(char * cwd, char *path_pattn){
     fprintf(stderr, "Could not find a file pattern of %s in %s\n", file_pattern, folder); 
     return NULL;
 }
+static int 
+get_pci_dev_vers_fpattn(struct pci_dev *d, struct pci_class_methods *pcm, 
+                        char *fwv_fpattn_buff, *drv_fpattn_buff){
+    
+    char *fwv_file_pattn, *drv_file_pattn; 
+    /*** Step 1 - check to see if the pcm exists */
+    if (!pcm || !(pcm->fwv_file_pattns && pcm->drv_file_pattns){
+            return 0;
+    }
+    if(!(fwv_file_pattn = type->fwv_file_pattns[d->vendor_id]) || 
+        !(drv_file_pattn = type->drv_file_pattn[d->vendor_id])){
+            d->warning("get_pci_dev_vers_dir: input pattern for specific device ");
+            return 0;
+    }
+    strcpy(fwv_fpattn_buff, fwv_file_pattn);
+
+ 
+}
 
 
 static DIR * 
 get_pci_dev_vers_dir(struct pci_dev *d, struct pci_class_methods *type){
     char v_dir[MAX_PATH]={'\0'}, d_dir[MAX_PATH] = {'\0'};
     char relvpath[MAX_PATH] = {'\0'};
+    char *fwv_file_pattn, *drv_file_pattn; 
     DIR *dir;
+    /*** Step 0 - get file pattns for fw and dr files ***/
+    if(!(fwv_file_pattn = type->fwv_file_pattns[d->vendor_id]) || 
+        !(drv_file_pattn = type->drv_file_pattn[d->vendor_id])){
+            d->warning("get_pci_dev_vers_dir: input pattern for specific device ");
+            return NULL;
+    }
+    if 
 
     // Step 1 - get the pci device base folder
     if(!get_pci_dev_dirname(d, d_dir)){
@@ -301,52 +327,6 @@ int nvm_read_versions(struct pci_dev *dev, char *dr_v, char *fw_v){
     fclose(fp);
     return 1;
 }
-struct pci_class_methods scsi = {
-    "SCSI storage controller",
-    "host*", 
-     NULL // scsi_read_versions
-};
-struct pci_class_methods ide = {
-    "IDE iface",
-    NULL,
-    NULL // ide_read_versions
-};
-struct pci_class_methods floppy = {
-    "Floppy disk controller",
-    NULL,
-    NULL //floppy_read_versions
-};
-struct pci_class_methods ipi = {
-    "IPI bus controller",
-    NULL,
-    NULL //ipi_read_versions
-};
-struct pci_class_methods raid = {
-    "RAID bus controller",
-    NULL,
-    NULL //raid_read_versions
-};
-struct pci_class_methods ata = {
-    "ATA controller",
-    NULL,
-    NULL // ata_read_versions
-};
-struct pci_class_methods sata = {
-    "SATA controller",
-    NULL,
-    NULL //sata_read_versions
-};
-struct pci_class_methods sas = {
-    "Serial Attached SCSI controller",
-    "host*/scsi_host/host*",
-    sas_read_versions
-};
-struct pci_class_methods nvm = {
-    "Non-Volatile memory controller",
-    "nvme/nvme*",
-    nvm_read_versions
-};
-
 
 
 
@@ -418,30 +398,7 @@ int ib_read_versions(struct pci_dev * dev, char *dr_v, char *fw_v){
     return net_read_versions(dev, "ib*", dr_v, fw_v);
 }
 
-struct pci_class_methods eth = {
-    "Ethernet controller",
-    "net/eth*",
-    eth_read_versions
-};
-/*
-struct pci_class_methods tr = {
-    "Token ring network controller",
-    NULL,
-    tr_read_versions
-};
-struct pci_class_methods fddi = {
-    "FDDI network controller",
-    NULL,
-    fddi_read_versions
-};
-*/
-struct pci_class_methods ib = {
-    "Infiniband controller",
-    "net/ib",
-    ib_read_versions
-};
-
-/*=========================================================*/
+/*====================*/
 
 
 
@@ -450,13 +407,6 @@ struct pci_class_methods ib = {
 int fc_read_versions(struct pci_dev * dev, char *dr_v, char *fw_v){
     return 0;
 }
- 
-struct pci_class_methods fc = {
-    "Infiniband controller",
-    "host*/scsi_host/host*",
-    fc_read_versions
-};
-
 
 
 /*=========================================================*/

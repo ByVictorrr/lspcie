@@ -20,11 +20,7 @@
 #include <sys/types.h>
 #include "internal.h"
 #include "pread.h"
-
-// TODO : expand for other distros
-#ifdef PCI_LINUX_OS_DISTRO_SLES
-  #include "sysfs-class.h"
-#endif
+#include "sysfs-class.h"
 
 static void
 sysfs_config(struct pci_access *a)

@@ -54,8 +54,10 @@ struct pci_methods {
 
 
 struct pci_class_methods{
-    char *name;
-    char *relpath_v;
+    char *name; /* Name of the device */
+    char *relpath_vdir_pattn; /* Relative path to version folder(fn of class,sclass,os) */
+    char ***fwv_file_pattns; /* File pattern of fw version info(fn of class,sclass,os, and vendor) */
+    char ***drv_file_pattns; /* File pattern of dr version info (fn "")*/
     int (*read_versions)(struct pci_dev *, char *dr_v, char *fw_v); 
 };
 
