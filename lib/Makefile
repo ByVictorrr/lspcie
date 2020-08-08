@@ -86,7 +86,7 @@ params.o: params.c $(INCL)
 i386-ports.o: i386-ports.c $(INCL) i386-io-hurd.h i386-io-linux.h i386-io-sunos.h i386-io-windows.h i386-io-cygwin.h
 proc.o: proc.c $(INCL) pread.h
 sysfs.o: sysfs.c $(INCL) pread.h sysfs-class.h
-sysfs-class.o: sysfs-class.c $(INCL) sysfs-class.h
+sysfs-class.o: sysfs-class.c $(INCL) sysfs-class.h sysfs-classes/sysfs-class-sles.h
 generic.o: generic.c $(INCL)
 syscalls.o: syscalls.c $(INCL)
 obsd-device.o: obsd-device.c $(INCL)

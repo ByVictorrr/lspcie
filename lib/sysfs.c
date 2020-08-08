@@ -20,7 +20,6 @@
 #include <sys/types.h>
 #include "internal.h"
 #include "pread.h"
-#include "sysfs-class.h"
 
 static void
 sysfs_config(struct pci_access *a)

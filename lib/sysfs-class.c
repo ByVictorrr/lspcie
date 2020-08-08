@@ -100,6 +100,8 @@ pci_opendir(const char *dir_name){
     }
     return dir;
 }
+
+/*===================get_vdir functions =============================================*/
 /**
 * @param d - pci_dev struct ptr used to open up its device folder
 * @return a pointer to the base device folder (NULL if an error occured)
@@ -171,21 +173,36 @@ find_pci_dev_vers_dir(char * cwd, char *path_pattn){
     return NULL;
 }
 
+/
+static int 
+get_pci_dev_drv_fpattn(struct pci_dev *d, const struct pci_class_methods *pcm, char *drv_fpattn_buff, int buff_size){
+    char  *drv_file_pattn; 
+    /*** Step 1 - check to see if the pcm exists */
+    if (!pcm){
+        d->warning("get_pci_dev_drv_fpattn: Your pci_class_methods structure isn't defined");
+        return 0;
+    }else if (!(pcm->drv_file_pattns)){
+        d->warning("get_pci_dev_drv_fpattn: the drv_file_pattns table needs to be added to your pcm structure");
+        return 0;
+    }else if(!(drv_file_pattn = pcm->drv_file_pattns[d->vendor_id])){
+        d->warning("get_pci_dev_drv_fpattn: You need to add a pattern in the drv_file_pattns for that vendor and device in sysfs-class-sles.h");
+        return 0;
+    }else if(stlen(drv_file_pattn)+1 > buff_size){
+        d->warning("get_pci_dev_drv_fpattn: the drv_fpattn string is to long to store inside the buffer");
+        return 0;
+    }
 
-#define MAX_FPATTN 100
+    strcpy(drv_fpattn_buff, drv_file_pattn);
+    return 1; 
+}
+
 static DIR * 
 get_pci_dev_vers_dir(struct pci_dev *d, struct pci_class_methods *type){
     char v_dir[MAX_PATH]={'\0'}, d_dir[MAX_PATH] = {'\0'};
     char relvpath[MAX_PATH] = {'\0'};
-    char fwv_file_pattn[MAX_FPATTN], drv_file_pattn[MAX_FPATTN]; 
     DIR *dir;
-    /*** Step 0 - get file pattns for fw and dr files ***/
-    if(!get_pci_dev_drv_fpattn(d, type, drv_file_pattn)){
-        return NULL;
-    }
-    if(!get_pci_dev_fwv_fpattn(d, type, fwv_file_pattn)){
-        return NULL;
-    }
+
+    // TODO : GET rel_vpath
 
     // Step 1 - get the pci device base folder
     if(!get_pci_dev_dirname(d, d_dir)){
@@ -202,7 +219,9 @@ get_pci_dev_vers_dir(struct pci_dev *d, struct pci_class_methods *type){
     return dir;
 }
 
+static int 
 /*===================read_vfile functions =============================================*/
+
 /**
 * Desc: Given the vendor id from the pci_dev, this function uses the pcm attribute \
 *       to lookup the driver version file pattrn and stores that regex into the drv_fpattn_buff
@@ -359,7 +378,6 @@ line_string_in_vfile(const char *string, FILE *vfile){
     return -1;
 
 }
-/* TODO : HOW DO WE DETERMINE TO LOOK FOR "FIRMWARE/VERSION" ?*/
 /**
 * Desc: This function reads the version file and stores the info into vbuff
 
@@ -437,19 +455,16 @@ read_vfiles(DIR *v_dir, const char *fpattn, char * string, char *vbuff, int buff
 /**
 * @return to indicate what buffer is valid
 */
-enum FVERS{DRV, FWV};
-int sas_read_versions(struct pci_dev *dev, char *dr_v, char *fw_v){
-    FILE *fp;
+int sas_read_versions(struct pci_dev *dev, char *dr_v, char *fw_v, int drv_size, int fwv_size){
     DIR *v_dir;
     struct pci_class_methods *pcm;
     int num_vfiles;
     u16 ven_id = dev->vendor_id;
     char *drv_fpattn, *fwv_fpattn;
-    int fpattn_flag[2] = {0};
     // step 0 - get pcm
     if (!(pcm = pcm_vers_map[get_class(dev)][get_subclass(dev)])){
         dev->warning("sas_read_version: sas (struct pci_class_methods) not instantiated");
-        return  0;
+        return  -1;
     }
     // Step 1 - open version dir
     if(!(v_dir = get_pci_dev_vers_dir(dev, pcm)){
@@ -465,28 +480,24 @@ int sas_read_versions(struct pci_dev *dev, char *dr_v, char *fw_v){
         dev->warning("sas_read_version: sas (struct pcm) driver file pattn not installed");
         return 0;
     }
-    // Step 3- get pattns
+    // Step 3- get pattns and read files
+    get_pci_dev_drv_fpattn(struct pci_dev *d, const struct pci_class_methods *pcm, char *drv_fpattn_buff, int buff_size);
+    get_pci_dev_fwv_fpattn(struct pci_dev *d, const struct pci_class_methods *pcm, char *drv_fpattn_buff, int buff_size);
     if(!(drv_fpattn = pcm->drv_file_pattns[ven_id])){
         dev->warning("sas_read_version: sas (struct pcm) driver file pattn not installed");
+        return 0;
     }else{
-        fpattn_flag[DRV] = 1;
+        read_files(v_dir, drv_fpattn, dr_v, drv_size);
     }
     if(!(fwv_fpattn = pcm->fwv_file_pattns[ven_id])){
        dev->warning("sas_read_version: sas (struct pcm) driver file pattn not installed");
+       return 0;
      }else{
-        fpattn_flag[FWV] = 1;
+        read_files(v_dir, fwv_fpattn, fw_v, fwv_size);
      }
+     closedir(v_dir);
 
-    // both of them are installed (need flag)
-    if( fpattn_flag[DRV] && read_files(v_dir, drv_fpattn, dr_v)){
-        // condition based on return
-    }
-    if( fpattn_flag[FWV] &&read_files(v_dir, fwv_fpattn, fw_v)){
-        // condition based on return
-    }
-
-
-    return ;
+    return 1;
 }
 
 
@@ -500,7 +511,7 @@ int nvm_read_versions(struct pci_dev *dev, char *dr_v, char *fw_v){
     char nvme[MAX_PATH/2] = {'\0'};
 
     FILE *fp;
-    strcat(buff, "/firmware_rev");
+    // strcat(buff, "/firmware_rev");
 
     return 1;
 }
@@ -516,6 +527,9 @@ int nvm_read_versions(struct pci_dev *dev, char *dr_v, char *fw_v){
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <linux/sockios.h>
+const char *get_dirname(DIR *dir){
+    
+}
 /**
 *
 */
@@ -532,17 +546,18 @@ net_read_versions(struct pci_dev *dev, const char *iface_patrn,
     int fd = -1;
     struct ifreq ifr;
     struct ethtool_drvinfo info;
+    u16 ven_id = dev->vendor_id;
     memset(&info, 0, sizeof(struct ethtool_drvinfo));
     memset(&ifr, 0, sizeof(struct ifreq));
 
-    // step 1 - build path base path of device
-    if(!get_dev_folder(dev, buff, "net"))
+    // step 1 - build path base path of device( get interface)
+    if(!(v_dir = get_pci_dev_vers_dir(dev, pcm)){
+        dev->warning("sas_read_version: not able to find/open version directory");
         return 0;
-
-    // step 2 - check to see if something like host in the dir
-    if (!find_file_in_folder(buff, iface_patrn, iface)){
-       return 0;
     }
+
+
+
 
     strcpy(ifr.ifr_name, iface);
     if((fd=socket(AF_INET, SOCK_DGRAM, 0)) < 0){
