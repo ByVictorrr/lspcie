@@ -170,41 +170,6 @@ find_pci_dev_vers_dir(char * cwd, char *path_pattn){
     fprintf(stderr, "Could not find a file pattern of %s in %s\n", file_pattern, folder); 
     return NULL;
 }
-static int 
-get_pci_dev_drv_fpattn(struct pci_dev *d, const struct pci_class_methods *pcm, char *drv_fpattn_buff){
-    
-    char  *drv_file_pattn; 
-    /*** Step 1 - check to see if the pcm exists */
-    if (!pcm || !(pcm->drv_file_pattns)){
-            d->warning("get_pci_dev_drv_fpattn: Your pcm or drv_file_pattns is NULL");
-            return 0;
-    }
-    if(!(drv_file_pattn = pcm->drv_file_pattns[d->vendor_id])){
-            d->warning("get_pci_dev_drv_fpattn: You have to added an entry for to the table in sysfs-class-sles.h");
-            return 0;
-    }
-    strcpy(drv_fpattn_buff, drv_file_pattn);
-    return 1;
- 
-}
-static int 
-get_pci_dev_fwv_fpattn(struct pci_dev *d, struct pci_class_methods *pcm, char *fwv_fpattn_buff){
-    
-    char *fwv_file_pattn; 
-    /*** Step 1 - check to see if the pcm exists */
-    if (!pcm || !(pcm->fwv_file_pattns)){
-            d->warning("get_pci_dev_fwv_fpattn: Your pcm or fwv_file_pattns is NULL");
-            return 0;
-    }
-    if(!(fwv_file_pattn = type->fwv_file_pattns[d->vendor_id])){
-            d->warning("get_pci_dev_fwv_fpattn: You have to added an entry for to the table in sysfs-class-sles.h");
-            return 0;
-    }
-    strcpy(fwv_fpattn_buff, fwv_file_pattn);
-    return 1;
- 
-}
-
 
 
 #define MAX_FPATTN 100
@@ -237,13 +202,98 @@ get_pci_dev_vers_dir(struct pci_dev *d, struct pci_class_methods *type){
     return dir;
 }
 
+/*===================read_vfile functions =============================================*/
+/**
+* Desc: Given the vendor id from the pci_dev, this function uses the pcm attribute \
+*       to lookup the driver version file pattrn and stores that regex into the drv_fpattn_buff
+*
+*@param d : the pci device that we are using to look up the vendor id
+*@param pcm : the pcm of that particular class & subclass of that device \
+*             using it to get the driver file pattns using its lookup table
+*@param drv_fpattn_buff: The buffer that is used to store the drv_fpattn string 
+*@param buff_size: The max size of the drv_fpattn_buff
+*@return an integer 1 if everything was sucessful in getting your drv_pattn stored in the buff \
+*           integer 0 otherwise
+**/
+static int 
+get_pci_dev_drv_fpattn(struct pci_dev *d, const struct pci_class_methods *pcm, char *drv_fpattn_buff, int buff_size){
+    char  *drv_file_pattn; 
+    /*** Step 1 - check to see if the pcm exists */
+    if (!pcm){
+        d->warning("get_pci_dev_drv_fpattn: Your pci_class_methods structure isn't defined");
+        return 0;
+    }else if (!(pcm->drv_file_pattns)){
+        d->warning("get_pci_dev_drv_fpattn: the drv_file_pattns table needs to be added to your pcm structure");
+        return 0;
+    }else if(!(drv_file_pattn = pcm->drv_file_pattns[d->vendor_id])){
+        d->warning("get_pci_dev_drv_fpattn: You need to add a pattern in the drv_file_pattns for that vendor and device in sysfs-class-sles.h");
+        return 0;
+    }else if(stlen(drv_file_pattn)+1 > buff_size){
+        d->warning("get_pci_dev_drv_fpattn: the drv_fpattn string is to long to store inside the buffer");
+        return 0;
+    }
+
+    strcpy(drv_fpattn_buff, drv_file_pattn);
+    return 1; 
+}
+/**
+* Desc: Given the vendor id from the pci_dev, this function uses the pcm attribute \
+       to lookup the fw version file pattrn and stores that regex into the fwv_fpattn_buff
+
+*@param d : the pci device that we are using to look up the vendor id
+
+*@param pcm : the pcm of that particular class & subclass of that device \
+              using it to get the driver file pattns using its lookup table
+
+*@param fw_fpattn_buff: The buffer that is used to store the fwv_fpattn string 
+
+*@param buff_size: The max size of the fw_fpattn_buff
+
+*@return an integer 1 if everything was sucessful in getting your fwv_pattn stored in the buff \
+            integer 0 otherwise
+**/
+static int 
+get_pci_dev_fwv_fpattn(struct pci_dev *d, struct pci_class_methods *pcm, char *fwv_fpattn_buff, int buff_size){
+    
+    char *fwv_file_pattn; 
+    if (!pcm){
+        d->warning("get_pci_dev_fwv_fpattn: Your pci_class_methods structure isn't defined");
+        return 0;
+    }else if (!(pcm->fwv_file_pattns)){
+        d->warning("get_pci_dev_fwv_fpattn: the fwv_file_pattns table needs to be added to your pcm structure");
+        return 0;
+    }else if(!(fwv_file_pattn = pcm->fwv_file_pattns[d->vendor_id])){
+        d->warning("get_pci_dev_fwv_fpattn: You need to add a pattern in the fwv_file_pattns for that vendor and device in sysfs-class-sles.h");
+        return 0;
+    }else if(stlen(fwv_file_pattn)+1 > buff_size){
+        d->warning("get_pci_dev_fwv_fpattn: the fwv_fpattn string is to long to store inside the buffer");
+        return 0;
+    }
+    strcpy(fwv_fpattn_buff, fwv_file_pattn);
+    return 1; 
+}
+
 
 /**
-* Desc: read the v_dir and looks for matches with the fpattn
-* @return files_buff size (-1 if something whent wrong)
+* Desc: Reads the version directory object and looks for \
+*       a matches with the regex fpattn
+
+* @param v_dir : the version directory that is used to look \
+                 through for vfiles matching the fpattn
+
+* @param fpattn : the regex to get the version files 
+
+* @param files_buff : Stores a list of files that match the \
+                     fpattn in the v_dir
+                    
+* @param buff_size : The max size of the buffer
+
+* @return an int that denotes how many files were stored in files_buff \n 
+         -1 represents something whent wrong 
+          0 represents buffer is to small
 */
 static int
-get_vfiles(DIR *v_dir, const char *fpattn, FILE **files_buff){
+get_vfiles(const DIR *v_dir, const char *fpattn, FILE **files_buff, int buff_size){
     struct dirent *entry;
     regex_t regex;
     FILE *file;
@@ -258,30 +308,37 @@ get_vfiles(DIR *v_dir, const char *fpattn, FILE **files_buff){
     }else if (!files_buff){
         fprintf(stderr, "get_vfiles: files_buff is null");
         return -1;
-    }
-    // Step 2 - compose regex obj
-    if(regcomp(&regex, fpattn, 0)){
+    }else if(regcomp(&regex, fpattn, 0)){ /* Compile the regex */
         fprintf(stderr, "get_vfiles: regex compilation error");
-        return 0;
+        return -1;
     }
-
-    // Step 2 - read v_dir
+    // Step 2 - read v_dir and look for matches of the regex
     while((entry = readdir(v_dir))){
-        // if the regex matches the file name open the file
+        /* if the regex matches the file name open the file*/
          if(!regexec(&regex, entry->d_name, 0, NULL, 0)){
-            if((file=fopen(entry->d_name, "r")))
+            if((file=fopen(entry->d_name, "r"))){
+                if(i > buff_size-1){
+                    fprintf(stderr, "get_vfiles: Make your files_buff max size bigger");
+                    return i+1;
+                }
                 files_buff[i++] = file; 
-            else
-                fprintf(stderr, "get_vfiles: unable to open for reading %s", entry->d_name);
+            }else
+                fprintf(stderr, "get_vfiles: Unable to open for reading %s", entry->d_name);
          }
     }
-    return i;
+    return i+1;
 }
 
 /**
-* Desc: looks for string in vfile
-* @return the line number the string is on (-1 if didnt find it)
-*/
+* Desc: looks for string in vfile (also it rewinds the vfile to start of file)
+
+* @param string : a string that is used to find in a file
+
+* @param vfile : a version file 
+
+* @return The line number the string is on or -1 if it doesnt exist
+
+**/
 static int
 line_string_in_vfile(const char *string, FILE *vfile){
     char * line = NULL;
@@ -293,6 +350,7 @@ line_string_in_vfile(const char *string, FILE *vfile){
     rewind(vfile); 
     while((read = getline(&line, &len, fp)) != -1){
         if(strstr(string, line)){
+            rewind(vfile); 
             return line_num;
         }
         line_num++;
@@ -302,62 +360,70 @@ line_string_in_vfile(const char *string, FILE *vfile){
 
 }
 /* TODO : HOW DO WE DETERMINE TO LOOK FOR "FIRMWARE/VERSION" ?*/
+/**
+* Desc: This function reads the version file and stores the info into vbuff
+
+* @param vfile: The file ponter used to read the version file
+
+* @param string: The string to look for inside a file to get the data on that line
+
+* @param vbuff: Where we store the data
+
+* @param buff_size: The max size the buff can hold
+
+* @return an int 1 if we correctly extracted the data from the file into the buffer \
+             int 0 if something went wrong like the buffer isnt big enough to hold the information
+**/
 static int
-read_vfile(FILE *vfile, char *vbuff, char *string){
+read_vfile(FILE *vfile, char * string, char *vbuff, int buff_size){
     char * line = NULL;
     size_t len = 0;
     ssize_t read;
     int is_empty = 0, str_linenum, linenum=0;  
 
-    // Step 1 - search for in file the string "Firmware" or "Driver"
     // if no string firmware read the full file and store it into buffer
+    // Step 1 - Search for in file the string = {"Firmware" or "Driver"}
     str_linenum = line_string_in_vfile(string, vfile);
-    // is "firmware or driver in the string"
-    #define VERSION_SIZE 1024
-    memset(vbuff, '\0', VERSION_SIZE);
-
     while((read = getline(&line, &len, fp)) != -1){
-        // check to see if file is empty
-        if(!read){
-            is_empty=1;
-        }
-        if(str_linenum == -1){
-            // dont look for "firmware or driver in vfile"
-            strcat(vbuff, line);
-            int n = snprintf(vbuff, VERSION_SIZE, "%s %s",vbuff, line);
-        }else{
-            // look for "firmware or driver in vfile"
-            if(linenum==str_linenum){
-                int n = snprintf(vbuff, VERSION_SIZE, "%s %s",vbuff, line);
+        int n;
+        if(str_linenum == -1)
+            // Read every line in the file and concat it into the buffer
+            if((n = snprintf(vbuff, buff_size, "%s %s",vbuff, line)) < 0 || n>= buff_size){
+                fprintf(stderr, "read_vfile: the data in the file is to long for destination buffer");
+                return 0;
             }
-
+        else
+            // look for "firmware or driver in vfile"
+            if(linenum==str_linenum)
+                if((n = snprintf(vbuff, buff_size, "%s %s",vbuff, line)) < 0 || n>= buff_size){
+                    fprintf(stderr, "read_vfile: the data in the file is to long for destination buffer");
+                    return 0;
+                }
+        linenum++; 
         }
-        linenum++;
-    }
-
-    if(is_empty)
-        return 0;
-
     return 1; 
-
 }
+
+#define MAX_VFILES 20
 static int
-read_vfiles(DIR *v_dir, const char *fpattn, char *vbuff, const char *string){
-    #define MAX_V_FILES 20
-    FILE *vfiles[MAX_V_FILES], *vfile;
+read_vfiles(DIR *v_dir, const char *fpattn, char * string, char *vbuff, int buff_size){
+    FILE *vfiles[MAX_VFILES], *vfile;
     int num_vfiles, i;
     char *fwv_buff;
-    // error occured
-    if((num_vfiles = get_vfiles(v_dir, fpattn, vfiles)) == -1){
-        return -1;
-    }else if(num_vfiles == 0){
+    // Step 0 - Clear out the vbuffer
+    memset(vbuff, '\0', buff_size);
+    // Step 1 - get vfiles
+    if((num_vfiles = get_vfiles(v_dir, fpattn, vfiles)) == -1)
+        // buff isnt valid
         return 0;
-    }
-    // Can start reading 
+
+    // Step 2 - go through file pointer
     for(i=0; i< num_vfiles; i++){
         vfile = vfiles[i];
         if(!read_vfile(vfile, vbuff, string)){
-            continue;
+            // return if buffer is out of space
+            fclose(file);
+            return i;
         }
         fclose(file);
      }
@@ -365,11 +431,13 @@ read_vfiles(DIR *v_dir, const char *fpattn, char *vbuff, const char *string){
 }
 
 
+
 /*==========================================================*/
 /*========Class = 0x01 (Mass storage controllers) ==========*/
 /**
-* @return {1 on sucess, 0 on failure}
+* @return to indicate what buffer is valid
 */
+enum FVERS{DRV, FWV};
 int sas_read_versions(struct pci_dev *dev, char *dr_v, char *fw_v){
     FILE *fp;
     DIR *v_dir;
@@ -377,6 +445,7 @@ int sas_read_versions(struct pci_dev *dev, char *dr_v, char *fw_v){
     int num_vfiles;
     u16 ven_id = dev->vendor_id;
     char *drv_fpattn, *fwv_fpattn;
+    int fpattn_flag[2] = {0};
     // step 0 - get pcm
     if (!(pcm = pcm_vers_map[get_class(dev)][get_subclass(dev)])){
         dev->warning("sas_read_version: sas (struct pci_class_methods) not instantiated");
@@ -396,68 +465,43 @@ int sas_read_versions(struct pci_dev *dev, char *dr_v, char *fw_v){
         dev->warning("sas_read_version: sas (struct pcm) driver file pattn not installed");
         return 0;
     }
-    // need only one of the pattns to get here (need logic to get her)
+    // Step 3- get pattns
     if(!(drv_fpattn = pcm->drv_file_pattns[ven_id])){
-        // throw error
+        dev->warning("sas_read_version: sas (struct pcm) driver file pattn not installed");
+    }else{
+        fpattn_flag[DRV] = 1;
     }
     if(!(fwv_fpattn = pcm->fwv_file_pattns[ven_id])){
-        // throw error
-    }
+       dev->warning("sas_read_version: sas (struct pcm) driver file pattn not installed");
+     }else{
+        fpattn_flag[FWV] = 1;
+     }
 
     // both of them are installed (need flag)
-    if(read_files(v_dir, drv_fpattn, dr_v)){
+    if( fpattn_flag[DRV] && read_files(v_dir, drv_fpattn, dr_v)){
         // condition based on return
     }
-    if(read_files(v_dir, fwv_fpattn, fw_v)){
+    if( fpattn_flag[FWV] &&read_files(v_dir, fwv_fpattn, fw_v)){
         // condition based on return
     }
 
 
-    return 1;
+    return ;
 }
 
 
-   }
 
  
 
-    // Step 3 - use file patterns to read files( first dr_v)
-    if((num_vfiles = read_files(v_dir, const char *fpattn, fw_v))== -1 ){
-        dev->warning("sas_read_version: error reading driver firmware files");
-        return 0;
-    }
-    return 1;
-}
+
 int nvm_read_versions(struct pci_dev *dev, char *dr_v, char *fw_v){
     // Step 1 - get base folder
     char buff[MAX_PATH] = {'\0'};
     char nvme[MAX_PATH/2] = {'\0'};
 
     FILE *fp;
-    // step 1 - build path base path of device
-    if(!get_dev_folder(dev, buff, "nvme"))
-        return 0;
-
-    // Step 2 - read folder (buff)
-    if (!find_file_in_folder(buff, "nvme*",nvme))
-       return 0;
-
-    strcat(buff, nvme);
     strcat(buff, "/firmware_rev");
 
-    // step 4 - open up file version if doesnt exists then return null
-    if(!(fp=fopen(buff, "r"))){
-        fprintf(stderr, "Not able to open file %s", buff);
-        return 0;
-    }
-    char * line = NULL;
-    size_t len = 0;
-    ssize_t read;
-    int index = 0;  
-    getline(&line, &len, fp);
-    strcpy(fw_v, line);
-    // memset(dr_v, "")
-    fclose(fp);
     return 1;
 }
 
