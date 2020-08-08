@@ -171,76 +171,62 @@ find_pci_dev_vers_dir(char * cwd, char *path_pattn){
     return NULL;
 }
 static int 
-get_pci_dev_vers_fpattn(struct pci_dev *d, struct pci_class_methods *pcm, 
-                        char *fwv_fpattn_buff, *drv_fpattn_buff){
+get_pci_dev_drv_fpattn(struct pci_dev *d, const struct pci_class_methods *pcm, char *drv_fpattn_buff){
     
-    char *fwv_file_pattn, *drv_file_pattn; 
+    char  *drv_file_pattn; 
     /*** Step 1 - check to see if the pcm exists */
-    if (!pcm || !(pcm->fwv_file_pattns && pcm->drv_file_pattns){
+    if (!pcm || !(pcm->drv_file_pattns)){
+            d->warning("get_pci_dev_drv_fpattn: Your pcm or drv_file_pattns is NULL");
             return 0;
     }
-    if(!(fwv_file_pattn = type->fwv_file_pattns[d->vendor_id]) || 
-        !(drv_file_pattn = type->drv_file_pattn[d->vendor_id])){
-            d->warning("get_pci_dev_vers_dir: input pattern for specific device ");
+    if(!(drv_file_pattn = pcm->drv_file_pattns[d->vendor_id])){
+            d->warning("get_pci_dev_drv_fpattn: You have to added an entry for to the table in sysfs-class-sles.h");
+            return 0;
+    }
+    strcpy(drv_fpattn_buff, drv_file_pattn);
+    return 1;
+ 
+}
+static int 
+get_pci_dev_fwv_fpattn(struct pci_dev *d, struct pci_class_methods *pcm, char *fwv_fpattn_buff){
+    
+    char *fwv_file_pattn; 
+    /*** Step 1 - check to see if the pcm exists */
+    if (!pcm || !(pcm->fwv_file_pattns)){
+            d->warning("get_pci_dev_fwv_fpattn: Your pcm or fwv_file_pattns is NULL");
+            return 0;
+    }
+    if(!(fwv_file_pattn = type->fwv_file_pattns[d->vendor_id])){
+            d->warning("get_pci_dev_fwv_fpattn: You have to added an entry for to the table in sysfs-class-sles.h");
             return 0;
     }
     strcpy(fwv_fpattn_buff, fwv_file_pattn);
-
+    return 1;
  
 }
 
 
+
+#define MAX_FPATTN 100
 static DIR * 
 get_pci_dev_vers_dir(struct pci_dev *d, struct pci_class_methods *type){
     char v_dir[MAX_PATH]={'\0'}, d_dir[MAX_PATH] = {'\0'};
     char relvpath[MAX_PATH] = {'\0'};
-    char *fwv_file_pattn, *drv_file_pattn; 
+    char fwv_file_pattn[MAX_FPATTN], drv_file_pattn[MAX_FPATTN]; 
     DIR *dir;
     /*** Step 0 - get file pattns for fw and dr files ***/
-    if(!(fwv_file_pattn = type->fwv_file_pattns[d->vendor_id]) || 
-        !(drv_file_pattn = type->drv_file_pattn[d->vendor_id])){
-            d->warning("get_pci_dev_vers_dir: input pattern for specific device ");
-            return NULL;
+    if(!get_pci_dev_drv_fpattn(d, type, drv_file_pattn)){
+        return NULL;
     }
-    if 
+    if(!get_pci_dev_fwv_fpattn(d, type, fwv_file_pattn)){
+        return NULL;
+    }
 
     // Step 1 - get the pci device base folder
     if(!get_pci_dev_dirname(d, d_dir)){
         return NULL;
     }
     // Step 2 - go through each type and get the vers folder(abs path)
-    if(type == &scsi){
-        strcpy(rel_vpath_pattn, "host*");
-    }else if(type == &ide){
-        ;
-    }else if(type == &floppy){
-        ;
-    }else if(type == &ipi){
-        ;
-    }else if (type == &raid){
-        ;
-    }else if (type == &ata){
-        ;
-    }else if (type == &sata){
-        ;
-    }else if (type == &sas){
-        strcpy(rel_vpath_pattn, "host*/scsi_host/host*");
-        ;
-    }else if (type == &nvm){
-        strcpy(rel_vpath_pattn, "nvme/nvme*");
-    }else if (type == &eth){
-        // read eth folder name
-        strcpy(rel_vpath_pattn, "net/eth*");
-        ;
-    }else if (type == &ib){
-        strcpy(rel_vpath_pattn, "net/ib*");
-    }else if (type == &fc){
-        strcpy(rel_vpath_pattn, "host*/scsi_host/host*");
-    }else{
-        ;
-    }
-
-    // Something went wrong
     if(!find_pci_dev_vers_dir(d_dir, rel_vpath_pattn)){
         return NULL;
     }
@@ -249,6 +235,67 @@ get_pci_dev_vers_dir(struct pci_dev *d, struct pci_class_methods *type){
         return NULL;
     }
     return dir;
+}
+
+
+/**
+* Desc: read the v_dir and looks for matches with the fpattn
+* @return files_buff size (-1 if something whent wrong)
+*/
+static int
+get_vfiles(DIR *v_dir, const char *fpattn, FILE **files_buff){
+    struct dirent *entry;
+    regex_t regex;
+    FILE *file;
+    int i=0;
+    // Step 1 - check params
+    if(!v_dir){
+        fprintf(stderr, "get_vfiles: the directory object is null");
+        return -1;
+    }else if (!fpattn){
+        fprintf(stderr, "get_vfiles: the fpattn object is null");
+        return -1;
+    }else if (!files_buff){
+        fprintf(stderr, "get_vfiles: files_buff is null");
+        return -1;
+    }
+    // Step 2 - compose regex obj
+    if(regcomp(&regex, fpattn, 0)){
+        fprintf(stderr, "get_vfiles: regex compilation error");
+        return 0;
+    }
+
+    // Step 2 - read v_dir
+    while((entry = readdir(v_dir))){
+        // if the regex matches the file name open the file
+         if(!regexec(&regex, entry->d_name, 0, NULL, 0)){
+            if((file=fopen(entry->d_name, "r")))
+                files_buff[i++] = file; 
+            else
+                fprintf(stderr, "get_vfiles: unable to open for reading %s", entry->d_name);
+         }
+    }
+    return i;
+}
+
+static int
+read_files(DIR *v_dir, const char *fpattn, char *vbuff){
+    #define MAX_V_FILES 20
+    FILE *v_files[MAX_V_FILES];
+    int num_vfiles, i;
+    char *fwv_buff;
+    // error occured
+    if((num_vfiles = get_vfiles(v_dir, fpattn)) == -1){
+        return -1;
+    }else if(num_vfiles == 0){
+        return 0;
+    }
+    // Can start reading 
+    for(i=0; i< num_vfiles; i++){
+       // Step 1 - search for in file the string "Firmware"
+       // if no string firmware read the full file and store it into buffer
+    }
+    return i+1;
 }
 
 
@@ -261,19 +308,19 @@ int sas_read_versions(struct pci_dev *dev, char *dr_v, char *fw_v){
     char buff[MAX_PATH] = {'\0'};
     char host[MAX_PATH/2] = {'\0'};
     FILE *fp;
-    // step 1 - build path base path of device
-    if(!get_dev_folder(dev, buff, NULL))
+    DIR *v_dir;
+    struct pci_class_methods *pcm;
+    // step 0 - get pcm
+    if (!(pcm = pcm_vers_map[get_class(dev)][get_subclass(dev)])){
+        dev->warning("sas_read_version: sas (struct pci_class_methods) not instantiated");
+        return  0;
+    }
+    // Step 1 - open version dir
+    if(!(v_dir = get_pci_dev_vers_dir(dev, pcm)){
+        dev->warning("sas_read_version: not able to find/open version directory");
         return 0;
-
-    // Step 2 - read folder (buff)
-    if (!find_file_in_folder(buff, "host*", host))
-       return 0;
-
-    /* TODO check buff size */
-    strcat(buff, host);
-    strcat(buff, "/scsi_host/");
-    strcat(buff, host);
-    strcat(buff, "/version");
+    }
+    // Step 2 - use file patterns to read files
 
     // step 4 - open up file version if doesnt exists then return null
     if(!(fp=fopen(buff, "r"))){
