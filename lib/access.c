@@ -136,6 +136,7 @@ pci_read_vpd(struct pci_dev *d, int pos, byte *buf, int len)
   return d->methods->read_vpd ? d->methods->read_vpd(d, pos, buf, len) : 0;
 }
 /* =========================ADDED =============*/
+/* TODO: ADD parms for buff_size; */
 int 
 pci_read_vers(struct pci_dev *d, char *dr_v, char *fw_v)
 {
