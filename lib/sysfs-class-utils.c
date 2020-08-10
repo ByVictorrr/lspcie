@@ -105,30 +105,26 @@ pci_opendir(const char *dir_name){
 * @return a pointer to the base device folder (NULL if an error occured)
 */
 static char *
-get_pci_dev_dirname(struct pci_dev *d, char *dev_dirname){
+get_pci_dev_dirname(struct pci_dev *d, char *dev_dirname, int devdir_size){
 
-    int n = snprintf(dev_dirname, MAX_PATH, "%s/devices/%04x:%02x:%02x.%d",
+    int n = snprintf(dev_dirname, devdir_size, "%s/devices/%04x:%02x:%02x.%d",
 		   sysfs_name(d->access), d->domain, d->bus, d->dev, d->func);
     // Step 1 - check to see if buff is of correct size 
-    if (n < 0 || n >= MAX_PATH){
+    if (n < 0 || n >= dev_dirname){
         d->access->error("Folder name too long");
-        return NULL;
-    }
-    // Step 2 - open that folder
-    if(!(dir=pci_opendir(dev_dirname)){
-        d->access->error("Not able to open directory: %s", dev_dirname);
         return NULL;
     }
     return dev_dirname;
 }
 /**
-*@param folder - absolute path of the folder in which we want to look for a file
-*@param file_pattern - the regex to find a like file
-*@param file_bname - the returned file basename 
-*@return 0 if file_pattern not found in the folder (file_bname not correct)
+*@param cwd - absolute path of the folder in which we want to look for a folder
+*@param rel_vpath_pattn - the pattn to the version directory
+*@param cwd_size - size of the cwd buffer
+*@return the pci device version directory if sucessful \
+        NULL if it wasnt able to find the version directory (or buffer overflow)
 **/
 static char *
-find_pci_dev_vers_dir(char * cwd, char *path_pattn, int buff_size){
+find_pci_dev_vers_dir(char * cwd, char *rel_vpath_pattn, int cwd_size){
     DIR *dir;
     struct dirent *dp;
     regex_t regex;
@@ -136,108 +132,110 @@ find_pci_dev_vers_dir(char * cwd, char *path_pattn, int buff_size){
     #define NEXT_RELPATH_SIZE 100
     char b_dirname[BASE_DIRNAME_SIZE];
     char n_relpath[NEXT_RELPATH_SIZE];
-    char n_path[MAX_PATH] = {'\0'};
+    int n;
 
-    // Should never return NULL
-    if(!base_dirname(path_pattn, b_dirname, BASE_DIRNAME_SIZE))
+    /* Step 1 - get the base directory name
+    * Example: if path_pattn = /sys/bus/pci/devices
+    *          b_dirname = sys 
+    * Returns: NULL if 
+    */
+    if(!base_dirname(rel_vpath_pattn, b_dirname, BASE_DIRNAME_SIZE))
         return NULL;
-    // When there is no more to be parsed
-    if (!next_dirname(path_pattn, n_relpath, NEXT_DIRNAME_SIZE)){
-        // TODO: use snprintf
-        strcat(cwd, "/");
-        strcat(cwd, b_dirname);
+
+    /* Step 2 - get the next relpath after the base_dirname
+    * Example: if path_pattn = /sys/bus/pci/devices
+    *          n_relpath = bus/pci/devices
+    * Returns: NULL if there is no next path (example path_pattn = devices)
+    */
+    if (!next_relpath(rel_vpath_pattn, n_relpath, NEXT_DIRNAME_SIZE)){
+        n = snprintf(cwd, cwd_size, "%s/%s", cwd, b_dirname);
+        if (n < 0 || n >= cwd_size){
+            fprintf(stderr, "find_pci_dev_vers_dir: Folder name too long\n");
+            return NULL;
+        }
         return cwd;
     }
+    /* Step 3 - open the cwd direcotry */
     if (!(dir=pci_opendir(cwd)))
         return NULL;
    
+    /* Step 4 - compose the regex (look for the base dirname found above*/
     if (regcomp(&regex, b_dirname, 0)){
-       fprintf(stderr, "Could not compile regex\n"); 
+       fprintf(stderr, "find_pci_dev_vers_dir: Could not compile regex\n"); 
        return NULL;
     }
-    // Step 3 - go through dir and try to find  (#TODO )
+    /* Step 5 - go through dir and try to find b_dirname */
     while((dp=readdir(dir)) != NULL){
-        // if entry is directory and not .. or .
+        // Case 1 - if entry is directory and not .. or .
         if (dp->d_type == DT_DIR && 
         (strcmp(dp->d_name, ".") && strcmp(dp->d_name, ".."))){
+            // Case 1.1 -  See if there is a match
             if(!regexec(&regex, dp->d_name, 0, NULL, 0)){
-                snprintf(n_path, sizeof(n_path), "%s/%s", cwd, dp->d_name);
+                n = snprintf(cwd, cwd_size, "%s/%s", cwd, b_dirname);
+                if (n < 0 || n >= cwd_size){
+                    fprintf(stderr, "find_pci_dev_vers_dir: Folder name too long\n");
+                    closedir(dir);
+                    return NULL;
+                }
                 closedir(dir);
-                return find_pci_dev_vers_dir(n_path, n_relpath)
+                return find_pci_dev_vers_dir(cwd, n_relpath)
             }
         }
     }
-    fprintf(stderr, "Could not find a file pattern of %s in %s\n", file_pattern, folder); 
+    fprintf(stderr, "find_pci_dev_vers_dir: Could not find a file pattern of %s in %s\n", file_pattern, cwd); 
     return NULL;
 }
 
-/
+/**
+* Desc: Given a pci_dev d and a pcm find the version directory pattern and store in \
+        the vidir_pattn_buff
+  Assumption: pcm and d are not null 
+@return: 1 if successful storing the rel vdir pattn in the buffer \
+         0 if the buffer is too small to store the pattn in or if the relpath_vdir_pattn DNE
+*/
 static int 
-get_pci_dev_drv_fpattn(struct pci_dev *d, const struct pci_class_methods *pcm, char *drv_fpattn_buff, int buff_size){
-    char  *drv_file_pattn; 
-    /*** Step 1 - check to see if the pcm exists */
-    if (!pcm){
-        d->warning("get_pci_dev_drv_fpattn: Your pci_class_methods structure isn't defined");
-        return 0;
-    }else if (!(pcm->drv_file_pattns)){
-        d->warning("get_pci_dev_drv_fpattn: the drv_file_pattns table needs to be added to your pcm structure");
-        return 0;
-    }else if(!(drv_file_pattn = pcm->drv_file_pattns[d->vendor_id])){
-        d->warning("get_pci_dev_drv_fpattn: You need to add a pattern in the drv_file_pattns for that vendor and device in sysfs-class-sles.h");
-        return 0;
-    }else if(stlen(drv_file_pattn)+1 > buff_size){
-        d->warning("get_pci_dev_drv_fpattn: the drv_fpattn string is to long to store inside the buffer");
-        return 0;
-    }
-
-    strcpy(drv_fpattn_buff, drv_file_pattn);
-    return 1; 
-}
-
-static DIR * 
-get_pci_dev_vers_dir(struct pci_dev *d, struct pci_class_methods *type){
-    char v_dir[MAX_PATH]={'\0'}, d_dir[MAX_PATH] = {'\0'};
-    char rel_vpath_pattn[MAX_PATH] = {'\0'};
-    DIR *dir;
-
-    // TODO : GET rel_vpath
-    if (!get_pci_dev_vdir_pattn(d, type, rel_vpath_pattn, MAX_PATH) == ){
-        return NULL;
-    }
-
-    // Step 1 - get the pci device base folder
-    if(!get_pci_dev_dirname(d, d_dir)){
-        return NULL;
-    }
-    // Step 2 - go through each type and get the vers folder(abs path)
-    if(!find_pci_dev_vers_dir(d_dir, rel_vpath_pattn)){
-        return NULL;
-    }
-    // Else open file (d_dir is now vabs path)
-    if(!(dir=pci_opendir(d_dir))){
-        return NULL;
-    }
-    return dir;
-}
-
-//TODO
-static int 
-get_pci_dev_vdir_pattn(struct pci_dev *d, const struct pci_class_methods *pcm, char *vdir_pattn_buff, int buff_size){
+get_pci_dev_relvdir_pattn(struct pci_dev *d, const struct pci_class_methods *pcm, 
+                        char *vdir_pattn_buff, int buff_size){
     char  *vdir_pattn; 
     /*** Step 1 - check to see if the pcm exists */
-    if (!pcm){
-        d->warning("get_pci_dev_drv_fpattn: Your pci_class_methods structure isn't defined");
-        return 0;
-    }else if (!(pcm->relpath_vdir_pattn)){
-        d->warning("get_pci_dev_drv_fpattn: the drv_file_pattns table needs to be added to your pcm structure");
+    if (!(pcm->relpath_vdir_pattn)){
+        d->warning("get_pci_dev_relvdir_pattn: the drv_file_pattns table needs to be added to your pcm structure");
         return 0;
     }else if(srtlen(vdir_pattn_buff)+1 > buff_size){
-        d->warning("get_pci_dev_drv_fpattn: the drv_fpattn string is to long to store inside the buffer");
+        d->warning("get_pci_dev_relvdir_pattn: the drv_fpattn string is to long to store inside the buffer");
         return 0;
     }
     strcpy(vdir_pattn_buff, pcm->relpath_vdir_pattn);
     return 1;
 }
+
+static DIR * 
+get_pci_dev_vers_dir(struct pci_dev *d, struct pci_class_methods *type){
+    char d_dir[MAX_PATH] = {'\0'};
+    char rel_vpath_pattn[MAX_PATH] = {'\0'};
+    char *vdir_name;
+    DIR *vdir;
+
+    // Step 0 - get the relative path to the version directory
+    if (!get_pci_dev_relvdir_pattn(d, type, rel_vpath_pattn, MAX_PATH)){
+        return NULL;
+    }
+
+    // Step 1 - get the pci device base folder
+    if(!get_pci_dev_dirname(d, d_dir, MAX_PATH)){
+        return NULL;
+    }
+    // Step 2 - go through each type and get the vers folder(abs path)
+    if(!(vdir_name=find_pci_dev_vers_dir(d_dir, rel_vpath_pattn, MAX_PATH))){
+        return NULL;
+    }
+    // Else open file (d_dir is now vabs path)
+    if(!(vdir=pci_opendir(vdir_name))){
+        return NULL;
+    }
+    return vdir;
+}
+
 /*===================read_vfile functions =============================================*/
 
 /**
@@ -253,13 +251,11 @@ get_pci_dev_vdir_pattn(struct pci_dev *d, const struct pci_class_methods *pcm, c
 *           integer 0 otherwise
 **/
 static int 
-get_pci_dev_drv_fpattn(struct pci_dev *d, const struct pci_class_methods *pcm, char *drv_fpattn_buff, int buff_size){
+get_pci_dev_drv_fpattn(struct pci_dev *d, const struct pci_class_methods *pcm, 
+                        char *drv_fpattn_buff, int buff_size){
     char  *drv_file_pattn; 
-    /*** Step 1 - check to see if the pcm exists */
-    if (!pcm){
-        d->warning("get_pci_dev_drv_fpattn: Your pci_class_methods structure isn't defined");
-        return 0;
-    }else if (!(pcm->drv_file_pattns)){
+    /*** Step 1 - check to see if the pcm drv file pattn exists */
+    if (!(pcm->drv_file_pattns)){
         d->warning("get_pci_dev_drv_fpattn: the drv_file_pattns table needs to be added to your pcm structure");
         return 0;
     }else if(!(drv_file_pattn = pcm->drv_file_pattns[d->vendor_id])){
@@ -273,30 +269,23 @@ get_pci_dev_drv_fpattn(struct pci_dev *d, const struct pci_class_methods *pcm, c
     strcpy(drv_fpattn_buff, drv_file_pattn);
     return 1; 
 }
+
 /**
 * Desc: Given the vendor id from the pci_dev, this function uses the pcm attribute \
        to lookup the fw version file pattrn and stores that regex into the fwv_fpattn_buff
-
 *@param d : the pci device that we are using to look up the vendor id
-
 *@param pcm : the pcm of that particular class & subclass of that device \
               using it to get the driver file pattns using its lookup table
-
 *@param fw_fpattn_buff: The buffer that is used to store the fwv_fpattn string 
-
 *@param buff_size: The max size of the fw_fpattn_buff
-
 *@return an integer 1 if everything was sucessful in getting your fwv_pattn stored in the buff \
-            integer 0 otherwise
 **/
 static int 
-get_pci_dev_fwv_fpattn(struct pci_dev *d, struct pci_class_methods *pcm, char *fwv_fpattn_buff, int buff_size){
+get_pci_dev_fwv_fpattn(struct pci_dev *d, struct pci_class_methods *pcm, 
+                        char *fwv_fpattn_buff, int buff_size){
     
     char *fwv_file_pattn; 
-    if (!pcm){
-        d->warning("get_pci_dev_fwv_fpattn: Your pci_class_methods structure isn't defined");
-        return 0;
-    }else if (!(pcm->fwv_file_pattns)){
+    if (!(pcm->fwv_file_pattns)){
         d->warning("get_pci_dev_fwv_fpattn: the fwv_file_pattns table needs to be added to your pcm structure");
         return 0;
     }else if(!(fwv_file_pattn = pcm->fwv_file_pattns[d->vendor_id])){
@@ -314,17 +303,12 @@ get_pci_dev_fwv_fpattn(struct pci_dev *d, struct pci_class_methods *pcm, char *f
 /**
 * Desc: Reads the version directory object and looks for \
 *       a matches with the regex fpattn
-
 * @param v_dir : the version directory that is used to look \
                  through for vfiles matching the fpattn
-
 * @param fpattn : the regex to get the version files 
-
 * @param files_buff : Stores a list of files that match the \
                      fpattn in the v_dir
-                    
 * @param buff_size : The max size of the buffer
-
 * @return an int that denotes how many files were stored in files_buff \n 
          -1 represents something whent wrong 
           0 represents buffer is to small
@@ -368,13 +352,9 @@ get_vfiles(const DIR *v_dir, const char *fpattn, FILE **files_buff, int buff_siz
 
 /**
 * Desc: looks for string in vfile (also it rewinds the vfile to start of file)
-
 * @param string : a string that is used to find in a file
-
 * @param vfile : a version file 
-
 * @return The line number the string is on or -1 if it doesnt exist
-
 **/
 static int
 line_string_in_vfile(const char *string, FILE *vfile){
@@ -398,15 +378,10 @@ line_string_in_vfile(const char *string, FILE *vfile){
 }
 /**
 * Desc: This function reads the version file and stores the info into vbuff
-
 * @param vfile: The file ponter used to read the version file
-
 * @param string: The string to look for inside a file to get the data on that line
-
 * @param vbuff: Where we store the data
-
 * @param buff_size: The max size the buff can hold
-
 * @return an int 1 if we correctly extracted the data from the file into the buffer \
              int 0 if something went wrong like the buffer isnt big enough to hold the information
 **/
@@ -416,7 +391,6 @@ read_vfile(FILE *vfile, char * string, char *vbuff, int buff_size){
     size_t len = 0;
     ssize_t read;
     int is_empty = 0, str_linenum, linenum=0;  
-
     // if no string firmware read the full file and store it into buffer
     // Step 1 - Search for in file the string = {"Firmware" or "Driver"}
     str_linenum = line_string_in_vfile(string, vfile);
@@ -452,7 +426,6 @@ read_vfiles(DIR *v_dir, const char *fpattn, char * string, char *vbuff, int buff
     if((num_vfiles = get_vfiles(v_dir, fpattn, vfiles)) == -1)
         // buff isnt valid
         return 0;
-
     // Step 2 - go through file pointer
     for(i=0; i< num_vfiles; i++){
         vfile = vfiles[i];

@@ -45,7 +45,8 @@ struct pci_methods {
   int (*read)(struct pci_dev *, int pos, byte *buf, int len);
   int (*write)(struct pci_dev *, int pos, byte *buf, int len);
   int (*read_vpd)(struct pci_dev *, int pos, byte *buf, int len);
-  int (*read_vers)(struct pci_dev *, char *dr_v, char *fw_v);
+  int (*read_drv)(struct pci_dev *, char *dr_v, int drv_size);
+  int (*read_fwv)(struct pci_dev *, char *fw_v, int fwv_size);
   void (*init_dev)(struct pci_dev *);
   void (*cleanup_dev)(struct pci_dev *);
 };
@@ -56,9 +57,10 @@ struct pci_methods {
 struct pci_class_methods{
     char *name; /* Name of the device */
     char *relpath_vdir_pattn; /* Relative path to version folder(fn of class,sclass,os) */
-    char ***fwv_file_pattns; /* File pattern of fw version info(fn of class,sclass,os, and vendor) */
     char ***drv_file_pattns; /* File pattern of dr version info (fn "")*/
-    int (*read_versions)(struct pci_dev *, char *dr_v, char *fw_v); 
+    char ***fwv_file_pattns; /* File pattern of fw version info(fn of class,sclass,os, and vendor) */
+    int (*read_drv)(struct pci_dev *, struct pci_class_methods *pcm, char *dr_v, int drv_size);
+    int (*read_fwv)(struct pci_dev *, struct pci_class_methods *pcm, char *fw_v, int fwv_size); 
 };
 
 

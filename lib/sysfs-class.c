@@ -10,34 +10,36 @@
 
 
 
-
 /*==========================================================*/
 /*========Class = 0x01 (Mass storage controllers) ==========*/
 /**
 * @return to indicate what buffer is valid
+* Assumptions: pcm isnt null (checked in the calling function)
 */
-int sas_read_versions(struct pci_dev *dev, char *dr_v, char *fw_v, int drv_size, int fwv_size){
+int sas_read_drv(struct pci_dev *dev, struct pci_class_methods *pcm,
+                    char *dr_v, char *fw_v, int drv_size, int fwv_size){
     DIR *v_dir;
     struct pci_class_methods *pcm;
     int num_vfiles;
-    u16 ven_id = dev->vendor_id;
-    char *drv_fpattn, *fwv_fpattn;
-    // step 0 - get pcm
-    if (!(pcm = pcm_vers_map[get_class(dev)][get_subclass(dev)])){
-        dev->warning("sas_read_version: sas (struct pci_class_methods) not instantiated");
-        return  -1;
-    }
+    #define DRV_FPATTN_MAX 100
+    #define FWV_FPATTN_MAX 100
+    char drv_fpattn[DRV_FPATTN_MAX], fwv_fpattn[FWV_FPATTN_MAX];
+    // Step 0 - clear out the fpattn buffers
+    memset(drv_fpattn, '\0', DRV_FPATTN_MAX);
+    memset(fwv_fpattn, '\0', FWV_FPATTN_MAX);
+
     // Step 1 - open version dir
     if(!(v_dir = get_pci_dev_vers_dir(dev, pcm)){
         dev->warning("sas_read_version: not able to find/open version directory");
         return 0;
     }
-    // Step 2 - get pattns from pcm (use vendor_id )
-    get_pci_dev_drv_fpattn(struct pci_dev *d, const struct pci_class_methods *pcm, char *drv_fpattn_buff, int buff_size);
-    get_pci_dev_fwv_fpattn(struct pci_dev *d, const struct pci_class_methods *pcm, char *drv_fpattn_buff, int buff_size);
-
-    read_files(v_dir, drv_fpattn, "Driver", dr_v, drv_size);
-    read_files(v_dir, fwv_fpattn, "Firmware", fw_v, fwv_size);
+    // Step 2 - get pattns from pcm (TODO )
+    if(get_pci_dev_drv_fpattn(dev, pcm, drv_fpattn, DRV_FPATTN_MAX)){
+        read_files(v_dir, drv_fpattn, "Driver", dr_v, drv_size);
+    }
+    if(get_pci_dev_fwv_fpattn(dev, pcm, fwv_fpattn, FWV_FPATTN_MAX)){
+        read_files(v_dir, fwv_fpattn, "Firmware", fw_v, fwv_size);
+    }
     closedir(v_dir);
 
     return 1;
@@ -76,7 +78,7 @@ int nvm_read_versions(struct pci_dev *dev, char *dr_v, char *fw_v){
 *
 */
 int 
-net_read_versions(struct pci_dev *dev, char *dr_v, char *fw_v){
+net_read_versions(struct pci_dev *dev, struct *char *dr_v, char *fw_v){
     /* TODO : (use for ib too) 
         step 1 : go to /sys/bus/devices/pciaddr/net
         step 2 : read for eth*

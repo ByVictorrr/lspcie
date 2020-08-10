@@ -138,10 +138,16 @@ pci_read_vpd(struct pci_dev *d, int pos, byte *buf, int len)
 /* =========================ADDED =============*/
 /* TODO: ADD parms for buff_size; */
 int 
-pci_read_vers(struct pci_dev *d, char *dr_v, char *fw_v)
+pci_read_driver_version(struct pci_dev *d, char *dr_v, int drv_size)
 {
   // if the read_vers != NULL; then call sysfs_read_vers
-  return d->methods->read_vers ? d->methods->read_vers(d, dr_v, fw_v) : 0;
+  return d->methods->read_drv ? d->methods->read_drv(d, dr_v, drv_size) : 0;
+}
+int 
+pci_read_firmware_version(struct pci_dev *d, char *fw_v, int fwv_size)
+{
+  // if the read_vers != NULL; then call sysfs_read_vers
+  return d->methods->read_fwv ? d->methods->read_fwv(d, fw_size, fwv_size) : 0;
 }
 
 /* ==============================================*/
