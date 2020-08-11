@@ -22,13 +22,9 @@
 /*===========SAS ====================================*/
 #define SAS_RELPATH_VDIR_PATTN "host*/scsi_host/host*"
 #define SAS_DRV_FILE_PATTNS 
-char *sas_drv_file_pattns[PCI_VENDOR_MAX] = {
-    [ADAPTEC_VENID] = "version*"
-};
+extern char *sas_drv_file_pattns[PCI_VENDOR_MAX];
 #define SAS_FWV_FILE_PATTNS
-char *sas_fwv_file_pattns[PCI_VENDOR_MAX] = {
-    [ADAPTEC_VENID] = "version*"
-};
+extern char *sas_fwv_file_pattns[PCI_VENDOR_MAX];
 
 /*=================================================*/
 #define NVM_RELPATH_VDIR_PATTN "nvme/nvme*"
@@ -40,16 +36,10 @@ char *sas_fwv_file_pattns[PCI_VENDOR_MAX] = {
 #define FC_RELPATH_VDIR_PATTN "host*/scsi_host/host*"
 /*=================FC================*/
 
-#define SAS_DRV_FILE_PATTNS 
-char *fc_drv_file_pattns[PCI_VENDOR_MAX] = {
-    [QLOGIC_VENID] = "driver_version*",
-    [EMULEX_VENID] = "lpfc_drvr_version*"
-};
+#define FC_DRV_FILE_PATTNS 
+extern char *fc_drv_file_pattns[PCI_VENDOR_MAX];
 
-#define SAS_FWV_FILE_PATTNS
-char *fc_fwv_file_pattns[PCI_VENDOR_MAX] = {
-    [QLOGIC_VENID] = "(option_rom|option_)*",
-    [EMULEX_VENID] = "option_rom*"
-};
+#define FC_FWV_FILE_PATTNS
+extern char *fc_fwv_file_pattns[PCI_VENDOR_MAX];
 /*=================================================*/
 #endif
