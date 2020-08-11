@@ -425,7 +425,7 @@ const struct pci_class_methods fc = {
 };
 
 /*==============PCM Table ==================================*/
-const struct pci_class_methods *pcm_vers_map[PCI_CLASS_MAX][PCI_SCLASS_MAX] = {
+struct pci_class_methods *pcm_vers_map[PCI_CLASS_MAX][PCI_SCLASS_MAX] = {
     {NULL}, /* Unclassified devices */
     {NULL, NULL, NULL, NULL, &raid, &ata, &sata, &sas, &nvm}, /* Mass storage controllers */
     {&eth, NULL, NULL, NULL, NULL, NULL, NULL, &ib, NULL},

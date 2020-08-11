@@ -98,7 +98,10 @@ void pci_free_dev(struct pci_dev *) PCI_ABI;
 int pci_lookup_method(char *name) PCI_ABI;	/* Returns -1 if not found */
 char *pci_get_method_name(int index) PCI_ABI;	/* Returns "" if unavailable, NULL if index out of range */
 
-/* ADDED TO get class and subclass */
+
+/* Getting class and subclass */
+#define PCI_CLASS_MASK 0xFF00
+#define PCI_SUBCLASS_MASK 0x00F
 inline u8 get_class(struct pci_dev * d);
 inline u8 get_subclass(struct pci_dev *d);
 
@@ -170,12 +173,14 @@ u16 pci_read_word(struct pci_dev *, int pos) PCI_ABI;
 u32 pci_read_long(struct pci_dev *, int pos) PCI_ABI;
 int pci_read_block(struct pci_dev *, int pos, u8 *buf, int len) PCI_ABI;
 int pci_read_vpd(struct pci_dev *d, int pos, u8 *buf, int len) PCI_ABI;
+int pci_read_driver_version(struct pci_dev *d, char *dr_v, int drv_size) PCI_ABI;
+int pci_read_firmware_version(struct pci_dev *d, char *fw_v, int fwv_size) PCI_ABI;
 int pci_read_vers(struct pci_dev *d, char *dr_v, char *fw_v) PCI_ABI;
+
 int pci_write_byte(struct pci_dev *, int pos, u8 data) PCI_ABI;
 int pci_write_word(struct pci_dev *, int pos, u16 data) PCI_ABI;
 int pci_write_long(struct pci_dev *, int pos, u32 data) PCI_ABI;
 int pci_write_block(struct pci_dev *, int pos, u8 *buf, int len) PCI_ABI;
-
 /*
  * Most device properties take some effort to obtain, so libpci does not
  * initialize them during default bus scan. Instead, you have to call

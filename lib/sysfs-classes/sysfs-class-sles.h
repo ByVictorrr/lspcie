@@ -1,7 +1,7 @@
 #include <stdio.h> // NULL declaration
 #include "vendors.h"
 
-#define VENDOR_MAX 0xffff
+#define PCI_VENDOR_MAX 0xffff
 /* README: How to update a device 
     In order to update a device, setup a macro
     #define $(DEVICE_NAME)_{FW,DR}V_FILE_PATTN
@@ -20,11 +20,11 @@
 /*===========SAS ====================================*/
 #define SAS_RELPATH_VDIR_PATTN "host*/scsi_host/host*"
 #define SAS_DRV_FILE_PATTNS 
-char *sas_drv_file_pattns[VENDOR_MAX] = {
+char *sas_drv_file_pattns[] = {
     [ADAPTEC_VENID] = "version*"
 };
 #define SAS_FWV_FILE_PATTNS
-char *sas_fwv_file_pattns[VENDOR_MAX] = {
+char *sas_fwv_file_pattns[] = {
     [ADAPTEC_VENID] = "version*"
 };
 
@@ -39,13 +39,13 @@ char *sas_fwv_file_pattns[VENDOR_MAX] = {
 /*=================FC================*/
 
 #define SAS_DRV_FILE_PATTNS 
-char *fc_drv_file_pattns[VENDOR_MAX] = {
+char *fc_drv_file_pattns[] = {
     [QLOGIC_VENID] = "driver_version*",
     [EMULEX_VENID] = "lpfc_drvr_version*"
 };
 
 #define SAS_FWV_FILE_PATTNS
-char *fc_fwv_file_pattns[VENDOR_MAX] = {
+char *fc_fwv_file_pattns[] = {
     [QLOGIC_VENID] = "(option_rom|option_)*",
     [EMULEX_VENID] = "option_rom*"
 };

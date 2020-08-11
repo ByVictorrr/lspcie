@@ -20,6 +20,7 @@
 #include <sys/types.h>
 #include "internal.h"
 #include "pread.h"
+#include "sysfs-class.h"
 
 static void
 sysfs_config(struct pci_access *a)
@@ -499,7 +500,7 @@ static int sysfs_read_drv(struct pci_dev *d, char *dr_v, int drv_size){
   sclass = get_subclass(d);
   // Step 2 - Get the function that is used to get version info
   if ((pcm = pcm_vers_map[class][sclass]) == NULL){
-    d->access->warning("sysfs_read_vers: class not supported to read version info");
+    d->access->error("sysfs_read_vers: class not supported to read version info");
     return 0;
   }
   /* Step 3 - Use this get_vers function to read versions
@@ -515,7 +516,7 @@ static int sysfs_read_fwv(struct pci_dev *d, char *fw_v, int fwv_size){
   sclass = get_subclass(d);
   // Step 2 - Get the function that is used to get version info
   if ((pcm = pcm_vers_map[class][sclass]) == NULL){
-    d->access->warning("sysfs_read_vers: class not supported to read version info");
+    d->access->error("sysfs_read_vers: class not supported to read version info");
     return 0;
   }
   /* Step 3 - Use this get_vers function to read versions
@@ -546,7 +547,8 @@ struct pci_methods pm_linux_sysfs = {
   sysfs_read,
   sysfs_write,
   sysfs_read_vpd,
-  sysfs_read_vers,
+  sysfs_read_drv,
+  sysfs_read_fwv,
   NULL,					/* init_dev */
   sysfs_cleanup_dev
 };

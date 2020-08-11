@@ -9,8 +9,7 @@
 #include <stdlib.h>
 #include <regex.h>
 
-#define MAX_PATH 100
-#define MAX_PATTN 100
+
 /*============ Path Utility functions ==============================*/
 /**
 * Desc: Given a path (absolute or relative) it returns a string of \

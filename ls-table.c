@@ -214,20 +214,7 @@ show_device_entry(struct device *d, locn_map_t f)
     show_vendor(d, e.vendor);
     // 5. Driver (driver name)
     show_driver(d, e.driver);
-    // 6. Device_info
-    if (table > 0)
-        pos = show_dev_info(d, e.dev_info);
-    if (table > 1)
-        sprintf(dev_info_num,"[%4.4x:%4.4x]", d->dev->vendor_id, d->dev->device_id);
-        //sprintf(e.dev_info+pos,"[%4.4x:%4.4x]", i->dev->dev->vendor_id, i->dev->dev->device_id);
-
-    // 7. Driver/fw version (TODO: handle the ret value)
-    if (!pci_read_vers(d->dev, e.dr_v, e.fw_v)) {
-        // have the function return {dr_v_NOT FOUND, fw_v_NOT FOUND, both not found, both found}
-        memset(e.dr_v, '\0',VERSION_SIZE);
-        memset(e.dr_v, '\0',VERSION_SIZE);
-    }
-    
+   
 
     printf("%-12.12s\t%-12.12s\t%-40.40s\t%-12.12s\t%-12.12s", 
             e.pci_addr, 
@@ -235,15 +222,26 @@ show_device_entry(struct device *d, locn_map_t f)
             e.card_info,
             e.vendor,
             e.driver);
-    if(table > 1)
-        printf("\t%-40.40s",e.dev_info);
-    if(table > 2)
-        printf("%s",dev_info_num);
-    // TODO : add for -4T dr & fw versions
-    if (table > 3)
-        printf("\t %s, %s", e.dr_v, e.fw_v);
-    
 
+     // 6. Device_info
+    if (table > 1){
+        pos = show_dev_info(d, e.dev_info);
+        printf("\t%-40.40s",e.dev_info);
+    }
+    if (table > 2){
+        sprintf(dev_info_num,"[%4.4x:%4.4x]", d->dev->vendor_id, d->dev->device_id);
+        printf("%s",dev_info_num);
+    }
+    if(table > 3){
+    // 7. Driver/fw version (TODO: handle the ret value)
+        if (!pci_read_driver_version(d->dev, e.dr_v, VERSION_SIZE)) {
+            memset(e.dr_v, '.', 1);
+        }
+        if (!pci_read_firmware_version(d->dev, e.fw_v, VERSION_SIZE)) {
+            memset(e.fw_v, '.', 1);
+        }
+        printf("\t %s, %s", e.dr_v, e.fw_v);
+    }
     printf("\n");
 }
 static void 
@@ -255,11 +253,15 @@ print_hdr(int line_width){
             "Card_info",
             "Vendor",
             "Driver");
-    if(table > 1)
+    if(table > 1){
         printf("\t%-40.40s", "Device_info");
+    }
+    if(table > 3){
+        printf("\t%-40.40s", "Driver Version");
+        printf("\t%-40.40s", "Firmware Version");
+    }
+
     printf("\n");
-
-
     for(i=0; i<line_width; i++)
         putchar('-');
     putchar('\n');

@@ -147,7 +147,7 @@ int
 pci_read_firmware_version(struct pci_dev *d, char *fw_v, int fwv_size)
 {
   // if the read_vers != NULL; then call sysfs_read_vers
-  return d->methods->read_fwv ? d->methods->read_fwv(d, fw_size, fwv_size) : 0;
+  return d->methods->read_fwv ? d->methods->read_fwv(d, fw_v, fwv_size) : 0;
 }
 
 /* ==============================================*/
