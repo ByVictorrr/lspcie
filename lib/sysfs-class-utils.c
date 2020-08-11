@@ -7,8 +7,6 @@
 #include <string.h>
 #include <errno.h>
 #include "pci.h"
-#define MAX_PATH 100
-#define MAX_PATTN 100
 inline u8 get_class(struct pci_dev * d){
      return (d->device_class & PCI_CLASS_MASK) >> 8;
 }
@@ -24,10 +22,10 @@ inline u8 get_subclass(struct pci_dev *d){
 * @param size - size of the buffer (b_dirname)
 * @return b_dirname if the operations were sucessful, NULL otherwise
 */
-char* base_dirname(const char *path, char *b_dirname, int size){
+static char * 
+base_dirname(const char *path, char *b_dirname, int size){
     char *token;
     char buff[MAX_PATH] = {'\0'};
-    int i=0;
     // Step 0 - check if either parm is NULL
     if(!path || !b_dirname){
         fprintf(stderr, "get_base_dir: both parameters need to be non NULL");
@@ -58,7 +56,9 @@ char* base_dirname(const char *path, char *b_dirname, int size){
 * @param size - size of the buffer (n_relpath)
 * @return n_relpath if there is a next path in path, NULL otherwise
 */
-char *next_relpath(const char *path, char *n_relpath, int size){
+
+static char 
+*next_relpath(const char *path, char *n_relpath, int size){
     char *token;
     char buff[MAX_PATH] = {'\0'};
     int exists=0;
@@ -98,7 +98,7 @@ static DIR *
 pci_opendir(const char *dir_name){
     DIR * dir;
     if(!(dir=opendir(dir_name))){
-        fprintf(stderr, "Not able to open the directory: %s", dir_name)
+        fprintf(stderr, "Not able to open the directory: %s", dir_name);
         return NULL;
     }
     return dir;
@@ -117,7 +117,7 @@ get_pci_dev_dirname(struct pci_dev *dev, char *dev_dirname, int devdir_size){
 		   sysfs_name(dev->access), dev->domain, dev->bus, dev->dev, dev->func);
     // Step 1 - check to see if buff is of correct size 
     if (n < 0 || n >= dev_dirname){
-        d->access->error("get_pci_dev_dirname: Folder name too long to store in desired buffer");
+        dev->access->error("get_pci_dev_dirname: Folder name too long to store in desired buffer");
         return NULL;
     }
     return dev_dirname;
@@ -162,7 +162,7 @@ find_pci_dev_vers_dir(const char * cwd, const char *rel_vpath_pattn){
     ptr_nrelvpath = next_relpath(rel_vpath_pattn, n_relvpath_pattn, NEXT_RELPATH_SIZE);
     if(!ptr_bdirname && !ptr_nrelvpath){
         if(!(vdir=strdup(cwd))){
-            fprintf(stderr, "find_pci_dev_vers_dir: strdup error\n"); 
+            fprintf(stderr, "find_pci_dev_vers_dir: strdup access->error\n"); 
             return NULL;
         }
         return vdir;
@@ -209,13 +209,12 @@ find_pci_dev_vers_dir(const char * cwd, const char *rel_vpath_pattn){
 static int 
 set_pci_dev_relvdir_pattn(struct pci_dev *d, const struct pci_class_methods *pcm, 
                         char *vdir_pattn_buff, int buff_size){
-    char  *vdir_pattn; 
     /*** Step 1 - check to see if the pcm exists */
     if (!(pcm->relpath_vdir_pattn)){
-        d->error("get_pci_dev_relvdir_pattn: pcm->relpath_vdir_pattn is NULL");
+        d->access->error("get_pci_dev_relvdir_pattn: pcm->relpath_vdir_pattn is NULL");
         return 0;
-    }else if(srtlen(vdir_pattn_buff)+1 > buff_size){
-        d->error("get_pci_dev_relvdir_pattn: the pcm->relpath_vdir_pattn string is to long to store in the desired buffer");
+    }else if(strlen(vdir_pattn_buff)+1 > buff_size){
+        d->access->error("get_pci_dev_relvdir_pattn: the pcm->relpath_vdir_pattn string is to long to store in the desired buffer");
         return 0;
     }
     strcpy(vdir_pattn_buff, pcm->relpath_vdir_pattn);
@@ -226,12 +225,11 @@ set_pci_dev_relvdir_pattn(struct pci_dev *d, const struct pci_class_methods *pcm
 * @param 
 *
 */
-static int 
+int 
 set_pci_dev_vers_dir(struct pci_dev *dev, struct pci_class_methods *pcm){
     /* dev directory, relative path from dev directory to v dir pattern */
     char ddir[MAX_PATH], rel_vpath_pattn[MAX_PATH]; 
     char *vdir_name;
-    DIR *vdir;
     // Step 0 - clear out the buffers used in this function
     memset(ddir, '\0', MAX_PATH);
     memset(rel_vpath_pattn, '\0', MAX_PATH);
@@ -241,16 +239,16 @@ set_pci_dev_vers_dir(struct pci_dev *dev, struct pci_class_methods *pcm){
         return 1;
     }
     // Step 2 - get the relative path to the version directory
-    if (!get_pci_dev_relvdir_pattn(dev, pcm, rel_vpath_pattn, MAX_PATH)){
+    if (!set_pci_dev_relvdir_pattn(dev, pcm, rel_vpath_pattn, MAX_PATH)){
         return 0;
     }// Step 3 - get the pci device base folder
-    else if(!get_pci_dev_dirname(dev, d_dir, MAX_PATH)){
+    else if(!get_pci_dev_dirname(dev, ddir, MAX_PATH)){
         return 0;
     } // Step 4 - go through each type and get the vers folder(abs path)
-    else if(!(vdir_name=find_pci_dev_vers_dir(d_dir, rel_vpath_pattn, MAX_PATH))){
+    else if(!(vdir_name=find_pci_dev_vers_dir(ddir, rel_vpath_pattn))){
         return 0;
     }
-    d->version_dir=vdir_name;
+    dev->version_dir=vdir_name;
     return 1;
 }
 
@@ -268,19 +266,19 @@ set_pci_dev_vers_dir(struct pci_dev *dev, struct pci_class_methods *pcm){
 *@return an integer 1 if everything was sucessful in getting your drv_pattn stored in the buff \
 *           integer 0 otherwise
 **/
-static int 
-set_pci_dev_drv_fpattn(struct pci_dev *d, const struct pci_class_methods *pcm, 
+int 
+set_pci_dev_drv_fpattn(struct pci_dev *d, struct pci_class_methods *pcm, 
                         char *drv_fpattn_buff, int buff_size){
     char  *drv_file_pattn; 
     /*** Step 1 - check to see if the pcm drv file pattn exists */
     if (!(pcm->drv_file_pattns)){
-        d->warning("get_pci_dev_drv_fpattn: the drv_file_pattns table needs to be added to your pcm structure");
+        d->access->error("get_pci_dev_drv_fpattn: the drv_file_pattns table needs to be added to your pcm structure");
         return 0;
     }else if(!(drv_file_pattn = pcm->drv_file_pattns[d->vendor_id])){
-        d->warning("get_pci_dev_drv_fpattn: You need to add a pattern in the drv_file_pattns for that vendor and device in sysfs-class-sles.h");
+        d->access->error("get_pci_dev_drv_fpattn: You need to add a pattern in the drv_file_pattns for that vendor and device in sysfs-class-sles.h");
         return 0;
     }else if(strlen(drv_file_pattn)+1 > buff_size){
-        d->warning("get_pci_dev_drv_fpattn: the drv_fpattn string is to long to store inside the buffer");
+        d->access->error("get_pci_dev_drv_fpattn: the drv_fpattn string is to long to store inside the buffer");
         return 0;
     }
 
@@ -298,19 +296,19 @@ set_pci_dev_drv_fpattn(struct pci_dev *d, const struct pci_class_methods *pcm,
 *@param buff_size: The max size of the fw_fpattn_buff
 *@return an integer 1 if everything was sucessful in getting your fwv_pattn stored in the buff \
 **/
-static int 
+int 
 set_pci_dev_fwv_fpattn(struct pci_dev *d, struct pci_class_methods *pcm, 
                         char *fwv_fpattn_buff, int buff_size){
     
     char *fwv_file_pattn; 
     if (!(pcm->fwv_file_pattns)){
-        d->warning("get_pci_dev_fwv_fpattn: the fwv_file_pattns table needs to be added to your pcm structure");
+        d->access->error("get_pci_dev_fwv_fpattn: the fwv_file_pattns table needs to be added to your pcm structure");
         return 0;
     }else if(!(fwv_file_pattn = pcm->fwv_file_pattns[d->vendor_id])){
-        d->warning("get_pci_dev_fwv_fpattn: You need to add a pattern in the fwv_file_pattns for that vendor and device in sysfs-class-sles.h");
+        d->access->error("get_pci_dev_fwv_fpattn: You need to add a pattern in the fwv_file_pattns for that vendor and device in sysfs-class-sles.h");
         return 0;
     }else if(strlen(fwv_file_pattn)+1 > buff_size){
-        d->warning("get_pci_dev_fwv_fpattn: the fwv_fpattn string is to long to store inside the buffer");
+        d->access->error("get_pci_dev_fwv_fpattn: the fwv_fpattn string is to long to store inside the buffer");
         return 0;
     }
     strcpy(fwv_fpattn_buff, fwv_file_pattn);
@@ -348,7 +346,7 @@ get_vfiles(const DIR *v_dir, const char *fpattn, FILE **files_buff, int buff_siz
         fprintf(stderr, "get_vfiles: files_buff is null");
         return -1;
     }else if(regcomp(&regex, fpattn, 0)){ /* Compile the regex */
-        fprintf(stderr, "get_vfiles: regex compilation error");
+        fprintf(stderr, "get_vfiles: regex compilation access->error");
         return -1;
     }
     // Step 2 - read v_dir and look for matches of the regex
@@ -378,12 +376,11 @@ static int
 line_string_in_vfile(const char *string, FILE *vfile){
     char * line = NULL;
     size_t len = 0;
-    ssize_t read;
     int line_num = 0;  
 
     // Step 1 - start of a file
     rewind(vfile); 
-    while((read = getline(&line, &len, fp)) != -1){
+    while(getline(&line, &len, vfile) != -1){
         if(strstr(string, line)){
             rewind(vfile); 
             return line_num;
@@ -408,11 +405,11 @@ read_vfile(FILE *vfile, char * string, char *vbuff, int buff_size){
     char * line = NULL;
     size_t len = 0;
     ssize_t read;
-    int is_empty = 0, str_linenum, linenum=0;  
+    int str_linenum, linenum=0;  
     // if no string firmware read the full file and store it into buffer
     // Step 1 - Search for in file the string = {"Firmware" or "Driver"}
     str_linenum = line_string_in_vfile(string, vfile);
-    while((read = getline(&line, &len, fp)) != -1){
+    while((read = getline(&line, &len, vfile)) != -1){
         int n;
         if(str_linenum == -1)
             // Read every line in the file and concat it into the buffer
@@ -444,7 +441,7 @@ read_vfile(FILE *vfile, char * string, char *vbuff, int buff_size){
 * @param buff_size - the size of the vbuffer
 * @return An int denoting the number of files read 
 */
-static int
+int
 read_vfiles(char *version_dir, const char *fpattn, char * string, char *vbuff, int buff_size){
     FILE *vfiles[MAX_VFILES], *vfile;
     DIR *vdir;
@@ -452,23 +449,27 @@ read_vfiles(char *version_dir, const char *fpattn, char * string, char *vbuff, i
     char *fwv_buff;
     // Step 1 - Open version_dir
     if(!(vdir=opendir(version_dir))){
-        fprintf(stderr, "read_vfiles: not able to open dir %s", version_dir)
+        fprintf(stderr, "read_vfiles: not able to open dir %s", version_dir);
         return 0;
     }
     // Step 2 - Get the number of matched vfiles and get the files
-    if((num_vfiles = get_vfiles(v_dir, fpattn, vfiles)) == -1)
+    if((num_vfiles = get_vfiles(vdir, fpattn, vfiles, MAX_VFILES)) == -1)
         return 0;
 
     // Step 3 - Iterate through the vfiles
     for(i=0; i< num_vfiles; i++){
         vfile = vfiles[i];
         // Step 4 - read the file
-        if(!read_vfile(vfile, vbuff, string)){
+        if(!read_vfile(vfile, string, vbuff, buff_size)){
             // if buffer is out of space
-            fclose(file);
-            return i;
+            fclose(vfile);
+            closedir(vdir);
+            return 0;
         }
-        fclose(file);
+        fclose(vfile);
+
      }
+
+    closedir(vdir);
     return i+1;
 }

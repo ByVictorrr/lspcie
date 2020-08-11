@@ -6,7 +6,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#include <libgen.h>
 #include "pci.h"
+#include <unistd.h>
 
 #define DRV_FPATTN_MAX 100
 #define FWV_FPATTN_MAX 100
@@ -20,32 +22,25 @@
 */
 static int 
 sas_read_drv(struct pci_dev *dev, struct pci_class_methods *pcm, char *dr_v, int drv_size){
-    DIR *v_dir;
-    int num_vfiles;
     char drv_fpattn[DRV_FPATTN_MAX];
     // Step 0 - clear out the fpattn buffers
     memset(drv_fpattn, '\0', DRV_FPATTN_MAX);
     // Step 1 - set the pci attribute version_dir
     if(!set_pci_dev_vers_dir(dev, pcm)){
-        dev->error("sas_read_drv: not able to find/open version directory");
+        dev->access->error("sas_read_drv: not able to find/open version directory");
         return 0;
     }
     // Step 2 - get pattns from pcm (TODO )
     if(!set_pci_dev_drv_fpattn(dev, pcm, drv_fpattn, DRV_FPATTN_MAX)){
-        closedir(v_dir);
         return 0;
-    }else if(!read_vfiles(v_dir, drv_fpattn, "Driver", dr_v, drv_size){
-        closedir(v_dir);
+    }else if(!read_vfiles(dev->version_dir, drv_fpattn, "Driver", dr_v, drv_size)){
         return 0;
     }
-    closedir(v_dir);
     return 1;
 }
 
 static int 
-sas_read_fwv(struct pci_dev *dev, struct pci_class_methods *pcm, char *fw_v, int fw_size){
-    DIR *v_dir;
-    int num_vfiles;
+sas_read_fwv(struct pci_dev *dev, struct pci_class_methods *pcm, char *fw_v, int fwv_size){
     char fwv_fpattn[FWV_FPATTN_MAX];
     // Step 0 - clear out the local buffers
     memset(fwv_fpattn, '\0', DRV_FPATTN_MAX);
@@ -55,13 +50,10 @@ sas_read_fwv(struct pci_dev *dev, struct pci_class_methods *pcm, char *fw_v, int
     }
     // Step 2 - get pattns from pcm (TODO )
     if(!set_pci_dev_fwv_fpattn(dev, pcm, fwv_fpattn, FWV_FPATTN_MAX)){
-        closedir(v_dir);
         return 0;
-    }else if(!read_vfiles(v_dir, fwv_fpattn, "Firmware", fw_v, fwv_size){
-        closedir(v_dir);
+    }else if(!read_vfiles(dev->version_dir, fwv_fpattn, "Firmware", fw_v, fwv_size)){
         return 0;
     }
-    closedir(v_dir);
     return 1;
 }
 
@@ -81,12 +73,8 @@ sas_read_fwv(struct pci_dev *dev, struct pci_class_methods *pcm, char *fw_v, int
 static int 
 net_read_info(struct pci_dev *dev, struct pci_class_methods *pcm, struct ethtool_drvinfo *info){
     char vdir_pattn[MAX_PATTN];
-    char devdir_path[MAX_PATH];
-    char iface[MAX_FILENAME];
     struct ifreq ifr;
 
-    struct pci_class_methods *pcm;
-    char *vdir_path;
     int fd;
 
     memset(vdir_pattn, 0, MAX_PATTN);
@@ -100,13 +88,13 @@ net_read_info(struct pci_dev *dev, struct pci_class_methods *pcm, struct ethtool
     // Step 1 - Get the version directory pattern
     strcpy(ifr.ifr_name, basename(dev->version_dir));
     if((fd=socket(AF_INET, SOCK_DGRAM, 0)) < 0){
-        dev->error("net_read_info: socket call from ethtool error");
+        dev->access->error("net_read_info: socket call from ethtool access->error");
         return 0;
     }
-    info.cmd = ETHTOOL_GDRVINFO;
+    info->cmd = ETHTOOL_GDRVINFO;
     ifr.ifr_data = (char *)(info);
     if(ioctl(fd, SIOCETHTOOL, &ifr) != 0){
-        dev->error("net_read_info: ioctl error");
+        dev->access->error("net_read_info: ioctl access->error");
         return 0;
     }
     close(fd);
@@ -120,7 +108,7 @@ eth_read_drv(struct pci_dev * dev, struct pci_class_methods *pcm,
         return 0;
     }
     if(strlen(info.version)+1 > drv_size){
-        dev->error("eth_read_drv: buffer not big enough to store info");
+        dev->access->error("eth_read_drv: buffer not big enough to store info");
         return 0;
     }
     strcpy(dr_v, info.version);
@@ -134,10 +122,10 @@ eth_read_fwv(struct pci_dev * dev, struct pci_class_methods *pcm,
         return 0;
     }
     if(strlen(info.fw_version)+1 > fwv_size){
-        dev->error("eth_read_drv: buffer not big enough to store info");
+        dev->access->error("eth_read_drv: buffer not big enough to store info");
         return 0;
     }
-    strcpy(dr_v, info.fw_version);
+    strcpy(fw_v, info.fw_version);
     return 1; 
 }
 static int 
@@ -147,7 +135,7 @@ ib_read_drv(struct pci_dev * dev, struct pci_class_methods *pcm, char *dr_v, int
         return 0;
     }
     if(strlen(info.version)+1 > drv_size){
-        dev->error("eth_read_drv: buffer not big enough to store info");
+        dev->access->error("eth_read_drv: buffer not big enough to store info");
         return 0;
     }
     strcpy(dr_v, info.version);
@@ -160,10 +148,10 @@ ib_read_fwv(struct pci_dev * dev, struct pci_class_methods *pcm, char *fw_v, int
         return 0;
     }
     if(strlen(info.fw_version)+1 > fwv_size){
-        dev->error("eth_read_drv: buffer not big enough to store info");
+        dev->access->error("eth_read_drv: buffer not big enough to store info");
         return 0;
     }
-    strcpy(dr_v, info.fw_version);
+    strcpy(fw_v, info.fw_version);
     return 1; 
 }
 
@@ -172,32 +160,24 @@ ib_read_fwv(struct pci_dev * dev, struct pci_class_methods *pcm, char *fw_v, int
 /*=================== Serial bus controller(0x0c)===========*/
 static int 
 fc_read_drv(struct pci_dev *dev, struct pci_class_methods *pcm, char *dr_v, int drv_size){
-    DIR *v_dir;
-    int num_vfiles;
     char drv_fpattn[DRV_FPATTN_MAX];
     // Step 0 - clear out the fpattn buffers
     memset(drv_fpattn, '\0', DRV_FPATTN_MAX);
     // Step 1 - set the pci attribute version_dir
     if(!set_pci_dev_vers_dir(dev, pcm)){
-        dev->error("sas_read_drv: not able to find/open version directory");
         return 0;
     }
     // Step 2 - get pattns from pcm (TODO )
     if(!set_pci_dev_drv_fpattn(dev, pcm, drv_fpattn, DRV_FPATTN_MAX)){
-        closedir(v_dir);
         return 0;
-    }else if(!read_vfiles(v_dir, drv_fpattn, "Driver", dr_v, drv_size){
-        closedir(v_dir);
+    }else if(!read_vfiles(dev->version_dir, drv_fpattn, "Driver", dr_v, drv_size)){
         return 0;
     }
-    closedir(v_dir);
     return 1;
 }
 
 static int 
-fc_read_fwv(struct pci_dev *dev, struct pci_class_methods *pcm, char *fw_v, int fw_size){
-    DIR *v_dir;
-    int num_vfiles;
+fc_read_fwv(struct pci_dev *dev, struct pci_class_methods *pcm, char *fw_v, int fwv_size){
     char fwv_fpattn[FWV_FPATTN_MAX];
     // Step 0 - clear out the local buffers
     memset(fwv_fpattn, '\0', DRV_FPATTN_MAX);
@@ -207,13 +187,10 @@ fc_read_fwv(struct pci_dev *dev, struct pci_class_methods *pcm, char *fw_v, int 
     }
     // Step 2 - get pattns from pcm (TODO )
     if(!set_pci_dev_fwv_fpattn(dev, pcm, fwv_fpattn, FWV_FPATTN_MAX)){
-        closedir(v_dir);
         return 0;
-    }else if(!read_vfiles(v_dir, fwv_fpattn, "Firmware", fw_v, fwv_size){
-        closedir(v_dir);
+    }else if(!read_vfiles(dev->version_dir, fwv_fpattn, "Firmware", fw_v, fwv_size)){
         return 0;
     }
-    closedir(v_dir);
     return 1;
 }
 
@@ -297,6 +274,7 @@ const struct pci_class_methods sata = {
 };
 const struct pci_class_methods sas = {
     "Serial Attached SCSI controller",
+    SAS_RELPATH_VDIR_PATTN,
     #ifdef SAS_DRV_FILE_PATTNS
         sas_drv_file_pattns,
     #else 
@@ -359,6 +337,8 @@ const struct pci_class_methods eth = {
         eth_fwv_file_pattns,
     #else 
         NULL,
+    #endif
+
     #ifdef ETH_READ_DRV
        eth_read_drv,
     #else 

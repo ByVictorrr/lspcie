@@ -32,7 +32,8 @@
 
 #include "pci.h"
 #include "sysdep.h"
-
+#ifndef INTERNAL_H_
+#define INTERNAL_H_
 struct pci_methods {
   char *name;
   char *help;
@@ -57,8 +58,8 @@ struct pci_methods {
 struct pci_class_methods{
     char *name; /* Name of the device */
     char *relpath_vdir_pattn; /* Relative path to version folder(fn of class,sclass,os) */
-    char ***drv_file_pattns; /* File pattern of dr version info (fn "")*/
-    char ***fwv_file_pattns; /* File pattern of fw version info(fn of class,sclass,os, and vendor) */
+    char **drv_file_pattns; /* File pattern of dr version info (fn "")*/
+    char **fwv_file_pattns; /* File pattern of fw version info(fn of class,sclass,os, and vendor) */
     int (*read_drv)(struct pci_dev *, struct pci_class_methods *pcm, char *dr_v, int drv_size);
     int (*read_fwv)(struct pci_dev *, struct pci_class_methods *pcm, char *fw_v, int fwv_size); 
 };
@@ -113,3 +114,4 @@ extern struct pci_methods pm_intel_conf1, pm_intel_conf2, pm_linux_proc,
 	pm_fbsd_device, pm_aix_device, pm_nbsd_libpci, pm_obsd_device,
 	pm_dump, pm_linux_sysfs, pm_darwin, pm_sylixos_device, pm_hurd;
 
+#endif

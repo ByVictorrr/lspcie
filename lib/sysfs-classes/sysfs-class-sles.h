@@ -1,3 +1,5 @@
+#ifndef SYSFS_CLASS_SLES_H_
+#define SYSFS_CLASS_SLES_H_
 #include <stdio.h> // NULL declaration
 #include "vendors.h"
 
@@ -20,16 +22,16 @@
 /*===========SAS ====================================*/
 #define SAS_RELPATH_VDIR_PATTN "host*/scsi_host/host*"
 #define SAS_DRV_FILE_PATTNS 
-char *sas_drv_file_pattns[] = {
+char *sas_drv_file_pattns[PCI_VENDOR_MAX] = {
     [ADAPTEC_VENID] = "version*"
 };
 #define SAS_FWV_FILE_PATTNS
-char *sas_fwv_file_pattns[] = {
+char *sas_fwv_file_pattns[PCI_VENDOR_MAX] = {
     [ADAPTEC_VENID] = "version*"
 };
 
 /*=================================================*/
-#define NVDIRM_RELPATH_VDIR_PATTN "nvme/nvme*"
+#define NVM_RELPATH_VDIR_PATTN "nvme/nvme*"
 /* Class 0x02 */
 #define ETH_RELPATH_VDIR_PATTN "net/eth*"
 #define IB_RELPATH_VDIR_PATTN "net/ib*"
@@ -39,14 +41,15 @@ char *sas_fwv_file_pattns[] = {
 /*=================FC================*/
 
 #define SAS_DRV_FILE_PATTNS 
-char *fc_drv_file_pattns[] = {
+char *fc_drv_file_pattns[PCI_VENDOR_MAX] = {
     [QLOGIC_VENID] = "driver_version*",
     [EMULEX_VENID] = "lpfc_drvr_version*"
 };
 
 #define SAS_FWV_FILE_PATTNS
-char *fc_fwv_file_pattns[] = {
+char *fc_fwv_file_pattns[PCI_VENDOR_MAX] = {
     [QLOGIC_VENID] = "(option_rom|option_)*",
     [EMULEX_VENID] = "option_rom*"
 };
 /*=================================================*/
+#endif
