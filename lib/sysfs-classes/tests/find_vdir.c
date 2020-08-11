@@ -103,13 +103,8 @@ find_pci_dev_vers_dir(char * cwd, char *rel_vpath_pattn, int cwd_size){
     #define NEXT_RELPATH_SIZE 100
     char b_dirname[BASE_DIRNAME_SIZE];
     char n_relpath[NEXT_RELPATH_SIZE];
-    char n_cwd[MAX_PATH];
-    char *vdir;
     int n;
-    // step 0 - memset buffs
-    memset(b_dirname, 0, BASE_DIRNAME_SIZE);
-    memset(n_relpath, 0, NEXT_RELPATH_SIZE);
-    memset(n_cwd, 0, MAX_PATH);
+
     /* Step 1 - get the base directory name
     * Example: if path_pattn = /sys/bus/pci/devices
     *          b_dirname = sys 
@@ -124,13 +119,12 @@ find_pci_dev_vers_dir(char * cwd, char *rel_vpath_pattn, int cwd_size){
     * Returns: NULL if there is no next path (example path_pattn = devices)
     */
     if (!next_relpath(rel_vpath_pattn, n_relpath, NEXT_RELPATH_SIZE)){
-        int num_chars = strlen(cwd) + strlen(b_dirname)+ 1;
-        if(!(vdir= malloc(sizeof(char)*(num_chars+1)))){
-            fprintf(stderr, "find_pci_dev_vers_dir: malloc error");
+        n = snprintf(cwd, cwd_size, "%s/%s", cwd, b_dirname);
+        if (n < 0 || n >= cwd_size){
+            fprintf(stderr, "find_pci_dev_vers_dir: Folder name too long\n");
             return NULL;
         }
-        n = snprintf(vdir, num_chars+1, "%s/%s", cwd, b_dirname);
-        return vdir;
+        return cwd;
     }
     /* Step 3 - open the cwd direcotry */
     if (!(dir=opendir(cwd)))
@@ -148,14 +142,14 @@ find_pci_dev_vers_dir(char * cwd, char *rel_vpath_pattn, int cwd_size){
         (strcmp(dp->d_name, ".") && strcmp(dp->d_name, ".."))){
             // Case 1.1 -  See if there is a match
             if(!regexec(&regex, dp->d_name, 0, NULL, 0)){
-                n = snprintf(n_cwd, MAX_PATH, "%s/%s", cwd, dp->d_name);
-                if (n < 0 || n >= MAX_PATH){
+                n = snprintf(cwd, cwd_size, "%s/%s", cwd, b_dirname);
+                if (n < 0 || n >= cwd_size){
                     fprintf(stderr, "find_pci_dev_vers_dir: Folder name too long\n");
                     closedir(dir);
                     return NULL;
                 }
                 closedir(dir);
-                return find_pci_dev_vers_dir(n_cwd, n_relpath, cwd_size);
+                return find_pci_dev_vers_dir(cwd, n_relpath, cwd_size);
             }
         }
     }
@@ -167,13 +161,10 @@ int main(){
     DIR *d;
     #define CWD_SIZE 100
     #define CWD "/sys/bus/pci/devices/0002:c1:00.0"
-    #define REL_VPATH_PATTN "host*/scsi_host/host*"
+    #define REL_VPATH_PATTN "host*/scsi_host/host*";
     char cwd[CWD_SIZE], rel_vpath_pattn[100] = {'\0'};
-
     char *vdir;
     strcpy(cwd, CWD);
-    strcpy(rel_vpath_pattn, REL_VPATH_PATTN);
     vdir=find_pci_dev_vers_dir(cwd, rel_vpath_pattn, CWD_SIZE);
-    // currently *vidr == '/'
     return 0;
 }
