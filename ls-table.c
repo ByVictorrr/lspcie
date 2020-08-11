@@ -241,7 +241,8 @@ show_device_entry(struct device *d, locn_map_t f)
         if (!pci_read_firmware_version(d->dev, e.fw_v, VERSION_SIZE)) {
             memset(e.fw_v, '.', 1);
         }
-        printf("\t %s, %s", e.dr_v, e.fw_v);
+        printf("\t%-40.40s", e.dr_v);
+        printf("\t%-40.40s", e.fw_v);
     }
     printf("\n");
 }
