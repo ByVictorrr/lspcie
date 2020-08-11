@@ -14,21 +14,24 @@
 
 /*===========SAS ====================================*/
 char *sas_drv_file_pattns[PCI_VENDOR_MAX] = {
-    [ADAPTEC_VENID] = "version*"
+    [ADAPTEC_VENID] = "version"
 };
 char *sas_fwv_file_pattns[PCI_VENDOR_MAX] = {
-    [ADAPTEC_VENID] = "version*"
+    [ADAPTEC_VENID] = "version"
 };
 
+char *nvm_fwv_file_pattns[PCI_VENDOR_MAX] = {
+    [INTEL_VENID] = "firmware_rev" 
+};
 /*=================================================*/
 /*=================FC================*/
 
 char *fc_drv_file_pattns[PCI_VENDOR_MAX] = {
-    [QLOGIC_VENID] = "driver_version*",
+    [QLOGIC_VENID] = "driver_version",
     [EMULEX_VENID] = "lpfc_drvr_version*"
 };
 
 char *fc_fwv_file_pattns[PCI_VENDOR_MAX] = {
-    [QLOGIC_VENID] = "(option_rom|option_)*",
+    [QLOGIC_VENID] = "(.{0,}fw_version|optrom_.{1,}_version)",
     [EMULEX_VENID] = "option_rom*"
 };

@@ -152,6 +152,8 @@ struct pci_methods pm_nbsd_libpci = {
   nbsd_read,
   nbsd_write,
   NULL,                                 /* read_vpd */
+  NULL,                                 /* read_drv */
+  NULL,                                 /* read_fwv */
   NULL,                                 /* dev_init */
   NULL                                  /* dev_cleanup */
 };

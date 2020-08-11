@@ -60,8 +60,8 @@ struct pci_class_methods{
     char *relpath_vdir_pattn; /* Relative path to version folder(fn of class,sclass,os) */
     char **drv_file_pattns; /* File pattern of dr version info (fn "")*/
     char **fwv_file_pattns; /* File pattern of fw version info(fn of class,sclass,os, and vendor) */
-    int (*read_drv)(struct pci_dev *, struct pci_class_methods *pcm, char *dr_v, int drv_size);
-    int (*read_fwv)(struct pci_dev *, struct pci_class_methods *pcm, char *fw_v, int fwv_size); 
+    int (*read_drv)(struct pci_dev *, const struct pci_class_methods *pcm, char *dr_v, int drv_size);
+    int (*read_fwv)(struct pci_dev *, const struct pci_class_methods *pcm, char *fw_v, int fwv_size); 
 };
 
 

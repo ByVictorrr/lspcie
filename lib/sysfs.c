@@ -494,13 +494,13 @@ static int sysfs_read_vpd(struct pci_dev *d, int pos, byte *buf, int len)
 
 static int sysfs_read_drv(struct pci_dev *d, char *dr_v, int drv_size){
   u8 class, sclass;
-  struct pci_class_methods *pcm;
+  const struct pci_class_methods *pcm;
   // Step 1 - sub class and class 
   class = get_class(d);
   sclass = get_subclass(d);
   // Step 2 - Get the function that is used to get version info
   if ((pcm = pcm_vers_map[class][sclass]) == NULL){
-    d->access->error("sysfs_read_vers: class not supported to read version info");
+    d->access->warning("sysfs_read_drv: class not supported to read version info");
     return 0;
   }
   /* Step 3 - Use this get_vers function to read versions
@@ -510,13 +510,13 @@ static int sysfs_read_drv(struct pci_dev *d, char *dr_v, int drv_size){
 }
 static int sysfs_read_fwv(struct pci_dev *d, char *fw_v, int fwv_size){
   u8 class, sclass;
-  struct pci_class_methods *pcm;
+  const struct pci_class_methods *pcm;
   // Step 1 - sub class and class 
   class = get_class(d);
   sclass = get_subclass(d);
   // Step 2 - Get the function that is used to get version info
   if ((pcm = pcm_vers_map[class][sclass]) == NULL){
-    d->access->error("sysfs_read_vers: class not supported to read version info");
+    d->access->warning("sysfs_read_fwv: class not supported to read version info");
     return 0;
   }
   /* Step 3 - Use this get_vers function to read versions

@@ -26,8 +26,13 @@ extern char *sas_drv_file_pattns[PCI_VENDOR_MAX];
 #define SAS_FWV_FILE_PATTNS
 extern char *sas_fwv_file_pattns[PCI_VENDOR_MAX];
 
-/*=================================================*/
+/*================NVM===============================*/
 #define NVM_RELPATH_VDIR_PATTN "nvme/nvme*"
+#define NVM_FWV_FILE_PATTNS
+extern char *nvm_fwv_file_pattns[PCI_VENDOR_MAX];
+
+
+
 /* Class 0x02 */
 #define ETH_RELPATH_VDIR_PATTN "net/eth*"
 #define IB_RELPATH_VDIR_PATTN "net/ib*"

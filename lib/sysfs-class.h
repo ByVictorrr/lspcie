@@ -18,24 +18,29 @@
 
 #define SAS_READ_DRV
 #define SAS_READ_FWV
+#define NVM_READ_DRV
+#define NVM_READ_FWV
+
 
 #define ETH_READ_DRV
 #define ETH_READ_FWV
 #define IB_READ_DRV
 #define IB_READ_FWV
+#define FC_READ_DRV
+#define FC_READ_FWV
 
 
 /* sysfs-class-utils.c */
 inline char * sysfs_name(struct pci_access *a);
 
-int set_pci_dev_vers_dir(struct pci_dev *dev, struct pci_class_methods *pcm);
+int set_pci_dev_vers_dir(struct pci_dev *dev, const struct pci_class_methods *pcm);
 int read_vfiles(char *version_dir, const char *fpattn, char * string, char *vbuff, int buff_size);
-int set_pci_dev_drv_fpattn(struct pci_dev *d, struct pci_class_methods *pcm, char *drv_fpattn_buff, int buff_size);
-int set_pci_dev_fwv_fpattn(struct pci_dev *d, struct pci_class_methods *pcm, char *fwv_fpattn_buff, int buff_size);
+int set_pci_dev_drv_fpattn(struct pci_dev *d, const struct pci_class_methods *pcm, char *drv_fpattn_buff, int buff_size);
+int set_pci_dev_fwv_fpattn(struct pci_dev *d, const struct pci_class_methods *pcm, char *fwv_fpattn_buff, int buff_size);
  
  
  
-extern struct pci_class_methods *pcm_vers_map[PCI_CLASS_MAX][PCI_SCLASS_MAX];
+extern const struct pci_class_methods *pcm_vers_map[PCI_CLASS_MAX][PCI_SCLASS_MAX];
 
 
 

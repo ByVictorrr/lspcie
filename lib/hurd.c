@@ -362,7 +362,8 @@ struct pci_methods pm_hurd = {
   hurd_read,
   hurd_write,
   NULL,				/* read_vpd */
-  NULL,       /* read_vers */
+  NULL,       /* read_drv */
+  NULL,       /* read_fwv */
   hurd_init_dev,
   hurd_cleanup_dev
 };

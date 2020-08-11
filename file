@@ -1,0 +1,201 @@
+cd lib && ./configure
+Configuring libpci for your system... x86_64--linux 4.12.14-95.51-default x86_64 linux
+Looking for access methods... sysfs proc i386-ports dump
+Checking for zlib support... yes (auto-detected)
+Checking for DNS support... yes (auto-detected)
+Checking for libkmod... no (auto-detected)
+Checking for udev hwdb support... no (auto-detected)
+Checking whether to build a shared library... no (set manually)
+make -C lib all
+make[1]: Entering directory '/root/lspcie/lib'
+gcc -O2 -Wall -W -Wno-parentheses -Wstrict-prototypes -Wmissing-prototypes -g -O1   -c -o init.o init.c
+gcc -O2 -Wall -W -Wno-parentheses -Wstrict-prototypes -Wmissing-prototypes -g -O1   -c -o access.o access.c
+gcc -O2 -Wall -W -Wno-parentheses -Wstrict-prototypes -Wmissing-prototypes -g -O1   -c -o generic.o generic.c
+gcc -O2 -Wall -W -Wno-parentheses -Wstrict-prototypes -Wmissing-prototypes -g -O1   -c -o dump.o dump.c
+dump.c:190:1: warning: missing initializer for field ‘cleanup_dev’ of ‘struct pci_methods’ [-Wmissing-field-initializers]
+ };
+ ^
+In file included from dump.c:14:0:
+internal.h:52:10: note: ‘cleanup_dev’ declared here
+   void (*cleanup_dev)(struct pci_dev *);
+          ^
+gcc -O2 -Wall -W -Wno-parentheses -Wstrict-prototypes -Wmissing-prototypes -g -O1   -c -o names.o names.c
+gcc -O2 -Wall -W -Wno-parentheses -Wstrict-prototypes -Wmissing-prototypes -g -O1   -c -o filter.o filter.c
+gcc -O2 -Wall -W -Wno-parentheses -Wstrict-prototypes -Wmissing-prototypes -g -O1   -c -o names-hash.o names-hash.c
+gcc -O2 -Wall -W -Wno-parentheses -Wstrict-prototypes -Wmissing-prototypes -g -O1   -c -o names-parse.o names-parse.c
+gcc -O2 -Wall -W -Wno-parentheses -Wstrict-prototypes -Wmissing-prototypes -g -O1   -c -o names-net.o names-net.c
+gcc -O2 -Wall -W -Wno-parentheses -Wstrict-prototypes -Wmissing-prototypes -g -O1   -c -o names-cache.o names-cache.c
+gcc -O2 -Wall -W -Wno-parentheses -Wstrict-prototypes -Wmissing-prototypes -g -O1   -c -o names-hwdb.o names-hwdb.c
+gcc -O2 -Wall -W -Wno-parentheses -Wstrict-prototypes -Wmissing-prototypes -g -O1   -c -o params.o params.c
+gcc -O2 -Wall -W -Wno-parentheses -Wstrict-prototypes -Wmissing-prototypes -g -O1   -c -o caps.o caps.c
+gcc -O2 -Wall -W -Wno-parentheses -Wstrict-prototypes -Wmissing-prototypes -g -O1   -c -o sysfs.o sysfs.c
+gcc -O2 -Wall -W -Wno-parentheses -Wstrict-prototypes -Wmissing-prototypes -g -O1   -c -o sysfs-class.o sysfs-class.c
+sysfs-class.c: In function ‘eth_read_drv’:
+sysfs-class.c:110:31: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+     if(strlen(info.version)+1 > drv_size){
+                               ^
+sysfs-class.c: In function ‘eth_read_fwv’:
+sysfs-class.c:124:34: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+     if(strlen(info.fw_version)+1 > fwv_size){
+                                  ^
+sysfs-class.c: In function ‘ib_read_drv’:
+sysfs-class.c:137:31: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+     if(strlen(info.version)+1 > drv_size){
+                               ^
+sysfs-class.c: In function ‘ib_read_fwv’:
+sysfs-class.c:150:34: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+     if(strlen(info.fw_version)+1 > fwv_size){
+                                  ^
+sysfs-class.c: At top level:
+sysfs-class.c:410:5: warning: initialization discards ‘const’ qualifier from pointer target type [enabled by default]
+     {NULL, NULL, NULL, NULL, &raid, &ata, &sata, &sas, &nvm}, /* Mass storage controllers */
+     ^
+sysfs-class.c:410:5: warning: initialization discards ‘const’ qualifier from pointer target type [enabled by default]
+sysfs-class.c:410:5: warning: initialization discards ‘const’ qualifier from pointer target type [enabled by default]
+sysfs-class.c:410:5: warning: initialization discards ‘const’ qualifier from pointer target type [enabled by default]
+sysfs-class.c:410:5: warning: initialization discards ‘const’ qualifier from pointer target type [enabled by default]
+sysfs-class.c:411:5: warning: initialization discards ‘const’ qualifier from pointer target type [enabled by default]
+     {&eth, NULL, NULL, NULL, NULL, NULL, NULL, &ib, NULL},
+     ^
+sysfs-class.c:411:5: warning: initialization discards ‘const’ qualifier from pointer target type [enabled by default]
+sysfs-class.c:421:5: warning: initialization discards ‘const’ qualifier from pointer target type [enabled by default]
+     {NULL, NULL, NULL, NULL, &fc, NULL, NULL, NULL, NULL} // Serial bus controller
+     ^
+sysfs-class.c:162:1: warning: ‘fc_read_drv’ defined but not used [-Wunused-function]
+ fc_read_drv(struct pci_dev *dev, struct pci_class_methods *pcm, char *dr_v, int drv_size){
+ ^
+sysfs-class.c:180:1: warning: ‘fc_read_fwv’ defined but not used [-Wunused-function]
+ fc_read_fwv(struct pci_dev *dev, struct pci_class_methods *pcm, char *fw_v, int fwv_size){
+ ^
+gcc -O2 -Wall -W -Wno-parentheses -Wstrict-prototypes -Wmissing-prototypes -g -O1   -c -o sysfs-class-utils.o sysfs-class-utils.c
+sysfs-class-utils.c: In function ‘get_pci_dev_dirname’:
+sysfs-class-utils.c:119:20: warning: comparison between pointer and integer [enabled by default]
+     if (n < 0 || n >= dev_dirname){
+                    ^
+sysfs-class-utils.c: In function ‘set_pci_dev_relvdir_pattn’:
+sysfs-class-utils.c:216:40: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+     }else if(strlen(vdir_pattn_buff)+1 > buff_size){
+                                        ^
+sysfs-class-utils.c: In function ‘set_pci_dev_drv_fpattn’:
+sysfs-class-utils.c:280:39: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+     }else if(strlen(drv_file_pattn)+1 > buff_size){
+                                       ^
+sysfs-class-utils.c: In function ‘set_pci_dev_fwv_fpattn’:
+sysfs-class-utils.c:310:39: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+     }else if(strlen(fwv_file_pattn)+1 > buff_size){
+                                       ^
+sysfs-class-utils.c: In function ‘read_vfiles’:
+sysfs-class-utils.c:460:11: warning: unused variable ‘fwv_buff’ [-Wunused-variable]
+     char *fwv_buff;
+           ^
+sysfs-class-utils.c:458:10: warning: unused variable ‘vdir’ [-Wunused-variable]
+     DIR *vdir;
+          ^
+sysfs-class-utils.c: At top level:
+sysfs-class-utils.c:98:1: warning: ‘pci_opendir’ defined but not used [-Wunused-function]
+ pci_opendir(const char *dir_name){
+ ^
+gcc -O2 -Wall -W -Wno-parentheses -Wstrict-prototypes -Wmissing-prototypes -g -O1   -c -o sysfs-classes/sysfs-class-sles.o sysfs-classes/sysfs-class-sles.c
+gcc -O2 -Wall -W -Wno-parentheses -Wstrict-prototypes -Wmissing-prototypes -g -O1   -c -o proc.o proc.c
+proc.c:213:1: warning: missing initializer for field ‘cleanup_dev’ of ‘struct pci_methods’ [-Wmissing-field-initializers]
+ };
+ ^
+In file included from proc.c:18:0:
+internal.h:52:10: note: ‘cleanup_dev’ declared here
+   void (*cleanup_dev)(struct pci_dev *);
+          ^
+gcc -O2 -Wall -W -Wno-parentheses -Wstrict-prototypes -Wmissing-prototypes -g -O1   -c -o i386-ports.o i386-ports.c
+i386-ports.c:300:1: warning: missing initializer for field ‘cleanup_dev’ of ‘struct pci_methods’ [-Wmissing-field-initializers]
+ };
+ ^
+In file included from i386-ports.c:11:0:
+internal.h:52:10: note: ‘cleanup_dev’ declared here
+   void (*cleanup_dev)(struct pci_dev *);
+          ^
+i386-ports.c:317:1: warning: missing initializer for field ‘cleanup_dev’ of ‘struct pci_methods’ [-Wmissing-field-initializers]
+ };
+ ^
+In file included from i386-ports.c:11:0:
+internal.h:52:10: note: ‘cleanup_dev’ declared here
+   void (*cleanup_dev)(struct pci_dev *);
+          ^
+rm -f libpci.a
+ar rcs libpci.a init.o access.o generic.o dump.o names.o filter.o names-hash.o names-parse.o names-net.o names-cache.o names-hwdb.o params.o caps.o sysfs.o sysfs-class.o sysfs-class-utils.o sysfs-classes/sysfs-class-sles.o proc.o i386-ports.o
+ranlib libpci.a
+sed <libpci.pc.in >libpci.pc -e 's,@PREFIX@,/usr/local,' \
+	-e 's,@INCDIR@,/usr/local/include,' \
+	-e 's,@LIBDIR@,/usr/local/lib,' \
+	-e 's,@IDSDIR@,/usr/local/share,' \
+	-e 's,@VERSION@,3.7.0,' \
+	-e 's,@LDLIBS@, -lz -lresolv,'
+make[1]: Leaving directory '/root/lspcie/lib'
+gcc -O2 -Wall -W -Wno-parentheses -Wstrict-prototypes -Wmissing-prototypes -g -O1   -c -o lspci.o lspci.c
+lspci.c: In function ‘show_slot_path’:
+lspci.c:281:4: warning: ‘return’ with a value, in function returning void [enabled by default]
+    return pos;
+    ^
+lspci.c:289:3: warning: ‘return’ with a value, in function returning void [enabled by default]
+   return pos; 
+   ^
+lspci.c: In function ‘show_slot_name’:
+lspci.c:301:27: warning: ‘pos’ may be used uninitialized in this function [-Wmaybe-uninitialized]
+   if(table) show_slot_path(d, buf+pos);
+                           ^
+gcc -O2 -Wall -W -Wno-parentheses -Wstrict-prototypes -Wmissing-prototypes -g -O1   -c -o ls-vpd.o ls-vpd.c
+gcc -O2 -Wall -W -Wno-parentheses -Wstrict-prototypes -Wmissing-prototypes -g -O1   -c -o ls-caps.o ls-caps.c
+gcc -O2 -Wall -W -Wno-parentheses -Wstrict-prototypes -Wmissing-prototypes -g -O1   -c -o ls-caps-vendor.o ls-caps-vendor.c
+gcc -O2 -Wall -W -Wno-parentheses -Wstrict-prototypes -Wmissing-prototypes -g -O1   -c -o ls-ecaps.o ls-ecaps.c
+gcc -O2 -Wall -W -Wno-parentheses -Wstrict-prototypes -Wmissing-prototypes -g -O1    -c -o ls-kernel.o ls-kernel.c
+gcc -O2 -Wall -W -Wno-parentheses -Wstrict-prototypes -Wmissing-prototypes -g -O1   -c -o ls-tree.o ls-tree.c
+gcc -O2 -Wall -W -Wno-parentheses -Wstrict-prototypes -Wmissing-prototypes -g -O1   -c -o ls-map.o ls-map.c
+gcc -O2 -Wall -W -Wno-parentheses -Wstrict-prototypes -Wmissing-prototypes -g -O1   -c -o ls-table.o ls-table.c
+ls-table.c: In function ‘is_pci_addr’:
+ls-table.c:99:22: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+     return d->domain == dom && d->bus == bus && d->dev == dev 
+                      ^
+ls-table.c: In function ‘show_dev_info’:
+ls-table.c:165:9: warning: unused variable ‘dt_node’ [-Wunused-variable]
+   char *dt_node;
+         ^
+ls-table.c:164:62: warning: unused variable ‘sdbuf’ [-Wunused-variable]
+   char classbuf[128], vendbuf[128], devbuf[128], svbuf[128], sdbuf[128];
+                                                              ^
+ls-table.c:164:50: warning: unused variable ‘svbuf’ [-Wunused-variable]
+   char classbuf[128], vendbuf[128], devbuf[128], svbuf[128], sdbuf[128];
+                                                  ^
+ls-table.c:164:37: warning: unused variable ‘devbuf’ [-Wunused-variable]
+   char classbuf[128], vendbuf[128], devbuf[128], svbuf[128], sdbuf[128];
+                                     ^
+ls-table.c:164:23: warning: unused variable ‘vendbuf’ [-Wunused-variable]
+   char classbuf[128], vendbuf[128], devbuf[128], svbuf[128], sdbuf[128];
+                       ^
+ls-table.c:164:8: warning: unused variable ‘classbuf’ [-Wunused-variable]
+   char classbuf[128], vendbuf[128], devbuf[128], svbuf[128], sdbuf[128];
+        ^
+ls-table.c:163:15: warning: unused variable ‘sd_id’ [-Wunused-variable]
+   word sv_id, sd_id;
+               ^
+ls-table.c:163:8: warning: unused variable ‘sv_id’ [-Wunused-variable]
+   word sv_id, sd_id;
+        ^
+ls-table.c:162:7: warning: unused variable ‘c’ [-Wunused-variable]
+   int c;
+       ^
+ls-table.c: In function ‘show_device_entry’:
+ls-table.c:196:9: warning: variable ‘pos’ set but not used [-Wunused-but-set-variable]
+     int pos; 
+         ^
+gcc -O2 -Wall -W -Wno-parentheses -Wstrict-prototypes -Wmissing-prototypes -g -O1   -c -o common.o common.c
+gcc   lspci.o ls-vpd.o ls-caps.o ls-caps-vendor.o ls-ecaps.o ls-kernel.o ls-tree.o ls-map.o ls-table.o common.o lib/libpci.a  -lz -lresolv  -o lspci
+gcc -O2 -Wall -W -Wno-parentheses -Wstrict-prototypes -Wmissing-prototypes -g -O1   -c -o setpci.o setpci.c
+gcc   setpci.o common.o lib/libpci.a  -lz -lresolv -o setpci
+gcc -O2 -Wall -W -Wno-parentheses -Wstrict-prototypes -Wmissing-prototypes -g -O1   -c -o example.o example.c
+gcc   example.o lib/libpci.a  -lz -lresolv -o example
+M=`echo 2020-05-31 | sed 's/-01-/-January-/;s/-02-/-February-/;s/-03-/-March-/;s/-04-/-April-/;s/-05-/-May-/;s/-06-/-June-/;s/-07-/-July-/;s/-08-/-August-/;s/-09-/-September-/;s/-10-/-October-/;s/-11-/-November-/;s/-12-/-December-/;s/\(.*\)-\(.*\)-\(.*\)/\3 \2 \1/'` ; sed <lspci.man >lspci.8 "s/@TODAY@/$M/;s/@VERSION@/pciutils-3.7.0/;s#@IDSDIR@#/usr/local/share#"
+M=`echo 2020-05-31 | sed 's/-01-/-January-/;s/-02-/-February-/;s/-03-/-March-/;s/-04-/-April-/;s/-05-/-May-/;s/-06-/-June-/;s/-07-/-July-/;s/-08-/-August-/;s/-09-/-September-/;s/-10-/-October-/;s/-11-/-November-/;s/-12-/-December-/;s/\(.*\)-\(.*\)-\(.*\)/\3 \2 \1/'` ; sed <setpci.man >setpci.8 "s/@TODAY@/$M/;s/@VERSION@/pciutils-3.7.0/;s#@IDSDIR@#/usr/local/share#"
+M=`echo 2020-05-31 | sed 's/-01-/-January-/;s/-02-/-February-/;s/-03-/-March-/;s/-04-/-April-/;s/-05-/-May-/;s/-06-/-June-/;s/-07-/-July-/;s/-08-/-August-/;s/-09-/-September-/;s/-10-/-October-/;s/-11-/-November-/;s/-12-/-December-/;s/\(.*\)-\(.*\)-\(.*\)/\3 \2 \1/'` ; sed <pcilib.man >pcilib.7 "s/@TODAY@/$M/;s/@VERSION@/pciutils-3.7.0/;s#@IDSDIR@#/usr/local/share#"
+M=`echo 2020-05-31 | sed 's/-01-/-January-/;s/-02-/-February-/;s/-03-/-March-/;s/-04-/-April-/;s/-05-/-May-/;s/-06-/-June-/;s/-07-/-July-/;s/-08-/-August-/;s/-09-/-September-/;s/-10-/-October-/;s/-11-/-November-/;s/-12-/-December-/;s/\(.*\)-\(.*\)-\(.*\)/\3 \2 \1/'` ; sed <pci.ids.man >pci.ids.5 "s/@TODAY@/$M/;s/@VERSION@/pciutils-3.7.0/;s#@IDSDIR@#/usr/local/share#"
+sed <update-pciids.sh >update-pciids "s@^DEST=.*@DEST=/usr/local/share/pci.ids.gz@;s@^PCI_COMPRESSED_IDS=.*@PCI_COMPRESSED_IDS=1@"
+chmod +x update-pciids
+M=`echo 2020-05-31 | sed 's/-01-/-January-/;s/-02-/-February-/;s/-03-/-March-/;s/-04-/-April-/;s/-05-/-May-/;s/-06-/-June-/;s/-07-/-July-/;s/-08-/-August-/;s/-09-/-September-/;s/-10-/-October-/;s/-11-/-November-/;s/-12-/-December-/;s/\(.*\)-\(.*\)-\(.*\)/\3 \2 \1/'` ; sed <update-pciids.man >update-pciids.8 "s/@TODAY@/$M/;s/@VERSION@/pciutils-3.7.0/;s#@IDSDIR@#/usr/local/share#"
+gzip -9n <pci.ids >pci.ids.gz

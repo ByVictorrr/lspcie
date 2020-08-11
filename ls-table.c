@@ -156,7 +156,7 @@ show_card_info(struct device *d, char *buff){
 
 }
 static int
-show_dev_info(struct device *d, char *buff){
+show_dev_info(struct device *d, char *buff, int buff_size){
   struct pci_dev *p = d->dev;
   char namebuf[1024], *name;
   int c;
@@ -164,7 +164,7 @@ show_dev_info(struct device *d, char *buff){
   char classbuf[128], vendbuf[128], devbuf[128], svbuf[128], sdbuf[128];
   char *dt_node;
   name = pci_lookup_name(pacc, namebuf, sizeof(namebuf), PCI_LOOKUP_DEVICE, p->vendor_id, p->device_id);
-  return sprintf(buff, "%s", name);
+  return snprintf(buff, buff_size, "%s", name);
        
 }
 static void
@@ -226,7 +226,7 @@ show_device_entry(struct device *d, locn_map_t f)
 
      // 6. Device_info
     if (table > 1){
-        pos = show_dev_info(d, e.dev_info);
+        pos = show_dev_info(d, e.dev_info, DEVICE_INFO_SIZE);
         printf("\t%-40.40s",e.dev_info);
     }
     if (table > 2){
@@ -259,8 +259,8 @@ print_hdr(int line_width){
         printf("\t%-40.40s", "Device_info");
     }
     if(table > 3){
-        printf("\t%-40.40s", "Driver Version");
-        printf("\t%-40.40s", "Firmware Version");
+        printf("\t%-20.20s", "Driver Version");
+        printf("\t%-20.20s", "Firmware Version");
     }
 
     printf("\n");
@@ -274,7 +274,7 @@ show_table(struct device *first_dev)
     struct device *head = first_dev, *p;
     locn_map_t f;
 
-    print_hdr(150);
+    print_hdr(200);
 
     // Step 1 - build loc_map (returns FILE *ptr)
     if(!(f=build_locn_map())){

@@ -153,7 +153,8 @@ struct pci_methods pm_sylixos_device = {
   sylixos_read,
   sylixos_write,
   NULL,			// no read_vpd
-  NULL,     // no read_vers
+  NULL,     // no read_drv
+  NULL,     // no read_fwv
   NULL,			// no init_dev
   NULL,			// no cleanup_dev
 };
