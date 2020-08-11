@@ -28,6 +28,9 @@ char* base_dirname(const char *path, char *b_dirname, int size){
     if(!path || !b_dirname){
         fprintf(stderr, "get_base_dir: both parameters need to be non NULL");
         return NULL;
+    // Step 1.5 - check to see if path is ""
+    }else if(strlen(path) == 0){
+        return NULL;
     }
     // Step 1 - cpy data from path to buff (so we can use strtok)
     if(strlen(path)+1 > MAX_PATH){
@@ -95,36 +98,41 @@ char *next_relpath(const char *path, char *n_relpath, int size){
         NULL if it wasnt able to find the version directory (or buffer overflow)
 **/
 static char *
-find_pci_dev_vers_dir(char * cwd, char *rel_vpath_pattn, int cwd_size){
+find_pci_dev_vers_dir(const char * cwd, const char *rel_vpath_pattn){
     DIR *dir;
     struct dirent *dp;
     regex_t regex;
     #define BASE_DIRNAME_SIZE 100
     #define NEXT_RELPATH_SIZE 100
     char b_dirname[BASE_DIRNAME_SIZE];
-    char n_relpath[NEXT_RELPATH_SIZE];
+    char n_relvpath_pattn[NEXT_RELPATH_SIZE];
+    char n_cwd[MAX_PATH];
+    char *vdir, *ptr_bdirname, *ptr_nrelvpath;
+    
     int n;
+    // Step 0 - clear local buffers
+    memset(b_dirname, 0, BASE_DIRNAME_SIZE);
+    memset(n_relvpath_pattn, 0, NEXT_RELPATH_SIZE);
 
     /* Step 1 - get the base directory name
     * Example: if path_pattn = /sys/bus/pci/devices
     *          b_dirname = sys 
     * Returns: NULL if 
     */
-    if(!base_dirname(rel_vpath_pattn, b_dirname, BASE_DIRNAME_SIZE))
-        return NULL;
-
     /* Step 2 - get the next relpath after the base_dirname
     * Example: if path_pattn = /sys/bus/pci/devices
     *          n_relpath = bus/pci/devices
     * Returns: NULL if there is no next path (example path_pattn = devices)
     */
-    if (!next_relpath(rel_vpath_pattn, n_relpath, NEXT_RELPATH_SIZE)){
-        n = snprintf(cwd, cwd_size, "%s/%s", cwd, b_dirname);
-        if (n < 0 || n >= cwd_size){
-            fprintf(stderr, "find_pci_dev_vers_dir: Folder name too long\n");
+ 
+    ptr_bdirname = base_dirname(rel_vpath_pattn, b_dirname, BASE_DIRNAME_SIZE);
+    ptr_nrelvpath = next_relpath(rel_vpath_pattn, n_relvpath_pattn, NEXT_RELPATH_SIZE);
+    if(!ptr_bdirname && !ptr_nrelvpath){
+        if(!(vdir=strdup(cwd))){
+            fprintf(stderr, "find_pci_dev_vers_dir: strdup error\n"); 
             return NULL;
         }
-        return cwd;
+        return vdir;
     }
     /* Step 3 - open the cwd direcotry */
     if (!(dir=opendir(cwd)))
@@ -142,14 +150,14 @@ find_pci_dev_vers_dir(char * cwd, char *rel_vpath_pattn, int cwd_size){
         (strcmp(dp->d_name, ".") && strcmp(dp->d_name, ".."))){
             // Case 1.1 -  See if there is a match
             if(!regexec(&regex, dp->d_name, 0, NULL, 0)){
-                n = snprintf(cwd, cwd_size, "%s/%s", cwd, b_dirname);
-                if (n < 0 || n >= cwd_size){
+                n = snprintf(n_cwd, MAX_PATH, "%s/%s", cwd, dp->d_name);
+                if (n < 0 || n >= MAX_PATH){
                     fprintf(stderr, "find_pci_dev_vers_dir: Folder name too long\n");
                     closedir(dir);
                     return NULL;
                 }
                 closedir(dir);
-                return find_pci_dev_vers_dir(cwd, n_relpath, cwd_size);
+                return find_pci_dev_vers_dir(n_cwd, n_relvpath_pattn);
             }
         }
     }
@@ -160,11 +168,13 @@ find_pci_dev_vers_dir(char * cwd, char *rel_vpath_pattn, int cwd_size){
 int main(){
     DIR *d;
     #define CWD_SIZE 100
-    #define CWD "/sys/bus/pci/devices/0002:c1:00.0"
-    #define REL_VPATH_PATTN "host*/scsi_host/host*";
+    #define CWD "/sys/bus/pci/devices/0001:c1:00.0"
+    #define REL_VPATH_PATTN "infiniband_verbs/uverbs*"
+
     char cwd[CWD_SIZE], rel_vpath_pattn[100] = {'\0'};
     char *vdir;
     strcpy(cwd, CWD);
-    vdir=find_pci_dev_vers_dir(cwd, rel_vpath_pattn, CWD_SIZE);
+    strcpy(rel_vpath_pattn, REL_VPATH_PATTN);
+    vdir=find_pci_dev_vers_dir(cwd, rel_vpath_pattn);
     return 0;
 }
