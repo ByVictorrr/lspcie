@@ -101,17 +101,18 @@ pci_opendir(const char *dir_name){
 
 /*===================get_vdir functions =============================================*/
 /**
-* @param d - pci_dev struct ptr used to open up its device folder
-* @return a pointer to the base device folder (NULL if an error occured)
+* @param dev - pci_dev structused to find up its device folder
+* @param dev_dirname - where to store the desired device folder name
+* @param devdir_size - the size of the dev_dirname
+* @return the base device folder name or NULL if buffer too small
 */
 static char *
-get_pci_dev_dirname(struct pci_dev *d, char *dev_dirname, int devdir_size){
-
+get_pci_dev_dirname(struct pci_dev *dev, char *dev_dirname, int devdir_size){
     int n = snprintf(dev_dirname, devdir_size, "%s/devices/%04x:%02x:%02x.%d",
-		   sysfs_name(d->access), d->domain, d->bus, d->dev, d->func);
+		   sysfs_name(dev->access), dev->domain, dev->bus, dev->dev, dev->func);
     // Step 1 - check to see if buff is of correct size 
     if (n < 0 || n >= dev_dirname){
-        d->access->error("Folder name too long");
+        d->access->error("get_pci_dev_dirname: Folder name too long to store in desired buffer");
         return NULL;
     }
     return dev_dirname;
@@ -194,46 +195,55 @@ find_pci_dev_vers_dir(char * cwd, char *rel_vpath_pattn, int cwd_size){
          0 if the buffer is too small to store the pattn in or if the relpath_vdir_pattn DNE
 */
 static int 
-get_pci_dev_relvdir_pattn(struct pci_dev *d, const struct pci_class_methods *pcm, 
+set_pci_dev_relvdir_pattn(struct pci_dev *d, const struct pci_class_methods *pcm, 
                         char *vdir_pattn_buff, int buff_size){
     char  *vdir_pattn; 
     /*** Step 1 - check to see if the pcm exists */
     if (!(pcm->relpath_vdir_pattn)){
-        d->warning("get_pci_dev_relvdir_pattn: the drv_file_pattns table needs to be added to your pcm structure");
+        d->error("get_pci_dev_relvdir_pattn: pcm->relpath_vdir_pattn is NULL");
         return 0;
     }else if(srtlen(vdir_pattn_buff)+1 > buff_size){
-        d->warning("get_pci_dev_relvdir_pattn: the drv_fpattn string is to long to store inside the buffer");
+        d->error("get_pci_dev_relvdir_pattn: the pcm->relpath_vdir_pattn string is to long to store in the desired buffer");
         return 0;
     }
     strcpy(vdir_pattn_buff, pcm->relpath_vdir_pattn);
     return 1;
 }
-
-static DIR * 
-get_pci_dev_vers_dir(struct pci_dev *d, struct pci_class_methods *type){
-    char d_dir[MAX_PATH] = {'\0'};
-    char rel_vpath_pattn[MAX_PATH] = {'\0'};
+/**
+* Description: This function sets the pci_dev field version_folder
+* @param 
+*
+*/
+static int 
+set_pci_dev_vers_dir(struct pci_dev *dev, struct pci_class_methods *pcm){
+    /* dev directory, relative path from dev directory to v dir pattern */
+    char ddir[MAX_PATH], rel_vpath_pattn[MAX_PATH]; 
     char *vdir_name;
     DIR *vdir;
+    // Step 0 - clear out the buffers used in this function
+    memset(ddir, '\0', MAX_PATH);
+    memset(rel_vpath_pattn, '\0', MAX_PATH);
 
-    // Step 0 - get the relative path to the version directory
-    if (!get_pci_dev_relvdir_pattn(d, type, rel_vpath_pattn, MAX_PATH)){
-        return NULL;
+    // Step 1 - check if the pci_dev has set the pci_ver_dir already
+    if(dev->version_dir){
+        return 1;
     }
-
-    // Step 1 - get the pci device base folder
-    if(!get_pci_dev_dirname(d, d_dir, MAX_PATH)){
-        return NULL;
+    // Step 2 - get the relative path to the version directory
+    if (!get_pci_dev_relvdir_pattn(dev, pcm, rel_vpath_pattn, MAX_PATH)){
+        return 0;
+    }// Step 3 - get the pci device base folder
+    else if(!get_pci_dev_dirname(dev, d_dir, MAX_PATH)){
+        return 0;
+    } // Step 4 - go through each type and get the vers folder(abs path)
+    else if(!(vdir_name=find_pci_dev_vers_dir(d_dir, rel_vpath_pattn, MAX_PATH))){
+        return 0;
     }
-    // Step 2 - go through each type and get the vers folder(abs path)
-    if(!(vdir_name=find_pci_dev_vers_dir(d_dir, rel_vpath_pattn, MAX_PATH))){
-        return NULL;
+    // Step 5 - malloc for d->version dir
+    if(!(d->version_dir=strdup(vdir_name))){
+        d->warning("set_pci_dev_vers_dir: not able to malloc space for version_dir\n");
+        return 0;
     }
-    // Else open file (d_dir is now vabs path)
-    if(!(vdir=pci_opendir(vdir_name))){
-        return NULL;
-    }
-    return vdir;
+    return 1;
 }
 
 /*===================read_vfile functions =============================================*/
@@ -251,7 +261,7 @@ get_pci_dev_vers_dir(struct pci_dev *d, struct pci_class_methods *type){
 *           integer 0 otherwise
 **/
 static int 
-get_pci_dev_drv_fpattn(struct pci_dev *d, const struct pci_class_methods *pcm, 
+set_pci_dev_drv_fpattn(struct pci_dev *d, const struct pci_class_methods *pcm, 
                         char *drv_fpattn_buff, int buff_size){
     char  *drv_file_pattn; 
     /*** Step 1 - check to see if the pcm drv file pattn exists */
@@ -281,7 +291,7 @@ get_pci_dev_drv_fpattn(struct pci_dev *d, const struct pci_class_methods *pcm,
 *@return an integer 1 if everything was sucessful in getting your fwv_pattn stored in the buff \
 **/
 static int 
-get_pci_dev_fwv_fpattn(struct pci_dev *d, struct pci_class_methods *pcm, 
+set_pci_dev_fwv_fpattn(struct pci_dev *d, struct pci_class_methods *pcm, 
                         char *fwv_fpattn_buff, int buff_size){
     
     char *fwv_file_pattn; 
@@ -415,22 +425,38 @@ read_vfile(FILE *vfile, char * string, char *vbuff, int buff_size){
 }
 
 #define MAX_VFILES 20
+/**
+* Desc: Given the version_dir and file pattern read all those file patterns \
+        that match and store in the buffer
+* @param version_dir - version directory name (absolute path)
+* @param fpattn - the regex pattern of files to look for
+* @param string - in files look for this line and use it to store info on \
+                  that line in vbuff
+* @param vbuff - the buffer where the info is to be stored
+* @param buff_size - the size of the vbuffer
+* @return An int denoting the number of files read 
+*/
 static int
-read_vfiles(DIR *v_dir, const char *fpattn, char * string, char *vbuff, int buff_size){
+read_vfiles(char *version_dir, const char *fpattn, char * string, char *vbuff, int buff_size){
     FILE *vfiles[MAX_VFILES], *vfile;
+    DIR *vdir;
     int num_vfiles, i;
     char *fwv_buff;
-    // Step 0 - Clear out the vbuffer
-    memset(vbuff, '\0', buff_size);
-    // Step 1 - get vfiles
-    if((num_vfiles = get_vfiles(v_dir, fpattn, vfiles)) == -1)
-        // buff isnt valid
+    // Step 1 - Open version_dir
+    if(!(vdir=opendir(version_dir))){
+        fprintf(stderr, "read_vfiles: not able to open dir %s", version_dir)
         return 0;
-    // Step 2 - go through file pointer
+    }
+    // Step 2 - Get the number of matched vfiles and get the files
+    if((num_vfiles = get_vfiles(v_dir, fpattn, vfiles)) == -1)
+        return 0;
+
+    // Step 3 - Iterate through the vfiles
     for(i=0; i< num_vfiles; i++){
         vfile = vfiles[i];
+        // Step 4 - read the file
         if(!read_vfile(vfile, vbuff, string)){
-            // return if buffer is out of space
+            // if buffer is out of space
             fclose(file);
             return i;
         }

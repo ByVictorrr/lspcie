@@ -189,11 +189,16 @@ static void
 show_device_entry(struct device *d, locn_map_t f)
 {
 
-    char dev_info_num[10]={'\0'};
-    char locn[LOCN_SIZE] = {'\0'};
-    int pos;
- 
-    struct tab_entry e = {'\0'};
+    #define DEV_INFO_NUM_SIZE 10
+    char dev_info_num[DEV_INFO_NUM_SIZE];
+    char locn[LOCN_SIZE];
+    struct tab_entry e;
+    int pos; 
+    // clear out local buffers
+    memset(dev_info_num, '\0', DEV_INFO_NUM_SIZE);
+    memset(locn, '\0', LOCN_SIZE);
+    memset(e, '\0', sizeof(struct tab_entry));
+
     // Step 0 - See if the device if found in the locn map (dont print out device)
     if(get_locn(d->dev, f, locn) == NOT_FOUND){
         return;
