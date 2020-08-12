@@ -57,25 +57,6 @@ sas_read_fwv(struct pci_dev *dev, const struct pci_class_methods *pcm, char *fw_
     return 1;
 }
 
-static int 
-nvm_read_drv(struct pci_dev *dev, const struct pci_class_methods *pcm, char *dr_v, int drv_size){
-    char drv_fpattn[DRV_FPATTN_MAX];
-    // Step 0 - clear out the fpattn buffers
-    memset(drv_fpattn, '\0', DRV_FPATTN_MAX);
-    // Step 1 - set the pci attribute version_dir
-    if(!set_pci_dev_vers_dir(dev, pcm)){
-        dev->access->warning("sas_read_drv: not able to find/open version directory");
-        return 0;
-    }
-    // Step 2 - get pattns from pcm (TODO )
-    if(!set_pci_dev_drv_fpattn(dev, pcm, drv_fpattn, DRV_FPATTN_MAX)){
-        return 0;
-    }else if(!read_vfiles(dev->version_dir, drv_fpattn, "driver:", dr_v, drv_size)){
-        return 0;
-    }
-    return 1;
-}
-
 
 
 static int 

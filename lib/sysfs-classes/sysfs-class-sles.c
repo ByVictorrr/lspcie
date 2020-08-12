@@ -28,10 +28,10 @@ char *nvm_fwv_file_pattns[PCI_VENDOR_MAX] = {
 
 char *fc_drv_file_pattns[PCI_VENDOR_MAX] = {
     [QLOGIC_VENID] = "driver_version",
-    [EMULEX_VENID] = "lpfc_drvr_version*"
+    [BROADCOM_VENID] = "lpfc_drvr_version"
 };
 
 char *fc_fwv_file_pattns[PCI_VENDOR_MAX] = {
     [QLOGIC_VENID] = "(.{0,}fw_version|optrom_.{1,}_version)",
-    [EMULEX_VENID] = "option_rom*"
+    [BROADCOM_VENID] = "option_rom_version"
 };

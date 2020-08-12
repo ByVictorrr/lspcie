@@ -433,17 +433,23 @@ read_vfile(FILE *vfile, char * string, char *vbuff, int buff_size){
         // Step 2 - trim white spaces 
         trimstr(vbuff);
         // Step 3 - check if new line is on the read data
-        if(vbuff[strlen(vbuff)-1]='\n')
+        if(vbuff[strlen(vbuff)-1]=='\n')
             vbuff[strlen(vbuff)-1]=0;
-
+        
+        // Step 4  - no string found in the file
+        if(str_linenum == -1){
+           return 1; 
+        }
         // Step 4 - if the string is a substring of the line
-        if(linenum==str_linenum)
+        else if(str_linenum == linenum){
             // remove substring
             strremove(vbuff, string);
+            return 1;
+        }
 
         linenum++; 
     }
-    return 1; 
+    return 0; 
 }
 
 #define MAX_VFILES 20

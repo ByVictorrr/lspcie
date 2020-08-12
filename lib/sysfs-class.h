@@ -18,7 +18,6 @@
 
 #define SAS_READ_DRV
 #define SAS_READ_FWV
-#define NVM_READ_DRV
 #define NVM_READ_FWV
 
 
