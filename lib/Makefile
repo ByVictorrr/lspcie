@@ -18,7 +18,7 @@ OBJS += sysfs-class-sles
 endif
 
 ifdef PCI_LINUX_OS_DISTRO_REDHAT
-OBJS += sysfs-class-sles
+OBJS += sysfs-class-redhat
 endif
 
 
@@ -100,6 +100,7 @@ sysfs.o: sysfs.c $(INCL) pread.h sysfs-class.h
 sysfs-class.o: sysfs-class.c $(INCL) sysfs-class.h 
 sysfs-class-utils.o: sysfs-class-utils.c $(INCL) sysfs-class.h 
 sysfs-class-sles.o: sysfs-class-sles.c sysfs-class-sles.h
+sysfs-class-redhat.o: sysfs-class-redhat.c sysfs-class-redhat.h
 generic.o: generic.c $(INCL)
 syscalls.o: syscalls.c $(INCL)
 obsd-device.o: obsd-device.c $(INCL)

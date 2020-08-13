@@ -16,7 +16,7 @@
   #include "sysfs-class-sles.h"
 #endif
 #ifdef PCI_LINUX_OS_DISTRO_REDHAT
-  #include "sysfs-class-sles.h"
+  #include "sysfs-class-rehat.h"
 #endif
 
 /*====== Class 0x01 =====*/
@@ -47,15 +47,6 @@ const char* get_pci_dev_drv_fpattn(struct pci_dev *d, const struct pci_class_met
 const char * get_pci_dev_fwv_fpattn(struct pci_dev *d, const struct pci_class_methods *pcm);
  
 extern const struct pci_class_methods *pcm_vers_map[PCI_CLASS_MAX][PCI_SCLASS_MAX];
-/* syfs-class-{sles,redhat,..}.c*/
-/* V FILE PATTNS */
-#define SAS_VFILE_PATTNS 
-#define NVM_VFILE_PATTNS
-extern const char *nvm_vfile_pattns[PCI_VENDOR_MAX][2];
-extern const char *sas_vfile_pattns[PCI_VENDOR_MAX][2];
-/* V FILE PATTNS */
-#define FC_VFILE_PATTNS 
-extern const char *fc_vfile_pattns[PCI_VENDOR_MAX][2];
 
 
 #endif
