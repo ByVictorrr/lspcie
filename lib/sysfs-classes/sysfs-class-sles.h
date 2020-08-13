@@ -2,7 +2,7 @@
 #define SYSFS_CLASS_SLES_H_
 #include <stdio.h> // NULL declaration
 #include "vendors.h"
-
+enum VFILE_PATTNS{DRV_FPATTN, FWV_FPATTN};
 #define PCI_VENDOR_MAX 0xffff
 /* README: How to update a device 
     In order to update a device, setup a macro
@@ -12,39 +12,31 @@
     invoke the function  
 */
 
-/* Class 0x01 */
-/*========SCSI======================*/
+/* =========Class 0x01 ==============*/
+/* RELATIVE VDIR PATTNS */
 #define RAID_RELPATH_VDIR_PATTN NULL
 #define ATA_RELPATH_VDIR_PATTN NULL
 #define SATA_RELPATH_VDIR_PATTN NULL
-
-
-/*===========SAS ====================================*/
 #define SAS_RELPATH_VDIR_PATTN "host*/scsi_host/host*"
-#define SAS_DRV_FILE_PATTNS 
-extern char *sas_drv_file_pattns[PCI_VENDOR_MAX];
-#define SAS_FWV_FILE_PATTNS
-extern char *sas_fwv_file_pattns[PCI_VENDOR_MAX];
-
-/*================NVM===============================*/
 #define NVM_RELPATH_VDIR_PATTN "nvme/nvme*"
-#define NVM_FWV_FILE_PATTNS
-extern char *nvm_fwv_file_pattns[PCI_VENDOR_MAX];
+
+/* V FILE PATTNS */
+#define SAS_VFILE_PATTNS 
+#define NVM_VFILE_PATTNS
+extern const char *nvm_vfile_pattns[PCI_VENDOR_MAX][2];
+extern const char *sas_vfile_pattns[PCI_VENDOR_MAX][2];
 
 
-
-/* Class 0x02 */
+/*========== Class 0x02 ===========*/
+/* RELATIVE VDIR PATTNS */
 #define ETH_RELPATH_VDIR_PATTN "net/eth*"
 #define IB_RELPATH_VDIR_PATTN "net/ib*"
+#define FAB_RELPATH_VDIR_PATTN IB_RELPATH_VDIR_PATTN
 
-/* Class 0x0c */
+/*======== Class 0x0c =============*/
+/* RELATIVE VDIR PATTNS */
 #define FC_RELPATH_VDIR_PATTN "host*/scsi_host/host*"
-/*=================FC================*/
-
-#define FC_DRV_FILE_PATTNS 
-extern char *fc_drv_file_pattns[PCI_VENDOR_MAX];
-
-#define FC_FWV_FILE_PATTNS
-extern char *fc_fwv_file_pattns[PCI_VENDOR_MAX];
-/*=================================================*/
+/* V FILE PATTNS */
+#define FC_VFILE_PATTNS 
+extern const char *fc_vfile_pattns[PCI_VENDOR_MAX][2];
 #endif

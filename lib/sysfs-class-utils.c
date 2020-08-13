@@ -13,6 +13,58 @@ inline u8 get_class(struct pci_dev * d){
 inline u8 get_subclass(struct pci_dev *d){
      return (d->device_class & PCI_SUBCLASS_MASK);
 }
+
+char *strremove(char *str, const char *sub) {
+    char *p, *q, *r;
+    if ((q = r = strstr(str, sub)) != NULL) {
+        size_t len = strlen(sub);
+        while ((r = strstr(p = r + len, sub)) != NULL) {
+            memmove(q, p, r - p);
+            q += r - p;
+        }
+        memmove(q, p, strlen(p) + 1);
+        return str;
+    }
+    return NULL;
+}
+void trimstr(char* s) {
+    const char* d = s;
+    do {
+        while (*d == ' ') {
+            ++d;
+        }
+    } while (*s++ = *d++);
+}
+
+/**
+* Desc: function looks for data part of the string (i.e the version data) \
+        excluding the word parts of the string
+* @param string - the string that we are looking through
+* @return the starting address of the data part in the string \
+            NULL if an error occured or no match
+*/
+static const char *
+get_version_info(const char *string)
+{ 
+    const char* info_pattn = "[0-9].{1,}$"; 
+    regex_t re; 
+    regmatch_t pmatch;
+    const char *cursor;
+    if (regcomp(&re, info_pattn, REG_EXTENDED) != 0){
+        fprintf(stderr, "get_version_info: regcomp error\n");
+        return NULL; 
+    }
+    int status = regexec(&re, string, 1, &pmatch, 0); 
+    if (status != 0){
+        fprintf(stderr, "get_version_info: no match found\n");
+        return NULL; 
+    }
+    cursor=string;
+    regfree(&re);
+
+   return &cursor[pmatch.rm_so];
+} 
+
 /*============ Path Utility functions ==============================*/
 /**
 * Desc: Given a path (absolute or relative) it returns a string of \
@@ -178,14 +230,17 @@ find_pci_dev_vers_dir(const char * cwd, const char *rel_vpath_pattn){
                 if (n < 0 || n >= MAX_PATH){
                     fprintf(stderr, "find_pci_dev_vers_dir: Folder name too long\n");
                     closedir(dir);
+                    regfree(&regex);
                     return NULL;
                 }
                 closedir(dir);
+                regfree(&regex);
                 return find_pci_dev_vers_dir(n_cwd, n_relvpath_pattn);
             }
         }
     }
     fprintf(stderr, "find_pci_dev_vers_dir: Could not find a file pattern of %s in %s\n", rel_vpath_pattn, cwd); 
+    regfree(&regex);
     return NULL;
 
 }
@@ -197,19 +252,15 @@ find_pci_dev_vers_dir(const char * cwd, const char *rel_vpath_pattn){
 @return: 1 if successful storing the rel vdir pattn in the buffer \
          0 if the buffer is too small to store the pattn in or if the relpath_vdir_pattn DNE
 */
-static int 
-set_pci_dev_relvdir_pattn(struct pci_dev *d, const struct pci_class_methods *pcm, 
-                        char *vdir_pattn_buff, int buff_size){
+static const char *
+get_pci_dev_relvdir_pattn(struct pci_dev *d, const struct pci_class_methods *pcm){
     /*** Step 1 - check to see if the pcm exists */
-    if (!(pcm->relpath_vdir_pattn)){
-        d->access->warning("set_pci_dev_relvdir_pattn: pcm->relpath_vdir_pattn is NULL");
-        return 0;
-    }else if(strlen(vdir_pattn_buff)+1 > buff_size){
-        d->access->warning("set_pci_dev_relvdir_pattn: the pcm->relpath_vdir_pattn string is to long to store in the desired buffer");
-        return 0;
+    const char *relvdir_pattn;
+    if (!(relvdir_pattn=pcm->relpath_vdir_pattn)){
+        d->access->warning("get_pci_dev_relvdir_pattn: pcm->relpath_vdir_pattn is NULL");
+        return NULL;
     }
-    strcpy(vdir_pattn_buff, pcm->relpath_vdir_pattn);
-    return 1;
+    return relvdir_pattn;
 }
 /**
 * Description: This function sets the pci_dev field version_folder
@@ -219,24 +270,24 @@ set_pci_dev_relvdir_pattn(struct pci_dev *d, const struct pci_class_methods *pcm
 int 
 set_pci_dev_vers_dir(struct pci_dev *dev, const struct pci_class_methods *pcm){
     /* dev directory, relative path from dev directory to v dir pattern */
-    char ddir[MAX_PATH], rel_vpath_pattn[MAX_PATH]; 
+    char ddir[MAX_PATH];
+    const char *relvdir_pattn;
     char *vdir_name;
     // Step 0 - clear out the buffers used in this function
     memset(ddir, '\0', MAX_PATH);
-    memset(rel_vpath_pattn, '\0', MAX_PATH);
 
     // Step 1 - check if the pci_dev has set the pci_ver_dir already
     if(dev->version_dir){
         return 1;
     }
     // Step 2 - get the relative path to the version directory
-    if (!set_pci_dev_relvdir_pattn(dev, pcm, rel_vpath_pattn, MAX_PATH)){
+    if (!(relvdir_pattn=get_pci_dev_relvdir_pattn(dev, pcm))){
         return 0;
     }// Step 3 - get the pci device base folder
     else if(!get_pci_dev_dirname(dev, ddir, MAX_PATH)){
         return 0;
     } // Step 4 - go through each type and get the vers folder(abs path)
-    else if(!(vdir_name=find_pci_dev_vers_dir(ddir, rel_vpath_pattn))){
+    else if(!(vdir_name=find_pci_dev_vers_dir(ddir, relvdir_pattn))){
         return 0;
     }
     dev->version_dir=vdir_name;
@@ -257,24 +308,22 @@ set_pci_dev_vers_dir(struct pci_dev *dev, const struct pci_class_methods *pcm){
 *@return an integer 1 if everything was sucessful in getting your drv_pattn stored in the buff \
 *           integer 0 otherwise
 **/
-int 
-set_pci_dev_drv_fpattn(struct pci_dev *d, const struct pci_class_methods *pcm, 
-                        char *drv_fpattn_buff, int buff_size){
-    char  *drv_file_pattn; 
+const char *
+get_pci_dev_drv_fpattn(struct pci_dev *d, const struct pci_class_methods *pcm){
+    const char *drv_file_pattn; 
     /*** Step 1 - check to see if the pcm drv file pattn exists */
-    if (!(pcm->drv_file_pattns)){
-        d->access->warning("set_pci_dev_drv_fpattn: the drv_file_pattns table needs to be added to your pcm structure");
-        return 0;
-    }else if(!(drv_file_pattn = pcm->drv_file_pattns[d->vendor_id])){
-        d->access->warning("set_pci_dev_drv_fpattn: You need to add a pattern in the drv_file_pattns for that vendor and device in sysfs-class-sles.h");
-        return 0;
-    }else if(strlen(drv_file_pattn)+1 > buff_size){
-        d->access->warning("set_pci_dev_drv_fpattn: the drv_fpattn string is to long to store inside the buffer");
-        return 0;
-    }
+    if (!(pcm->vfile_pattns)){
+        d->access->warning("get_pci_dev_drv_fpattn: the vfile_pattns table needs to be added to your pcm structure");
+        return NULL;
+    }else if(!(pcm->vfile_pattns[d->vendor_id])){
+        d->access->warning("get_pci_dev_drv_fpattn: You need to add a pattern in the vfile_pattns for that vendor and device in sysfs-class-sles.h");
+        return NULL;
+    }else if(!(drv_file_pattn = pcm->vfile_pattns[d->vendor_id][DRV_FPATTN])){
+        d->access->warning("get_pci_dev_drv_fpattn: You need to add a pattern in the vfile_pattns for that DRV_FPATTN index and device in sysfs-class-sles.h");
+        return NULL;
+   }
 
-    strcpy(drv_fpattn_buff, drv_file_pattn);
-    return 1; 
+    return drv_file_pattn;
 }
 
 /**
@@ -287,23 +336,21 @@ set_pci_dev_drv_fpattn(struct pci_dev *d, const struct pci_class_methods *pcm,
 *@param buff_size: The max size of the fw_fpattn_buff
 *@return an integer 1 if everything was sucessful in getting your fwv_pattn stored in the buff \
 **/
-int 
-set_pci_dev_fwv_fpattn(struct pci_dev *d, const struct pci_class_methods *pcm, 
-                        char *fwv_fpattn_buff, int buff_size){
+const char *
+get_pci_dev_fwv_fpattn(struct pci_dev *d, const struct pci_class_methods *pcm){
     
-    char *fwv_file_pattn; 
-    if (!(pcm->fwv_file_pattns)){
-        d->access->warning("set_pci_dev_fwv_fpattn: the fwv_file_pattns table needs to be added to your pcm structure");
-        return 0;
-    }else if(!(fwv_file_pattn = pcm->fwv_file_pattns[d->vendor_id])){
-        d->access->warning("set_pci_dev_fwv_fpattn: You need to add a pattern in the fwv_file_pattns for that vendor and device in sysfs-class-sles.h");
-        return 0;
-    }else if(strlen(fwv_file_pattn)+1 > buff_size){
-        d->access->warning("set_pci_dev_fwv_fpattn: the fwv_fpattn string is to long to store inside the buffer");
-        return 0;
+    const char *fwv_file_pattn; 
+    if (!(pcm->vfile_pattns)){
+        d->access->warning("get_pci_dev_fwv_fpattn: the fwv_file_pattns table needs to be added to your pcm structure");
+        return NULL;
+    }else if(!(pcm->vfile_pattns[d->vendor_id])){
+        d->access->warning("get_pci_dev_fwv_fpattn: You need to add a pattern in the vfile_pattns for that vendor and device in sysfs-class-sles.h");
+        return NULL;
+    }else if(!(fwv_file_pattn = pcm->vfile_pattns[d->vendor_id][FWV_FPATTN])){
+        d->access->warning("get_pci_dev_fwv_fpattn: You need to add a pattern in the vfile_pattns for that FWV_FPATTN index and device in sysfs-class-sles.h");
+        return NULL;
     }
-    strcpy(fwv_fpattn_buff, fwv_file_pattn);
-    return 1; 
+    return fwv_file_pattn;
 }
 
 
@@ -355,10 +402,12 @@ get_vfiles(const char *vdir, const char *fpattn, FILE **files_buff, int buff_siz
             n=snprintf(vfile_path, MAX_PATH, "%s/%s", vdir, entry->d_name);
             if (n < 0 || n >= MAX_PATH){
                 fprintf(stderr, "get_vfiles: Folder name too long\n");
+                regfree(&regex);
                 return 0;
             }else if((file=fopen(vfile_path, "r"))){
                 if(i > buff_size-1){
                     fprintf(stderr, "get_vfiles: Make your files_buff max size bigger");
+                    regfree(&regex);
                     return i+1;
                 }
                 files_buff[i++] = file; 
@@ -366,30 +415,10 @@ get_vfiles(const char *vdir, const char *fpattn, FILE **files_buff, int buff_siz
                 fprintf(stderr, "get_vfiles: Unable to open for reading %s", entry->d_name);
          }
     }
+    regfree(&regex);
     return i;
 }
 
-char *strremove(char *str, const char *sub) {
-    char *p, *q, *r;
-    if ((q = r = strstr(str, sub)) != NULL) {
-        size_t len = strlen(sub);
-        while ((r = strstr(p = r + len, sub)) != NULL) {
-            memmove(q, p, r - p);
-            q += r - p;
-        }
-        memmove(q, p, strlen(p) + 1);
-        return str;
-    }
-    return NULL;
-}
-void trimstr(char* s) {
-    const char* d = s;
-    do {
-        while (*d == ' ') {
-            ++d;
-        }
-    } while (*s++ = *d++);
-}
 /**
 * Desc: looks for string in vfile (also it rewinds the vfile to start of file)
 * @param string : a string that is used to find in a file
@@ -421,9 +450,11 @@ line_string_in_vfile(char *string, FILE *vfile){
 * @return an int 1 if we correctly extracted the data from the file into the buffer \
              int 0 if something went wrong like the buffer isnt big enough to hold the information
 **/
+// TODO : this function only reads the first line of the file
 static int
 read_vfile(FILE *vfile, char * string, char *vbuff, int buff_size){
     int str_linenum=0, linenum=0;  
+    char *vinfo;
     // if no string firmware read the full file and store it into buffer
     // Step 1 - Search for in file the string = {"Firmware" or "Driver"}
     str_linenum = line_string_in_vfile(string, vfile);
@@ -438,12 +469,21 @@ read_vfile(FILE *vfile, char * string, char *vbuff, int buff_size){
         
         // Step 4  - no string found in the file
         if(str_linenum == -1){
+           // Step 1 - look for only the info part
+           if(!(vinfo = get_version_info(vbuff))){
+               return 1;
+           }
+           strcpy(vbuff, vinfo);
            return 1; 
         }
         // Step 4 - if the string is a substring of the line
         else if(str_linenum == linenum){
             // remove substring
-            strremove(vbuff, string);
+            // strremove(vbuff, string);
+            if(!(vinfo = get_version_info(vbuff))){
+               return 1;
+            }
+            strcpy(vbuff, vinfo);
             return 1;
         }
 
@@ -470,7 +510,6 @@ read_vfiles(char *version_dir, const char *fpattn, char * string, char *vsbuff, 
     char vbuff[MAX_LINE], last_vbuff[MAX_LINE];
     DIR *vdir;
     int num_vfiles, i;
-    char *fwv_buff;
     int n;
     memset(last_vbuff, 0, MAX_LINE);
     // Step 1 - Get the number of matched vfiles and get the files

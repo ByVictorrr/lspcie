@@ -13,6 +13,14 @@ int match(const char *string, const char *pattern)
  
 int main(void) 
 { 
+    #define MAX_VEN 100
+    enum VFILE_PATTNS{DRV_FPATTN, FWV_FPATTN};
+    char *array[MAX_VEN][2] ={
+        [0] = {
+            [DRV_FPATTN] = "dfa",
+            [FWV_FPATTN] = "ada"
+        }
+    };
     const char* s1 = "fw_version"; 
     const char* s2 = "optrom_efi_version"; 
     const char* re = "(.{0,}fw_version|optrom_.{1,}_version)"; 

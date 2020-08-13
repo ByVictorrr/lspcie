@@ -26,21 +26,22 @@
 #define VENDOR_INFO_SIZE 15
 #define DRIVER_SIZE 11
 #define DEVICE_INFO_SIZE 35
-#define VERSION_SIZE 30
+#define DR_VERSION_SIZE 30
+#define FW_VERSION_SIZE 100
 
 typedef enum {NOT_FOUND, FOUND} locn_found_t;
 
 
 
 struct tab_entry{
-    char pci_addr[PCI_ADDR_SIZE+1];
-    char loc_num[LOCN_SIZE+1];
-    char card_info[CARD_INFO_SIZE+1];
-    char vendor[VENDOR_INFO_SIZE+1];
-    char driver[DRIVER_SIZE+1];
-    char dev_info[DEVICE_INFO_SIZE+1];
-    char dr_v[VERSION_SIZE+1];
-    char fw_v[VERSION_SIZE+1];
+    char pci_addr[PCI_ADDR_SIZE];
+    char loc_num[LOCN_SIZE];
+    char card_info[CARD_INFO_SIZE];
+    char vendor[VENDOR_INFO_SIZE];
+    char driver[DRIVER_SIZE];
+    char dev_info[DEVICE_INFO_SIZE];
+    char dr_v[DR_VERSION_SIZE];
+    char fw_v[FW_VERSION_SIZE];
 };
 
 /*===============LOCATION MAP======================*/
@@ -235,10 +236,10 @@ show_device_entry(struct device *d, locn_map_t f)
     }
     if(table > 3){
     // 7. Driver/fw version (TODO: handle the ret value)
-        if (!pci_read_driver_version(d->dev, e.dr_v, VERSION_SIZE)) {
+        if (!pci_read_driver_version(d->dev, e.dr_v, DR_VERSION_SIZE)) {
             memset(e.dr_v, '.', 1);
         }
-        if (!pci_read_firmware_version(d->dev, e.fw_v, VERSION_SIZE)) {
+        if (!pci_read_firmware_version(d->dev, e.fw_v, FW_VERSION_SIZE)) {
             memset(e.fw_v, '.', 1);
         }
         printf("\t%-40.40s", e.dr_v);
