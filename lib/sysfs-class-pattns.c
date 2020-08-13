@@ -5,6 +5,9 @@
 /* ==========Class 0x01 ===================*/
 const char *raid_vfile_pattns[PCI_VENDOR_MAX][2] = {
     [INTEL_VENID] = { /* Vendor */
+        [DRV_FPATTN] = "^version$",
+    },
+    [BROADCOM_LSI_VENID] = {
         [DRV_FPATTN] = "^version$"
     }
 };
@@ -24,8 +27,18 @@ const char *sas_vfile_pattns[PCI_VENDOR_MAX][2] = {
     }
 };
 
+/* Noticed for all nvm they have seperate version directories 
+    Driver_vdir = (dev)/driver/module/version
+    Fw_vdr = nvme/nvme0/fw_rev
+*/
 const char *nvm_vfile_pattns[PCI_VENDOR_MAX][2] = {
     [INTEL_VENID] = {
+        [FWV_FPATTN] = "firmware_rev"
+    },
+    [SAMSUNG_VENID] = {
+        [FWV_FPATTN] = "firmware_rev"
+    },
+    [MARVEL_VENID] = {
         [FWV_FPATTN] = "firmware_rev"
     }
 };

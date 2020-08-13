@@ -2,7 +2,7 @@
 CWD="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 O_FILE=$CWD/loc_map.txt
 PRE_PARSED_FILE=$CWD/tmp.txt
-topology --io | sed -r '/^\s*$/d' | tail -n +3 | awk '{print $2","$1}' > $PRE_PARSED_FILE
+topology --io | sed -r '/^\s*$/d' | tail -n +3 | awk '{print $4","$2}' > $PRE_PARSED_FILE
 
 if [ -f "$O_FILE" ]
 then
