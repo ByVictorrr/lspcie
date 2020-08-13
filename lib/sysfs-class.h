@@ -16,7 +16,7 @@
   #include "sysfs-class-sles.h"
 #endif
 #ifdef PCI_LINUX_OS_DISTRO_REDHAT
-  #include "sysfs-class-rehat.h"
+  #include "sysfs-class-redhat.h"
 #endif
 
 /*====== Class 0x01 =====*/
