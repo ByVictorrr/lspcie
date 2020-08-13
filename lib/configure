@@ -64,7 +64,7 @@ case $sys in
 		echo >>$c '#define PCI_PATH_PROC_BUS_PCI "/proc/bus/pci"'
 		echo >>$c '#define PCI_PATH_SYS_BUS_PCI "/sys/bus/pci"'
 		# Added on for system dependent fw versions ( Only for redhat distros)
-		echo >> $c "#define PCI_LINUX_OS_DISTRO_`cat /etc/os-release | head -n 1 | sed 's/\"//g' | awk -F= '{print $2}'`"
+		echo >> $c "#define PCI_LINUX_OS_DISTRO_`cat /etc/os-release | head -n 1 | sed 's/\"//g' | awk -F= '{print $2}' | awk '{print $1$2}' |  tr '[a-z]' '[A-Z]'`"
 		case $cpu in
 				i?86|x86_64)	echo_n " i386-ports"
 						echo >>$c '#define PCI_HAVE_PM_INTEL_CONF'

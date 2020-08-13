@@ -102,8 +102,8 @@ char *pci_get_method_name(int index) PCI_ABI;	/* Returns "" if unavailable, NULL
 /* Getting class and subclass */
 #define PCI_CLASS_MASK 0xFF00
 #define PCI_SUBCLASS_MASK 0x00F
-inline u8 get_class(struct pci_dev * d);
-inline u8 get_subclass(struct pci_dev *d);
+extern inline u8 get_class(struct pci_dev * d);
+extern inline u8 get_subclass(struct pci_dev *d);
 
 /*
  *	Named parameters

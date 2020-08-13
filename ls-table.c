@@ -202,9 +202,11 @@ show_device_entry(struct device *d, locn_map_t f)
 
 
     // Step 0 - See if the device if found in the locn map (dont print out device)
+    /*
     if(get_locn(d->dev, f, locn) == NOT_FOUND){
         return;
     }
+    */
     // Setting tab_entry
     // 1. PCI Adress Ouput
     show_slot_name(d, e.pci_addr);
@@ -278,14 +280,18 @@ show_table(struct device *first_dev)
     print_hdr(200);
 
     // Step 1 - build loc_map (returns FILE *ptr)
+    /*
     if(!(f=build_locn_map())){
         return;
     }
+    */
 
     for(p=head; p; p=p->next){
         show_device_entry(p, f);
     }
+    /*
     clean_locn_map(f);
+    */
 
 }
 

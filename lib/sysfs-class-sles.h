@@ -20,11 +20,6 @@ enum VFILE_PATTNS{DRV_FPATTN, FWV_FPATTN};
 #define SAS_RELPATH_VDIR_PATTN "host*/scsi_host/host*"
 #define NVM_RELPATH_VDIR_PATTN "nvme/nvme*"
 
-/* V FILE PATTNS */
-#define SAS_VFILE_PATTNS 
-#define NVM_VFILE_PATTNS
-extern const char *nvm_vfile_pattns[PCI_VENDOR_MAX][2];
-extern const char *sas_vfile_pattns[PCI_VENDOR_MAX][2];
 
 
 /*========== Class 0x02 ===========*/
@@ -36,7 +31,5 @@ extern const char *sas_vfile_pattns[PCI_VENDOR_MAX][2];
 /*======== Class 0x0c =============*/
 /* RELATIVE VDIR PATTNS */
 #define FC_RELPATH_VDIR_PATTN "host*/scsi_host/host*"
-/* V FILE PATTNS */
-#define FC_VFILE_PATTNS 
-extern const char *fc_vfile_pattns[PCI_VENDOR_MAX][2];
+
 #endif
