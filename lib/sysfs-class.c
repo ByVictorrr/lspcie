@@ -18,6 +18,39 @@
 * Assumptions: pcm isnt null (checked in the calling function)
 */
 static int 
+raid_read_drv(struct pci_dev *dev, const struct pci_class_methods *pcm, char *dr_v, int drv_size){
+    const char *drv_fpattn;
+    // Step 1 - set the pci attribute version_dir
+    if(!set_pci_dev_vers_dir(dev, pcm)){
+        dev->access->warning("raid_read_drv: not able to find/open version directory");
+        return 0;
+    }
+    // Step 2 - get pattns from pcm (TODO )
+    if(!(drv_fpattn=get_pci_dev_drv_fpattn(dev, pcm))){
+        return 0;
+    }else if(!read_vfiles(dev->version_dir, drv_fpattn, "driver:", dr_v, drv_size)){
+        return 0;
+    }
+    return 1;
+}
+static int 
+sata_read_drv(struct pci_dev *dev, const struct pci_class_methods *pcm, char *dr_v, int drv_size){
+    const char *drv_fpattn;
+    // Step 1 - set the pci attribute version_dir
+    if(!set_pci_dev_vers_dir(dev, pcm)){
+        dev->access->warning("sata_read_drv: not able to find/open version directory");
+        return 0;
+    }
+    // Step 2 - get pattns from pcm (TODO )
+    if(!(drv_fpattn=get_pci_dev_drv_fpattn(dev, pcm))){
+        return 0;
+    }else if(!read_vfiles(dev->version_dir, drv_fpattn, "driver:", dr_v, drv_size)){
+        return 0;
+    }
+    return 1;
+}
+
+static int 
 sas_read_drv(struct pci_dev *dev, const struct pci_class_methods *pcm, char *dr_v, int drv_size){
     const char *drv_fpattn;
     // Step 1 - set the pci attribute version_dir
@@ -132,88 +165,6 @@ net_read_fwv(struct pci_dev * dev, const struct pci_class_methods *pcm, char *fw
 
 }
  
-/*
-static int 
-eth_read_drv(struct pci_dev * dev, const struct pci_class_methods *pcm, char *dr_v, int drv_size){
-    struct ethtool_drvinfo info;
-    if(!net_read_info(dev, pcm, &info)){
-        return 0;
-    }
-    if(strlen(info.version)+1 > drv_size){
-        dev->access->warning("eth_read_drv: buffer not big enough to store info");
-        return 0;
-    }
-    strcpy(dr_v, info.version);
-    return 1; 
-}
-static int 
-eth_read_fwv(struct pci_dev * dev, const struct pci_class_methods *pcm, char *fw_v, int fwv_size){
-    struct ethtool_drvinfo info;
-    if(!net_read_info(dev, pcm, &info)){
-        return 0;
-    }
-    if(strlen(info.fw_version)+1 > fwv_size){
-        dev->access->warning("eth_read_drv: buffer not big enough to store info");
-        return 0;
-    }
-    strcpy(fw_v, info.fw_version);
-    return 1; 
-}
-static int 
-ib_read_drv(struct pci_dev * dev, const struct pci_class_methods *pcm, char *dr_v, int drv_size){
-    struct ethtool_drvinfo info;
-    if(!net_read_info(dev, pcm, &info)){
-        return 0;
-    }
-    if(strlen(info.version)+1 > drv_size){
-        dev->access->warning("eth_read_drv: buffer not big enough to store info");
-        return 0;
-    }
-    strcpy(dr_v, info.version);
-    return 1; 
-}
-static int 
-ib_read_fwv(struct pci_dev * dev, const struct pci_class_methods *pcm, char *fw_v, int fwv_size){
-    struct ethtool_drvinfo info;
-    if(!net_read_info(dev, pcm, &info)){
-        return 0;
-    }
-    if(strlen(info.fw_version)+1 > fwv_size){
-        dev->access->warning("eth_read_drv: buffer not big enough to store info");
-        return 0;
-    }
-    strcpy(fw_v, info.fw_version);
-    return 1; 
-}
-
-static int 
-fab_read_drv(struct pci_dev * dev, const struct pci_class_methods *pcm, char *dr_v, int drv_size){
-    struct ethtool_drvinfo info;
-    if(!net_read_info(dev, pcm, &info)){
-        return 0;
-    }
-    if(strlen(info.version)+1 > drv_size){
-        dev->access->warning("eth_read_drv: buffer not big enough to store info");
-        return 0;
-    }
-    strcpy(dr_v, info.version);
-    return 1; 
-}
-static int 
-fab_read_fwv(struct pci_dev * dev, const struct pci_class_methods *pcm, char *fw_v, int fwv_size){
-    struct ethtool_drvinfo info;
-    if(!net_read_info(dev, pcm, &info)){
-        return 0;
-    }
-    if(strlen(info.fw_version)+1 > fwv_size){
-        dev->access->warning("fab_read_drv: buffer not big enough to store info");
-        return 0;
-    }
-    strcpy(fw_v, info.fw_version);
-    return 1; 
-}
-*/
-
 /*=================== Serial bus controller(0x0c)===========*/
 static int 
 fc_read_drv(struct pci_dev *dev, const struct pci_class_methods *pcm, char *dr_v, int drv_size){

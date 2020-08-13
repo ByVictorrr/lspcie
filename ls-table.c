@@ -87,8 +87,15 @@ clean_locn_map(locn_map_t f){
 */
 static void 
 get_loc_pair(char *str, char *pci_addr, char *loc){
+    char *p_pciaddr = strtok(str, ",");
+    char *p_loc = strtok(NULL, "\n");
+    strcpy(&pci_addr[0], p_pciaddr);
+    strcpy(&loc[0], p_loc);
+
+/*
    strcpy(pci_addr,strtok(str, ","));
    strcpy(loc,strtok(NULL, "\n"));
+   */
 }
 /**
 * Desc: Helper of get_loc; Used to determine if Dom/BDF is equal to pci_dev
@@ -114,13 +121,17 @@ get_locn(struct pci_dev *d, locn_map_t f, char *locn){
     char *line = NULL;
     unsigned int dom, bus, dev, func;
     char pci_addr[13] = {'\0'};
-    char loc[11] = {'\0'};
+    char loc[13] = {'\0'};
     locn_found_t found_loc=NOT_FOUND;
-
+    char *token;
     // Step 1 - read through each line of the file 
     while((read = getline(&line, &len, f)) != -1){
         // step 2 - Seperate line string
-        get_loc_pair(line, pci_addr, loc);
+        //get_loc_pair(line, pci_addr, loc);
+        token = strtok(line, ",");
+        strcpy(pci_addr,token);
+        token = strtok(NULL, "\n");
+        strcpy(loc,token);
         if (sscanf(pci_addr, "%x:%x:%x.%d", &dom, &bus, &dev, &func) < 4)
             fprintf(stderr,"get_loc: Couldn't parse entry name %s", pci_addr);
         // step 3 - look for a does this device match the pci_addr?
@@ -132,7 +143,6 @@ get_locn(struct pci_dev *d, locn_map_t f, char *locn){
     }
     /* reset the file pointer */
     fseek(f, 0, SEEK_SET);
-
     /* This means that it is an (IO device) */
     strcpy(locn, loc);
     return found_loc;
@@ -202,11 +212,9 @@ show_device_entry(struct device *d, locn_map_t f)
 
 
     // Step 0 - See if the device if found in the locn map (dont print out device)
-    /*
     if(get_locn(d->dev, f, locn) == NOT_FOUND){
         return;
     }
-    */
     // Setting tab_entry
     // 1. PCI Adress Ouput
     show_slot_name(d, e.pci_addr);
@@ -280,18 +288,14 @@ show_table(struct device *first_dev)
     print_hdr(200);
 
     // Step 1 - build loc_map (returns FILE *ptr)
-    /*
     if(!(f=build_locn_map())){
         return;
     }
-    */
 
     for(p=head; p; p=p->next){
         show_device_entry(p, f);
     }
-    /*
     clean_locn_map(f);
-    */
 
 }
 

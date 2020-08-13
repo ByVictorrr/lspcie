@@ -3,14 +3,18 @@ enum {DRV_FPATTN,FWV_FPATTN};
 typedef char * string_t;
 typedef string_t vfile_pattns_t [100][2];
 
-vfile_pattns_t fc = {
-    [10] = {
-        [DRV_FPATTN] = "driver_version",
-        [FWV_FPATTN] = "(.{0,}fw_version|optrom_.{1,}_version)"
-    },
-    [11] = {
-        [DRV_FPATTN] = "lpfc_drvr_version",
-        [FWV_FPATTN] = "option_rom_version"
+#define PCI_VENDOR_MAX 0xffff
+#define PCI_MAX_FPATTNS 4
+const char *sas[PCI_VENDOR_MAX][2][PCI_MAX_FPATTNS] = {
+    [99] = { /* Vendor */
+        [DRV_FPATTN] = { /* Driver version file pattern */
+            [0] = "driver_version", /* one of the patterns */
+            [1] = "version"
+        },
+        [FWV_FPATTN] = {
+            [0] = "firmware_version",
+            [1] = "version"
+        }
     }
 };
 
@@ -24,7 +28,6 @@ const struct methods m={
 
 int main(){
     
-    char *(*f)[100][2] = &fc;
-    char *(*f1)[2] = &fc[0];
+    const char *(*f1)[2][4] = &(sas[0]);
     return 0;
 }

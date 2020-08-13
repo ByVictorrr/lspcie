@@ -222,7 +222,7 @@ find_pci_dev_vers_dir(const char * cwd, const char *rel_vpath_pattn){
     /* Step 5 - go through dir and try to find b_dirname */
     while((dp=readdir(dir)) != NULL){
         // Case 1 - if entry is directory and not .. or .
-        if (dp->d_type == DT_DIR && 
+        if ((dp->d_type == DT_DIR || dp->d_type == DT_LNK) && 
         (strcmp(dp->d_name, ".") && strcmp(dp->d_name, ".."))){
             // Case 1.1 -  See if there is a match
             if(!regexec(&regex, dp->d_name, 0, NULL, 0)){
@@ -387,7 +387,7 @@ get_vfiles(const char *vdir, const char *fpattn, FILE **files_buff, int buff_siz
     }else if (!files_buff){
         fprintf(stderr, "get_vfiles: files_buff is null");
         return 0;
-    }else if(regcomp(&regex, fpattn, REG_EXTENDED|REG_NOSUB)){ /* Compile the regex */
+    }else if(regcomp(&regex, fpattn, REG_EXTENDED)){ /* Compile the regex */
         fprintf(stderr, "get_vfiles: regex compilation error");
         return 0;
     }else if(!(dir=opendir(vdir))){

@@ -52,17 +52,6 @@ struct pci_methods {
   void (*cleanup_dev)(struct pci_dev *);
 };
 
-/*====================ADDED=============================*/
-
-
-struct pci_class_methods{
-    const char *name; /* Name of the device */
-    const char *relpath_vdir_pattn; /* Relative path to version folder(fn of class,sclass,os) */
-    const char *(*vfile_pattns)[2]; /* File pattern of drv and fwv files */
-    int (*read_drv)(struct pci_dev *, const struct pci_class_methods *pcm, char *dr_v, int drv_size);
-    int (*read_fwv)(struct pci_dev *, const struct pci_class_methods *pcm, char *fw_v, int fwv_size); 
-};
-
 
 /*=======================================================*/
 
