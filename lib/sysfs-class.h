@@ -15,7 +15,7 @@ enum VDIR_RELPATHS{VDIR_DR, VDIR_FW};
 
 struct pci_class_methods{
     const char *name; /* Name of the device */
-    const char *(*vdir_relpath_pattns)[2]; /* File pattern of drv and fwv files */
+    const char **vdir_relpath_pattns; /* File pattern of drv and fwv files */
     int (*read_drv)(struct pci_dev *, const struct pci_class_methods *pcm, char *dr_v, int drv_size);
     int (*read_fwv)(struct pci_dev *, const struct pci_class_methods *pcm, char *fw_v, int fwv_size); 
 };
@@ -33,9 +33,12 @@ struct pci_class_methods{
 
 /* sysfs-class-utils.c */
 #define RAID_READ_DRV
+#define RAID_READ_FWV
 #define SATA_READ_DRV
+#define SATA_READ_FWV
 #define SAS_READ_DRV
 #define SAS_READ_FWV
+#define NVM_READ_DRV
 #define NVM_READ_FWV
 #define ETH_READ_DRV
 #define ETH_READ_FWV
@@ -48,36 +51,40 @@ struct pci_class_methods{
 
 
 extern inline char * sysfs_name(struct pci_access *a);
-int set_pci_dev_vers_dir(struct pci_dev *dev, const struct pci_class_methods *pcm);
+int set_pci_dev_fwvdir(struct pci_dev *dev, const struct pci_class_methods *pcm);
+int set_pci_dev_drvdir(struct pci_dev *dev, const struct pci_class_methods *pcm);
 int read_vfiles(char *version_dir, const char *fpattn, char * string, char *vbuff, int buff_size);
-const char* get_pci_dev_drv_fpattn(struct pci_dev *d, const struct pci_class_methods *pcm);
-const char * get_pci_dev_fwv_fpattn(struct pci_dev *d, const struct pci_class_methods *pcm); 
 extern const struct pci_class_methods *pcm_vers_map[PCI_CLASS_MAX][PCI_SCLASS_MAX];
 
 /* sysf-class-pattns.c */
+
+#define PCI_DRV_FPATTNS "(\
+^version$|driver_version|lpfc_drvr_version|\
+srcversion\
+)"
+#define PCI_FWV_FPATTNS "(\
+^version$|firmware_version|firmware_rev|option_rom_version|\
+.{0,}fw_version|optrom_.{1,}_version\
+)"
+
 /* Version directory patterns */
-#define RAID_RELPATH_VDIR_PATTN "driver/module"
-#define ATA_RELPATH_VDIR_PATTN NULL
-#define SATA_RELPATH_VDIR_PATTN RAID_RELPATH_VDIR_PATTN
-#define SAS_RELPATH_VDIR_PATTN "host*/scsi_host/host*"
-#define NVM_RELPATH_VDIR_PATTN "nvme/nvme*"
-#define ETH_RELPATH_VDIR_PATTN "net/eth*"
-#define IB_RELPATH_VDIR_PATTN "net/ib*"
-#define FAB_RELPATH_VDIR_PATTN IB_RELPATH_VDIR_PATTN
-#define FC_RELPATH_VDIR_PATTN "host*/scsi_host/host*"
-
-
-/* Version file patterns */
-#define SAS_VFILE_PATTNS 
-#define NVM_VFILE_PATTNS
-#define RAID_VFILE_PATTNS 
-#define SATA_VFILE_PATTNS 
-#define FC_VFILE_PATTNS 
-
-extern const char *sas_vfile_pattns[PCI_VENDOR_MAX][2];
-extern const char *sata_vfile_pattns[PCI_VENDOR_MAX][2];
-extern const char *nvm_vfile_pattns[PCI_VENDOR_MAX][2];
-extern const char *raid_vfile_pattns[PCI_VENDOR_MAX][2];
-extern const char *fc_vfile_pattns[PCI_VENDOR_MAX][2];
-
+/*======== Class 0x01==============*/
+#define RAID_VDIR_RELPATH_PATTNS
+#define SAS_VDIR_RELPATH_PATTNS
+#define SATA_VDIR_RELPATH_PATTNS
+#define NVM_VDIR_RELPATH_PATTNS
+extern const char *raid_vdir_relpath_pattns[2];
+extern const char *sas_vdir_relpath_pattns[2];
+extern const char *sata_vdir_relpath_pattns[2];
+extern const char *nvm_vdir_relpath_pattns[2];
+/*======== Class 0x02==============*/
+#define ETH_VDIR_RELPATH_PATTNS
+#define IB_VDIR_RELPATH_PATTNS
+#define FAB_VDIR_RELPATH_PATTNS
+extern const char *eth_vdir_relpath_pattns[2];
+extern const char *ib_vdir_relpath_pattns[2];
+extern const char *fab_vdir_relpath_pattns[2];
+/*======== Class 0x0c==============*/
+#define FC_VDIR_RELPATH_PATTNS
+extern const char *fc_vdir_relpath_pattns[2];
 #endif

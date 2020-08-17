@@ -19,87 +19,95 @@
 */
 static int 
 raid_read_drv(struct pci_dev *dev, const struct pci_class_methods *pcm, char *dr_v, int drv_size){
-    const char *drv_fpattn;
-    // Step 1 - set the pci attribute version_dir
-    if(!set_pci_dev_vers_dir(dev, pcm)){
-        dev->access->warning("raid_read_drv: not able to find/open version directory");
+    if(!set_pci_dev_drvdir(dev, pcm)){
         return 0;
-    }
-    // Step 2 - get pattns from pcm (TODO )
-    if(!(drv_fpattn=get_pci_dev_drv_fpattn(dev, pcm))){
-        return 0;
-    }else if(!read_vfiles(dev->version_dir, drv_fpattn, "driver:", dr_v, drv_size)){
+    }else if(!read_vfiles(dev->drvdir_path, PCI_DRV_FPATTNS, "driver:", dr_v, drv_size)){
         return 0;
     }
     return 1;
 }
+
+
+static int 
+raid_read_fwv(struct pci_dev *dev, const struct pci_class_methods *pcm, char *fw_v, int fwv_size){
+    if(!set_pci_dev_fwvdir(dev, pcm)){
+        return 0;
+    }else if(!read_vfiles(dev->fwvdir_path, PCI_FWV_FPATTNS, "firmware:", fw_v, fwv_size)){
+        return 0;
+    }
+    return 1;
+}
+
+
 static int 
 sata_read_drv(struct pci_dev *dev, const struct pci_class_methods *pcm, char *dr_v, int drv_size){
-    const char *drv_fpattn;
-    // Step 1 - set the pci attribute version_dir
-    if(!set_pci_dev_vers_dir(dev, pcm)){
-        dev->access->warning("sata_read_drv: not able to find/open version directory");
+    if(!set_pci_dev_drvdir(dev, pcm)){
         return 0;
-    }
-    // Step 2 - get pattns from pcm (TODO )
-    if(!(drv_fpattn=get_pci_dev_drv_fpattn(dev, pcm))){
-        return 0;
-    }else if(!read_vfiles(dev->version_dir, drv_fpattn, "driver:", dr_v, drv_size)){
+    }else if(!read_vfiles(dev->drvdir_path, PCI_DRV_FPATTNS, "driver:", dr_v, drv_size)){
         return 0;
     }
     return 1;
 }
+
+
+static int 
+sata_read_fwv(struct pci_dev *dev, const struct pci_class_methods *pcm, char *fw_v, int fwv_size){
+    if(!set_pci_dev_fwvdir(dev, pcm)){
+        return 0;
+    }else if(!read_vfiles(dev->fwvdir_path, PCI_FWV_FPATTNS, "firmware:", fw_v, fwv_size)){
+        return 0;
+    }
+    return 1;
+}
+
+
 
 static int 
 sas_read_drv(struct pci_dev *dev, const struct pci_class_methods *pcm, char *dr_v, int drv_size){
-    const char *drv_fpattn;
-    // Step 1 - set the pci attribute version_dir
-    if(!set_pci_dev_vers_dir(dev, pcm)){
-        dev->access->warning("sas_read_drv: not able to find/open version directory");
+    if(!set_pci_dev_drvdir(dev, pcm)){
         return 0;
-    }
-    // Step 2 - get pattns from pcm (TODO )
-    if(!(drv_fpattn=get_pci_dev_drv_fpattn(dev, pcm))){
-        return 0;
-    }else if(!read_vfiles(dev->version_dir, drv_fpattn, "driver:", dr_v, drv_size)){
+    }else if(!read_vfiles(dev->drvdir_path, PCI_DRV_FPATTNS, "driver:", dr_v, drv_size)){
         return 0;
     }
     return 1;
 }
+
 
 static int 
 sas_read_fwv(struct pci_dev *dev, const struct pci_class_methods *pcm, char *fw_v, int fwv_size){
-    const char *fwv_fpattn;
-    // Step 1 - set pci->version_dir
-    if(!set_pci_dev_vers_dir(dev, pcm)){
+    if(!set_pci_dev_fwvdir(dev, pcm)){
         return 0;
-    }
-    // Step 2 - get pattns from pcm (TODO )
-    if(!(fwv_fpattn=get_pci_dev_fwv_fpattn(dev, pcm))){
-        return 0;
-    }else if(!read_vfiles(dev->version_dir, fwv_fpattn, "firmware:", fw_v, fwv_size)){
+    }else if(!read_vfiles(dev->fwvdir_path, PCI_FWV_FPATTNS, "firmware:", fw_v, fwv_size)){
         return 0;
     }
     return 1;
 }
 
+
+
+
+static int 
+nvm_read_drv(struct pci_dev *dev, const struct pci_class_methods *pcm, char *dr_v, int drv_size){
+    if(!set_pci_dev_drvdir(dev, pcm)){
+        return 0;
+    }else if(!read_vfiles(dev->drvdir_path, PCI_DRV_FPATTNS, "driver:", dr_v, drv_size)){
+        return 0;
+    }
+    return 1;
+}
 
 
 static int 
 nvm_read_fwv(struct pci_dev *dev, const struct pci_class_methods *pcm, char *fw_v, int fwv_size){
-    const char *fwv_fpattn;
-    // Step 1 - set pci->version_dir
-    if(!set_pci_dev_vers_dir(dev, pcm)){
+    if(!set_pci_dev_fwvdir(dev, pcm)){
         return 0;
-    }
-    // Step 2 - get pattns from pcm (TODO )
-    if(!(fwv_fpattn=get_pci_dev_fwv_fpattn(dev, pcm))){
-        return 0;
-    }else if(!read_vfiles(dev->version_dir, fwv_fpattn, "firmware:", fw_v, fwv_size)){
+    }else if(!read_vfiles(dev->fwvdir_path, PCI_FWV_FPATTNS, "firmware:", fw_v, fwv_size)){
         return 0;
     }
     return 1;
 }
+
+
 
 
 
@@ -118,11 +126,11 @@ net_read_info(struct pci_dev *dev, const struct pci_class_methods *pcm, struct e
     struct ifreq ifr;
     int fd;
     // Step 1 - set pci->version_dir
-    if(!set_pci_dev_vers_dir(dev, pcm)){
+    if(!set_pci_dev_drvdir(dev, pcm)){
         return 0;
     }
     // Step 1 - Get the version directory pattern
-    strcpy(ifr.ifr_name, basename(dev->version_dir));
+    strcpy(ifr.ifr_name, basename(dev->drvdir_path));
     if((fd=socket(AF_INET, SOCK_DGRAM, 0)) < 0){
         dev->access->warning("net_read_info: socket call from ethtool access->warning");
         return 0;
@@ -168,31 +176,20 @@ net_read_fwv(struct pci_dev * dev, const struct pci_class_methods *pcm, char *fw
 /*=================== Serial bus controller(0x0c)===========*/
 static int 
 fc_read_drv(struct pci_dev *dev, const struct pci_class_methods *pcm, char *dr_v, int drv_size){
-    const char *drv_fpattn;
-    // Step 1 - set the pci attribute version_dir
-    if(!set_pci_dev_vers_dir(dev, pcm)){
+    if(!set_pci_dev_drvdir(dev, pcm)){
         return 0;
-    }
-    // Step 2 - get pattns from pcm (TODO )
-    if(!(drv_fpattn = get_pci_dev_drv_fpattn(dev, pcm))){
-        return 0;
-    }else if(!read_vfiles(dev->version_dir, drv_fpattn, "driver:", dr_v, drv_size)){
+    }else if(!read_vfiles(dev->drvdir_path, PCI_DRV_FPATTNS, "driver:", dr_v, drv_size)){
         return 0;
     }
     return 1;
 }
 
+
 static int 
 fc_read_fwv(struct pci_dev *dev, const struct pci_class_methods *pcm, char *fw_v, int fwv_size){
-    const char *fwv_fpattn;
-    // Step 1 - set pci->version_dir
-    if(!set_pci_dev_vers_dir(dev, pcm)){
+    if(!set_pci_dev_fwvdir(dev, pcm)){
         return 0;
-    }
-    // Step 2 - get pattns from pcm (TODO )
-    if(!(fwv_fpattn=get_pci_dev_fwv_fpattn(dev, pcm))){
-        return 0;
-    }else if(!read_vfiles(dev->version_dir, fwv_fpattn, "firmware:", fw_v, fwv_size)){
+    }else if(!read_vfiles(dev->fwvdir_path, PCI_FWV_FPATTNS, "firmware:", fw_v, fwv_size)){
         return 0;
     }
     return 1;
@@ -203,9 +200,8 @@ fc_read_fwv(struct pci_dev *dev, const struct pci_class_methods *pcm, char *fw_v
 /*===================0x01==========================*/
 const struct pci_class_methods raid = {
     "RAID bus controller",
-    RAID_RELPATH_VDIR_PATTN,
-    #ifdef RAID_VFILE_PATTNS
-        raid_vfile_pattns,
+    #ifdef RAID_VDIR_RELPATH_PATTNS
+        raid_vdir_relpath_pattns,
     #else 
         NULL,
     #endif
@@ -220,30 +216,10 @@ const struct pci_class_methods raid = {
        NULL,
     #endif
 };
-const struct pci_class_methods ata = {
-    "ATA controller",
-    ATA_RELPATH_VDIR_PATTN,
-    #ifdef ATA_VFILE_PATTNS
-        ata_vfile_pattns,
-    #else 
-        NULL,
-    #endif
-    #ifdef ATA_READ_DRV
-       ata_read_drv,
-    #else 
-       NULL,
-    #endif
-    #ifdef ATA_READ_FWV
-       ata_read_fwv,
-    #else 
-       NULL,
-    #endif
-};
 const struct pci_class_methods sata = {
     "SATA controller",
-    SATA_RELPATH_VDIR_PATTN,
-    #ifdef SATA_VFILE_PATTNS
-        sata_vfile_pattns,
+    #ifdef SATA_VDIR_RELPATH_PATTNS
+        sata_vdir_relpath_pattns,
     #else 
         NULL,
     #endif
@@ -260,9 +236,8 @@ const struct pci_class_methods sata = {
 };
 const struct pci_class_methods sas = {
     "Serial Attached SCSI controller",
-    SAS_RELPATH_VDIR_PATTN,
-    #ifdef SAS_VFILE_PATTNS
-        sas_vfile_pattns,
+    #ifdef SAS_VDIR_RELPATH_PATTNS
+        sas_vdir_relpath_pattns,
     #else 
         NULL,
     #endif
@@ -279,9 +254,8 @@ const struct pci_class_methods sas = {
 };
 const struct pci_class_methods nvm = {
     "Non-Volatile memory controller",
-    NVM_RELPATH_VDIR_PATTN,
-    #ifdef NVM_VFILE_PATTNS
-        nvm_vfile_pattns,
+    #ifdef NVM_VDIR_RELPATH_PATTNS
+        nvm_vdir_relpath_pattns,
     #else 
         NULL,
     #endif
@@ -301,9 +275,8 @@ const struct pci_class_methods nvm = {
 
 const struct pci_class_methods eth = {
     "Ethernet controller",
-    ETH_RELPATH_VDIR_PATTN,
-    #ifdef ETH_VFILE_PATTNS
-        eth_vfile_pattns,
+    #ifdef ETH_VDIR_RELPATH_PATTNS
+        eth_vdir_relpath_pattns,
     #else 
         NULL,
     #endif
@@ -320,9 +293,8 @@ const struct pci_class_methods eth = {
 };
 const struct pci_class_methods ib = {
     "Infiniband controller",
-    IB_RELPATH_VDIR_PATTN,
-    #ifdef IB_VFILE_PATTNS
-        net_drv_file_pattns,
+    #ifdef IB_VDIR_RELPATH_PATTNS
+        ib_vdir_relpath_pattns,
     #else 
         NULL,
     #endif
@@ -339,9 +311,8 @@ const struct pci_class_methods ib = {
 };
 const struct pci_class_methods fab = {
     "Fabric controller",
-    FAB_RELPATH_VDIR_PATTN,
-    #ifdef FAB_VFILE_PATTNS
-        fab_drv_file_pattns,
+    #ifdef FAB_VDIR_RELPATH_PATTNS
+        fab_vdir_relpath_pattns,
     #else 
         NULL,
     #endif
@@ -361,13 +332,11 @@ const struct pci_class_methods fab = {
  
 const struct pci_class_methods fc = {
     "Fibre Channel",
-    FC_RELPATH_VDIR_PATTN,
-    #ifdef FC_VFILE_PATTNS
-        fc_vfile_pattns,
+    #ifdef FC_VDIR_RELPATH_PATTNS
+        fc_vdir_relpath_pattns,
     #else 
         NULL,
     #endif
-
     #ifdef FC_READ_DRV
        fc_read_drv,
     #else 
@@ -383,7 +352,7 @@ const struct pci_class_methods fc = {
 /*==============PCM Table ==================================*/
 const struct pci_class_methods *pcm_vers_map[PCI_CLASS_MAX][PCI_SCLASS_MAX] = {
     {NULL}, /* Unclassified devices */
-    {NULL, NULL, NULL, NULL, &raid, &ata, &sata, &sas, &nvm}, /* Mass storage controllers */
+    {NULL, NULL, NULL, NULL, &raid, NULL, &sata, &sas, &nvm}, /* Mass storage controllers */
     {&eth, NULL, NULL, NULL, NULL, NULL, NULL, &ib, &fab},
     {NULL},
     {NULL},

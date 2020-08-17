@@ -253,14 +253,30 @@ find_pci_dev_vers_dir(const char * cwd, const char *rel_vpath_pattn){
          0 if the buffer is too small to store the pattn in or if the relpath_vdir_pattn DNE
 */
 static const char *
-get_pci_dev_relvdir_pattn(struct pci_dev *d, const struct pci_class_methods *pcm){
+get_pci_dev_drvdir_relpath_pattn(struct pci_dev *d, const struct pci_class_methods *pcm){
     /*** Step 1 - check to see if the pcm exists */
-    const char *relvdir_pattn;
-    if (!(relvdir_pattn=pcm->relpath_vdir_pattn)){
-        d->access->warning("get_pci_dev_relvdir_pattn: pcm->relpath_vdir_pattn is NULL");
+    const char *dr_relvdir_pattn;
+    if (!(pcm->vdir_relpath_pattns)){
+        d->access->warning("get_pci_dev_drvdir_relpath_pattn: pcm->vdir_relpath_pattns is NULL");
+        return NULL;
+    }else if (!(dr_relvdir_pattn=pcm->vdir_relpath_pattns[VDIR_DR])){
+        d->access->warning("get_pci_dev_relvdir_pattn: pcm->vdir_relpath_pattns[VDIR_FW] is NULL");
         return NULL;
     }
-    return relvdir_pattn;
+    return dr_relvdir_pattn;
+}
+static const char *
+get_pci_dev_fwvdir_relpath_pattn(struct pci_dev *d, const struct pci_class_methods *pcm){
+    /*** Step 1 - check to see if the pcm exists */
+    const char *fw_relvdir_pattn;
+    if (!(pcm->vdir_relpath_pattns)){
+        d->access->warning("get_pci_dev_fw_vdir_relpath_pattn: pcm->vdir_relpath_pattns is NULL");
+        return NULL;
+    }else if (!(fw_relvdir_pattn=pcm->vdir_relpath_pattns[VDIR_FW])){
+        d->access->warning("get_pci_dev_relvdir_pattn: pcm->vdir_relpath_pattns[VDIR_FW] is NULL");
+        return NULL;
+    }
+    return fw_relvdir_pattn;
 }
 /**
 * Description: This function sets the pci_dev field version_folder
@@ -268,7 +284,7 @@ get_pci_dev_relvdir_pattn(struct pci_dev *d, const struct pci_class_methods *pcm
 *
 */
 int 
-set_pci_dev_vers_dir(struct pci_dev *dev, const struct pci_class_methods *pcm){
+set_pci_dev_drvdir(struct pci_dev *dev, const struct pci_class_methods *pcm){
     /* dev directory, relative path from dev directory to v dir pattern */
     char ddir[MAX_PATH];
     const char *relvdir_pattn;
@@ -276,12 +292,12 @@ set_pci_dev_vers_dir(struct pci_dev *dev, const struct pci_class_methods *pcm){
     // Step 0 - clear out the buffers used in this function
     memset(ddir, '\0', MAX_PATH);
 
-    // Step 1 - check if the pci_dev has set the pci_ver_dir already
-    if(dev->version_dir){
+    // Step 1 - check if the pci_dev drvdir is set already
+    if(dev->drvdir_path){
         return 1;
     }
     // Step 2 - get the relative path to the version directory
-    if (!(relvdir_pattn=get_pci_dev_relvdir_pattn(dev, pcm))){
+    if (!(relvdir_pattn=get_pci_dev_drvdir_relpath_pattn(dev, pcm))){
         return 0;
     }// Step 3 - get the pci device base folder
     else if(!get_pci_dev_dirname(dev, ddir, MAX_PATH)){
@@ -290,68 +306,36 @@ set_pci_dev_vers_dir(struct pci_dev *dev, const struct pci_class_methods *pcm){
     else if(!(vdir_name=find_pci_dev_vers_dir(ddir, relvdir_pattn))){
         return 0;
     }
-    dev->version_dir=vdir_name;
+    dev->drvdir_path=vdir_name;
+    return 1;
+}
+int 
+set_pci_dev_fwvdir(struct pci_dev *dev, const struct pci_class_methods *pcm){
+    /* dev directory, relative path from dev directory to v dir pattern */
+    char ddir[MAX_PATH];
+    const char *relvdir_pattn;
+    char *vdir_name;
+    // Step 0 - clear out the buffers used in this function
+    memset(ddir, '\0', MAX_PATH);
+    // Step 1 - check if the pci_dev drvdir is set already
+    if(dev->fwvdir_path){
+        return 1;
+    }
+    // Step 2 - get the relative path to the version directory
+    if (!(relvdir_pattn=get_pci_dev_drvdir_relpath_pattn(dev, pcm))){
+        return 0;
+    }// Step 3 - get the pci device base folder
+    else if(!get_pci_dev_dirname(dev, ddir, MAX_PATH)){
+        return 0;
+    } // Step 4 - go through each type and get the vers folder(abs path)
+    else if(!(vdir_name=find_pci_dev_vers_dir(ddir, relvdir_pattn))){
+        return 0;
+    }
+    dev->fwvdir_path=vdir_name;
     return 1;
 }
 
 /*===================read_vfile functions =============================================*/
-
-/**
-* Desc: Given the vendor id from the pci_dev, this function uses the pcm attribute \
-*       to lookup the driver version file pattrn and stores that regex into the drv_fpattn_buff
-*
-*@param d : the pci device that we are using to look up the vendor id
-*@param pcm : the pcm of that particular class & subclass of that device \
-*             using it to get the driver file pattns using its lookup table
-*@param drv_fpattn_buff: The buffer that is used to store the drv_fpattn string 
-*@param buff_size: The max size of the drv_fpattn_buff
-*@return an integer 1 if everything was sucessful in getting your drv_pattn stored in the buff \
-*           integer 0 otherwise
-**/
-const char *
-get_pci_dev_drv_fpattn(struct pci_dev *d, const struct pci_class_methods *pcm){
-    const char *drv_file_pattn; 
-    /*** Step 1 - check to see if the pcm drv file pattn exists */
-    if (!(pcm->vfile_pattns)){
-        d->access->warning("get_pci_dev_drv_fpattn: the vfile_pattns table needs to be added to your pcm structure");
-        return NULL;
-    }else if(!(pcm->vfile_pattns[d->vendor_id])){
-        d->access->warning("get_pci_dev_drv_fpattn: You need to add a pattern in the vfile_pattns for that vendor and device in sysfs-class-sles.h");
-        return NULL;
-    }else if(!(drv_file_pattn = pcm->vfile_pattns[d->vendor_id][DRV_FPATTN])){
-        d->access->warning("get_pci_dev_drv_fpattn: You need to add a pattern in the vfile_pattns for that DRV_FPATTN index and device in sysfs-class-sles.h");
-        return NULL;
-   }
-
-    return drv_file_pattn;
-}
-
-/**
-* Desc: Given the vendor id from the pci_dev, this function uses the pcm attribute \
-       to lookup the fw version file pattrn and stores that regex into the fwv_fpattn_buff
-*@param d : the pci device that we are using to look up the vendor id
-*@param pcm : the pcm of that particular class & subclass of that device \
-              using it to get the driver file pattns using its lookup table
-*@param fw_fpattn_buff: The buffer that is used to store the fwv_fpattn string 
-*@param buff_size: The max size of the fw_fpattn_buff
-*@return an integer 1 if everything was sucessful in getting your fwv_pattn stored in the buff \
-**/
-const char *
-get_pci_dev_fwv_fpattn(struct pci_dev *d, const struct pci_class_methods *pcm){
-    
-    const char *fwv_file_pattn; 
-    if (!(pcm->vfile_pattns)){
-        d->access->warning("get_pci_dev_fwv_fpattn: the fwv_file_pattns table needs to be added to your pcm structure");
-        return NULL;
-    }else if(!(pcm->vfile_pattns[d->vendor_id])){
-        d->access->warning("get_pci_dev_fwv_fpattn: You need to add a pattern in the vfile_pattns for that vendor and device in sysfs-class-sles.h");
-        return NULL;
-    }else if(!(fwv_file_pattn = pcm->vfile_pattns[d->vendor_id][FWV_FPATTN])){
-        d->access->warning("get_pci_dev_fwv_fpattn: You need to add a pattern in the vfile_pattns for that FWV_FPATTN index and device in sysfs-class-sles.h");
-        return NULL;
-    }
-    return fwv_file_pattn;
-}
 
 
 /**
