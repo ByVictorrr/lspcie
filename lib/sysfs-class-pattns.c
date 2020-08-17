@@ -2,60 +2,62 @@
 #include "vendors.h"
 #include "sysfs-class.h"
 
+#define PCI_DRV_FPATTN "(\
+^version$|driver_version|lpfc_drvr_version|\
+)"
+#define PCI_FWV_FPATTN "(\
+^version$|firmware_version|firmare_rev|option_rom_version|\
+.{0,}fw_version|optrom_.{1,}_version\
+)"
+#define MAX_VDIR_RELPATH_PATTNS 4
 /* ==========Class 0x01 ===================*/
-const char *raid_vfile_pattns[PCI_VENDOR_MAX][2] = {
-    [INTEL_VENID] = { /* Vendor */
-        [DRV_FPATTN] = "^version$",
+const char *raid_vdir_relpath_pattns[2][MAX_VDIR_RELPATH_PATTNS] = {
+    [VDIR_DR] = {
+
     },
-    [BROADCOM_LSI_VENID] = {
-        [DRV_FPATTN] = "^version$"
+    [VDIR_FW] = {
+
     }
 };
-const char *sata_vfile_pattns[PCI_VENDOR_MAX][2] = {
-    [INTEL_VENID] = { /* Vendor */
-        [DRV_FPATTN] = "^version$"
+const char *sata_vdir_relpath_pattns[2][MAX_VDIR_RELPATH_PATTNS] = {
+    [VDIR_DR] = {
+
+    },
+    [VDIR_FW] = {
+
+    }
+};
+const char *sas_vdir_relpath_pattns[2][MAX_VDIR_RELPATH_PATTNS] = {
+    [VDIR_DR] = {
+
+    },
+    [VDIR_FW] = {
+
     }
 };
 
 
-
-
-const char *sas_vfile_pattns[PCI_VENDOR_MAX][2] = {
-    [ADAPTEC_VENID] = { /* Vendor */
-        [DRV_FPATTN] = "(driver_version|^version$)", 
-        [FWV_FPATTN] = "(firmware_version|^version$)"
-    }
-};
 
 /* Noticed for all nvm they have seperate version directories 
     Driver_vdir = (dev)/driver/module/version
     Fw_vdr = nvme/nvme0/fw_rev
 */
-const char *nvm_vfile_pattns[PCI_VENDOR_MAX][2] = {
-    [INTEL_VENID] = {
-        [FWV_FPATTN] = "firmware_rev"
+const char *nvm_vdir_relpath_pattns[2][MAX_VDIR_RELPATH_PATTNS] = {
+    [VDIR_DR] = {
+
     },
-    [SAMSUNG_VENID] = {
-        [FWV_FPATTN] = "firmware_rev"
-    },
-    [MARVEL_VENID] = {
-        [FWV_FPATTN] = "firmware_rev"
+    [VDIR_FW] = {
+
     }
 };
 
 /* ==========Class 0x0c ===================*/
-const char *fc_vfile_pattns[PCI_VENDOR_MAX][2] = {
-    /* QLogic same as REDHAT */
-    [QLOGIC_VENID] = {
-        [DRV_FPATTN] = "driver_version",
-        [FWV_FPATTN] = "(.{0,}fw_version|optrom_.{1,}_version)"
+const char *fc_vdir_relpath_pattns[2][MAX_VDIR_RELPATH_PATTNS] = {
+    [VDIR_DR] = {
+
     },
-    [BROADCOM_VENID] = {
-        [DRV_FPATTN] = "lpfc_drvr_version",
-        [FWV_FPATTN] = "option_rom_version"
-    },
-    [EMULEX_VENID] = {
-        [DRV_FPATTN] = "lpfc_drvr_version",
-        [FWV_FPATTN] = "option_rom_version"
+    [VDIR_FW] = {
+
     }
 };
+

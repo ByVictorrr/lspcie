@@ -10,13 +10,12 @@
 #define PCI_CLASS_MAX 256
 #define PCI_SCLASS_MAX 256
 #define PCI_VENDOR_MAX 0xffff
-enum VFILE_PATTNS{DRV_FPATTN, FWV_FPATTN};
+enum VDIR_RELPATHS{VDIR_DR, VDIR_FW};
 
 
 struct pci_class_methods{
     const char *name; /* Name of the device */
-    const char *relpath_vdir_pattn; /* Relative path to version folder(fn of class,sclass,os) */
-    const char *(*vfile_pattns)[2]; /* File pattern of drv and fwv files */
+    const char *(*vdir_relpath_pattns)[2]; /* File pattern of drv and fwv files */
     int (*read_drv)(struct pci_dev *, const struct pci_class_methods *pcm, char *dr_v, int drv_size);
     int (*read_fwv)(struct pci_dev *, const struct pci_class_methods *pcm, char *fw_v, int fwv_size); 
 };

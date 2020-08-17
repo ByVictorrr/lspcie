@@ -161,7 +161,7 @@ struct pci_dev {
   struct pci_cap *last_cap;		/* Last capability in the list */
 
   /* Version stuff */
-  char *version_dir;
+  char **version_dirs;
 };
 
 #define PCI_ADDR_IO_MASK (~(pciaddr_t) 0x3)
