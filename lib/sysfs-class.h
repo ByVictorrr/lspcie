@@ -57,7 +57,7 @@ srcversion\
 )"
 // FOR now net devices are using DR vdir
 #define PCI_VDIR_DR_RELPATH_PATTNS "(\
-host*/scsi_host/host*|net/eth*|net/ib*|\
+host*/scsi_host/host*|net/e*|net/ib*|\
 driver/module\
 )"
 #define PCI_VDIR_FW_RELPATH_PATTNS "(\

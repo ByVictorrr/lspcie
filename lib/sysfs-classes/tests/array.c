@@ -10,7 +10,7 @@ const char *raid_vdir_relpath_pattns[2]= {
 
 int get_next_vdirpath(int start, const char *vdir_paths){
     int i=0;
-    for(i = start; vdir_paths[i] != '|' && vdir_paths[i] != ')'; i++)
+    for(i = start; vdir_paths[i] != '|'; i++)
         ;
     return i-1;
 }
