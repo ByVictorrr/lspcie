@@ -174,7 +174,7 @@ get_pci_dev_dirname(struct pci_dev *dev, char *dev_dirname, int devdir_size){
         NULL if it wasnt able to find the version directory (or buffer overflow)
 **/
 static char *
-find_pci_dev_vers_dir(const char * cwd, const char *rel_vpath_pattn){
+_find_pci_dev_vers_dir(const char * cwd, const char *rel_vpath_pattn){
     DIR *dir;
     struct dirent *dp;
     regex_t regex;
@@ -235,7 +235,7 @@ find_pci_dev_vers_dir(const char * cwd, const char *rel_vpath_pattn){
                 }
                 closedir(dir);
                 regfree(&regex);
-                return find_pci_dev_vers_dir(n_cwd, n_relvpath_pattn);
+                return _find_pci_dev_vers_dir(n_cwd, n_relvpath_pattn);
             }
         }
     }
@@ -244,73 +244,69 @@ find_pci_dev_vers_dir(const char * cwd, const char *rel_vpath_pattn){
     return NULL;
 
 }
+static int 
+get_next_vdirpath(int start, const char *vdir_paths){
+    int i=0;
+    for(i = start; vdir_paths[i] != '|' && vdir_paths[i] != ')'; i++)
+        ;
+    return i-1;
+}
+char *
+find_pci_dev_vers_dir(const char * cwd, const char *rel_vpath_pattns){
+    char rel_vpath_pattn[MAX_PATH];
+    char *vdir;
+    int start, end; 
+    memset(rel_vpath_pattn, 0, MAX_PATH);
+    // Step 1 - parse the rel_vpath_pattn[rvp] (rvp1|rvp2|rvp3|..|rvpn)
+    if(rel_vpath_pattns[0] != '(' || rel_vpath_pattns[strlen(rel_vpath_pattns)-1] != ')'){
+        fprintf(stderr, "find_pci_dev_vers_dir: rel_vpath_pattns not of the right form\n");
+        return NULL;
+    }
+    // step 2 - parse pattns
+    start=end=1;
+    while(end != strlen(rel_vpath_pattns)-2){
+        end = get_next_vdirpath(start, rel_vpath_pattns);
+        memset(rel_vpath_pattn, 0, MAX_PATH);
+        memcpy(rel_vpath_pattn, &rel_vpath_pattns[start], end-start+1);
+        if((vdir=_find_pci_dev_vers_dir(cwd, rel_vpath_pattn))){
+            return vdir;
+        }
+        start=end+2;
+    }
 
-/**
-* Desc: Given a pci_dev d and a pcm find the version directory pattern and store in \
-        the vidir_pattn_buff
-  Assumption: pcm and d are not null 
-@return: 1 if successful storing the rel vdir pattn in the buffer \
-         0 if the buffer is too small to store the pattn in or if the relpath_vdir_pattn DNE
-*/
-static const char *
-get_pci_dev_drvdir_relpath_pattn(struct pci_dev *d, const struct pci_class_methods *pcm){
-    /*** Step 1 - check to see if the pcm exists */
-    const char *dr_relvdir_pattn;
-    if (!(pcm->vdir_relpath_pattns)){
-        d->access->warning("get_pci_dev_drvdir_relpath_pattn: pcm->vdir_relpath_pattns is NULL");
-        return NULL;
-    }else if (!(dr_relvdir_pattn=pcm->vdir_relpath_pattns[VDIR_DR])){
-        d->access->warning("get_pci_dev_relvdir_pattn: pcm->vdir_relpath_pattns[VDIR_FW] is NULL");
-        return NULL;
-    }
-    return dr_relvdir_pattn;
+    fprintf(stderr, "find_pci_dev_vers_dir: couldnt find a version dir associated with this dev\n");
+    return NULL;
 }
-static const char *
-get_pci_dev_fwvdir_relpath_pattn(struct pci_dev *d, const struct pci_class_methods *pcm){
-    /*** Step 1 - check to see if the pcm exists */
-    const char *fw_relvdir_pattn;
-    if (!(pcm->vdir_relpath_pattns)){
-        d->access->warning("get_pci_dev_fw_vdir_relpath_pattn: pcm->vdir_relpath_pattns is NULL");
-        return NULL;
-    }else if (!(fw_relvdir_pattn=pcm->vdir_relpath_pattns[VDIR_FW])){
-        d->access->warning("get_pci_dev_relvdir_pattn: pcm->vdir_relpath_pattns[VDIR_FW] is NULL");
-        return NULL;
-    }
-    return fw_relvdir_pattn;
-}
+
 /**
 * Description: This function sets the pci_dev field version_folder
 * @param 
 *
 */
 int 
-set_pci_dev_drvdir(struct pci_dev *dev, const struct pci_class_methods *pcm){
+set_pci_dev_drvdir(struct pci_dev *dev){
     /* dev directory, relative path from dev directory to v dir pattern */
     char ddir[MAX_PATH];
     const char *relvdir_pattn;
     char *vdir_name;
     // Step 0 - clear out the buffers used in this function
     memset(ddir, '\0', MAX_PATH);
-
     // Step 1 - check if the pci_dev drvdir is set already
     if(dev->drvdir_path){
         return 1;
     }
-    // Step 2 - get the relative path to the version directory
-    if (!(relvdir_pattn=get_pci_dev_drvdir_relpath_pattn(dev, pcm))){
-        return 0;
-    }// Step 3 - get the pci device base folder
+    // Step 3 - get the pci device base folder
     else if(!get_pci_dev_dirname(dev, ddir, MAX_PATH)){
         return 0;
     } // Step 4 - go through each type and get the vers folder(abs path)
-    else if(!(vdir_name=find_pci_dev_vers_dir(ddir, relvdir_pattn))){
+    else if(!(vdir_name=find_pci_dev_vers_dir(ddir, PCI_VDIR_DR_RELPATH_PATTNS))){
         return 0;
     }
     dev->drvdir_path=vdir_name;
     return 1;
 }
 int 
-set_pci_dev_fwvdir(struct pci_dev *dev, const struct pci_class_methods *pcm){
+set_pci_dev_fwvdir(struct pci_dev *dev){
     /* dev directory, relative path from dev directory to v dir pattern */
     char ddir[MAX_PATH];
     const char *relvdir_pattn;
@@ -321,14 +317,11 @@ set_pci_dev_fwvdir(struct pci_dev *dev, const struct pci_class_methods *pcm){
     if(dev->fwvdir_path){
         return 1;
     }
-    // Step 2 - get the relative path to the version directory
-    if (!(relvdir_pattn=get_pci_dev_fwvdir_relpath_pattn(dev, pcm))){
-        return 0;
-    }// Step 3 - get the pci device base folder
+    // Step 3 - get the pci device base folder
     else if(!get_pci_dev_dirname(dev, ddir, MAX_PATH)){
         return 0;
     } // Step 4 - go through each type and get the vers folder(abs path)
-    else if(!(vdir_name=find_pci_dev_vers_dir(ddir, relvdir_pattn))){
+    else if(!(vdir_name=find_pci_dev_vers_dir(ddir, PCI_VDIR_FW_RELPATH_PATTNS))){
         return 0;
     }
     dev->fwvdir_path=vdir_name;

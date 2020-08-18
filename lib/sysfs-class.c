@@ -18,8 +18,8 @@
 * Assumptions: pcm isnt null (checked in the calling function)
 */
 static int 
-raid_read_drv(struct pci_dev *dev, const struct pci_class_methods *pcm, char *dr_v, int drv_size){
-    if(!set_pci_dev_drvdir(dev, pcm)){
+msc_read_drv(struct pci_dev *dev, char *dr_v, int drv_size){
+    if(!set_pci_dev_drvdir(dev)){
         return 0;
     }else if(!read_vfiles(dev->drvdir_path, PCI_DRV_FPATTNS, "driver:", dr_v, drv_size)){
         return 0;
@@ -29,85 +29,14 @@ raid_read_drv(struct pci_dev *dev, const struct pci_class_methods *pcm, char *dr
 
 
 static int 
-raid_read_fwv(struct pci_dev *dev, const struct pci_class_methods *pcm, char *fw_v, int fwv_size){
-    if(!set_pci_dev_fwvdir(dev, pcm)){
+msc_read_fwv(struct pci_dev *dev, char *fw_v, int fwv_size){
+    if(!set_pci_dev_fwvdir(dev)){
         return 0;
     }else if(!read_vfiles(dev->fwvdir_path, PCI_FWV_FPATTNS, "firmware:", fw_v, fwv_size)){
         return 0;
     }
     return 1;
 }
-
-
-static int 
-sata_read_drv(struct pci_dev *dev, const struct pci_class_methods *pcm, char *dr_v, int drv_size){
-    if(!set_pci_dev_drvdir(dev, pcm)){
-        return 0;
-    }else if(!read_vfiles(dev->drvdir_path, PCI_DRV_FPATTNS, "driver:", dr_v, drv_size)){
-        return 0;
-    }
-    return 1;
-}
-
-
-static int 
-sata_read_fwv(struct pci_dev *dev, const struct pci_class_methods *pcm, char *fw_v, int fwv_size){
-    if(!set_pci_dev_fwvdir(dev, pcm)){
-        return 0;
-    }else if(!read_vfiles(dev->fwvdir_path, PCI_FWV_FPATTNS, "firmware:", fw_v, fwv_size)){
-        return 0;
-    }
-    return 1;
-}
-
-
-
-static int 
-sas_read_drv(struct pci_dev *dev, const struct pci_class_methods *pcm, char *dr_v, int drv_size){
-    if(!set_pci_dev_drvdir(dev, pcm)){
-        return 0;
-    }else if(!read_vfiles(dev->drvdir_path, PCI_DRV_FPATTNS, "driver:", dr_v, drv_size)){
-        return 0;
-    }
-    return 1;
-}
-
-
-static int 
-sas_read_fwv(struct pci_dev *dev, const struct pci_class_methods *pcm, char *fw_v, int fwv_size){
-    if(!set_pci_dev_fwvdir(dev, pcm)){
-        return 0;
-    }else if(!read_vfiles(dev->fwvdir_path, PCI_FWV_FPATTNS, "firmware:", fw_v, fwv_size)){
-        return 0;
-    }
-    return 1;
-}
-
-
-
-
-static int 
-nvm_read_drv(struct pci_dev *dev, const struct pci_class_methods *pcm, char *dr_v, int drv_size){
-    if(!set_pci_dev_drvdir(dev, pcm)){
-        return 0;
-    }else if(!read_vfiles(dev->drvdir_path, PCI_DRV_FPATTNS, "driver:", dr_v, drv_size)){
-        return 0;
-    }
-    return 1;
-}
-
-
-static int 
-nvm_read_fwv(struct pci_dev *dev, const struct pci_class_methods *pcm, char *fw_v, int fwv_size){
-    if(!set_pci_dev_fwvdir(dev, pcm)){
-        return 0;
-    }else if(!read_vfiles(dev->fwvdir_path, PCI_FWV_FPATTNS, "firmware:", fw_v, fwv_size)){
-        return 0;
-    }
-    return 1;
-}
-
-
 
 
 
@@ -122,11 +51,11 @@ nvm_read_fwv(struct pci_dev *dev, const struct pci_class_methods *pcm, char *fw_
 #include <linux/sockios.h>
 
 static int 
-net_read_info(struct pci_dev *dev, const struct pci_class_methods *pcm, struct ethtool_drvinfo *info){
+net_read_info(struct pci_dev *dev, struct ethtool_drvinfo *info){
     struct ifreq ifr;
     int fd;
     // Step 1 - set pci->version_dir
-    if(!set_pci_dev_drvdir(dev, pcm)){
+    if(!set_pci_dev_drvdir(dev)){
         return 0;
     }
     // Step 1 - Get the version directory pattern
@@ -145,9 +74,9 @@ net_read_info(struct pci_dev *dev, const struct pci_class_methods *pcm, struct e
     return 1;
 }
 static int
-net_read_drv(struct pci_dev * dev, const struct pci_class_methods *pcm, char *dr_v, int drv_size){
+nc_read_drv(struct pci_dev * dev, char *dr_v, int drv_size){
     struct ethtool_drvinfo info;
-    if(!net_read_info(dev, pcm, &info)){
+    if(!net_read_info(dev, &info)){
         return 0;
     }
     if(strlen(info.version)+1 > drv_size){
@@ -159,9 +88,9 @@ net_read_drv(struct pci_dev * dev, const struct pci_class_methods *pcm, char *dr
 }
 
 static int 
-net_read_fwv(struct pci_dev * dev, const struct pci_class_methods *pcm, char *fw_v, int fwv_size){
+nc_read_fwv(struct pci_dev * dev, char *fw_v, int fwv_size){
     struct ethtool_drvinfo info;
-    if(!net_read_info(dev, pcm, &info)){
+    if(!net_read_info(dev, &info)){
         return 0;
     }
     if(strlen(info.fw_version)+1 > fwv_size){
@@ -175,8 +104,8 @@ net_read_fwv(struct pci_dev * dev, const struct pci_class_methods *pcm, char *fw
  
 /*=================== Serial bus controller(0x0c)===========*/
 static int 
-fc_read_drv(struct pci_dev *dev, const struct pci_class_methods *pcm, char *dr_v, int drv_size){
-    if(!set_pci_dev_drvdir(dev, pcm)){
+sbc_read_drv(struct pci_dev *dev, char *dr_v, int drv_size){
+    if(!set_pci_dev_drvdir(dev)){
         return 0;
     }else if(!read_vfiles(dev->drvdir_path, PCI_DRV_FPATTNS, "driver:", dr_v, drv_size)){
         return 0;
@@ -186,28 +115,8 @@ fc_read_drv(struct pci_dev *dev, const struct pci_class_methods *pcm, char *dr_v
 
 
 static int 
-fc_read_fwv(struct pci_dev *dev, const struct pci_class_methods *pcm, char *fw_v, int fwv_size){
-    if(!set_pci_dev_fwvdir(dev, pcm)){
-        return 0;
-    }else if(!read_vfiles(dev->fwvdir_path, PCI_FWV_FPATTNS, "firmware:", fw_v, fwv_size)){
-        return 0;
-    }
-    return 1;
-}
-static int 
-usb_read_drv(struct pci_dev *dev, const struct pci_class_methods *pcm, char *dr_v, int drv_size){
-    if(!set_pci_dev_drvdir(dev, pcm)){
-        return 0;
-    }else if(!read_vfiles(dev->drvdir_path, PCI_DRV_FPATTNS, "driver:", dr_v, drv_size)){
-        return 0;
-    }
-    return 1;
-}
-
-
-static int 
-usb_read_fwv(struct pci_dev *dev, const struct pci_class_methods *pcm, char *fw_v, int fwv_size){
-    if(!set_pci_dev_fwvdir(dev, pcm)){
+sbc_read_fwv(struct pci_dev *dev, char *fw_v, int fwv_size){
+    if(!set_pci_dev_fwvdir(dev)){
         return 0;
     }else if(!read_vfiles(dev->fwvdir_path, PCI_FWV_FPATTNS, "firmware:", fw_v, fwv_size)){
         return 0;
@@ -218,192 +127,73 @@ usb_read_fwv(struct pci_dev *dev, const struct pci_class_methods *pcm, char *fw_
 
 
 /*===================PCM defs===================================*/
-/*===================0x01==========================*/
-const struct pci_class_methods raid = {
-    "RAID bus controller",
-    #ifdef RAID_VDIR_RELPATH_PATTNS
-        raid_vdir_relpath_pattns,
-    #else 
-        NULL,
-    #endif
-    #ifdef RAID_READ_DRV
-       raid_read_drv,
+/*===================mass storage controllers 0x01==========================*/
+const struct pci_class_methods msc = {
+    "Mass storage controller",
+    #ifdef MSC_READ_DRV
+       msc_read_drv,
     #else 
        NULL,
     #endif
-    #ifdef RAID_READ_FWV
-       raid_read_fwv,
+    #ifdef MSC_READ_FWV
+       msc_read_fwv,
     #else 
        NULL,
     #endif
 };
-const struct pci_class_methods sata = {
-    "SATA controller",
-    #ifdef SATA_VDIR_RELPATH_PATTNS
-        sata_vdir_relpath_pattns,
-    #else 
-        NULL,
-    #endif
-    #ifdef SATA_READ_DRV
-       sata_read_drv,
-    #else 
-       NULL,
-    #endif
-    #ifdef SATA_READ_FWV
-       sata_read_fwv,
-    #else 
-       NULL,
-    #endif
-};
-const struct pci_class_methods sas = {
-    "Serial Attached SCSI controller",
-    #ifdef SAS_VDIR_RELPATH_PATTNS
-        sas_vdir_relpath_pattns,
-    #else 
-        NULL,
-    #endif
-    #ifdef SAS_READ_DRV
-       sas_read_drv,
-    #else 
-       NULL,
-    #endif
-    #ifdef SAS_READ_FWV
-       sas_read_fwv,
-    #else 
-       NULL,
-    #endif
-};
-const struct pci_class_methods nvm = {
-    "Non-Volatile memory controller",
-    #ifdef NVM_VDIR_RELPATH_PATTNS
-        nvm_vdir_relpath_pattns,
-    #else 
-        NULL,
-    #endif
-    #ifdef NVM_READ_DRV
-       nvm_read_drv,
-    #else 
-       NULL,
-    #endif
-    #ifdef NVM_READ_FWV
-       nvm_read_fwv,
-    #else 
-       NULL,
-    #endif
-};
-
 /*========0x02(Network controllers)================*/
 
-const struct pci_class_methods eth = {
-    "Ethernet controller",
-    #ifdef ETH_VDIR_RELPATH_PATTNS
-        eth_vdir_relpath_pattns,
-    #else 
-        NULL,
-    #endif
-    #ifdef ETH_READ_DRV
-       net_read_drv,
+const struct pci_class_methods nc = {
+    "Network controller",
+    #ifdef NET_READ_DRV
+       nc_read_drv,
     #else 
        NULL,
     #endif
-    #ifdef ETH_READ_FWV
-       net_read_fwv,
-    #else 
-       NULL,
-    #endif
-};
-const struct pci_class_methods ib = {
-    "Infiniband controller",
-    #ifdef IB_VDIR_RELPATH_PATTNS
-        ib_vdir_relpath_pattns,
-    #else 
-        NULL,
-    #endif
-    #ifdef IB_READ_DRV
-       net_read_drv,
-    #else 
-       NULL,
-    #endif
-    #ifdef IB_READ_FWV
-       net_read_fwv,
-    #else 
-       NULL,
-    #endif
-};
-const struct pci_class_methods fab = {
-    "Fabric controller",
-    #ifdef FAB_VDIR_RELPATH_PATTNS
-        fab_vdir_relpath_pattns,
-    #else 
-        NULL,
-    #endif
-    #ifdef FAB_READ_DRV
-       net_read_drv,
-    #else 
-       NULL,
-    #endif
-    #ifdef FAB_READ_FWV
-       net_read_fwv,
+    #ifdef NET_READ_FWV
+       nc_read_fwv,
     #else 
        NULL,
     #endif
 };
 
 /*=================== Serial bus controller(0x0c)===========*/
- const struct pci_class_methods usb = {
-    "USB controller",
-    #ifdef USB_VDIR_RELPATH_PATTNS
-        usb_vdir_relpath_pattns,
-    #else 
-        NULL,
-    #endif
-    #ifdef USB_READ_DRV
-       usb_read_drv,
+ const struct pci_class_methods sbc = {
+    "Serial bus controller",
+    #ifdef SBC_READ_DRV
+       sbc_read_drv,
     #else 
        NULL,
     #endif
-    #ifdef USB_READ_FWV
-       usb_read_fwv,
+    #ifdef SBC_READ_FWV
+       sbc_read_fwv,
     #else 
        NULL,
     #endif
 };
- 
-const struct pci_class_methods fc = {
-    "Fibre Channel",
-    #ifdef FC_VDIR_RELPATH_PATTNS
-        fc_vdir_relpath_pattns,
-    #else 
-        NULL,
-    #endif
-    #ifdef FC_READ_DRV
-       fc_read_drv,
-    #else 
-       NULL,
-    #endif
-    #ifdef FC_READ_FWV
-       fc_read_fwv,
-    #else 
-       NULL,
-    #endif
-};
-
  
 
 /*==============PCM Table ==================================*/
-const struct pci_class_methods *pcm_vers_map[PCI_CLASS_MAX][PCI_SCLASS_MAX] = {
-    {NULL}, /* Unclassified devices */
-    {NULL, NULL, NULL, NULL, &raid, NULL, &sata, &sas, &nvm}, /* Mass storage controllers */
-    {&eth, NULL, NULL, NULL, NULL, NULL, NULL, &ib, &fab},
-    {NULL},
-    {NULL},
-    {NULL},
-    {NULL},
-    {NULL},
-    {NULL},
-    {NULL},
-    {NULL},
-    {NULL},
-    {NULL, NULL, NULL, &usb, &fc, NULL, NULL, NULL, NULL} // Serial bus controller
+const struct pci_class_methods *pcm_vers_map[PCI_CLASS_MAX] = {
+    NULL,  /* Unclassified device */
+    &msc,  /* Mass storage controller */
+    &nc,  /* Network controller */
+    NULL, /* Display controller */
+    NULL, /* Multimedia controller */
+    NULL, /* Memory controller */
+    NULL, /* Bridge */
+    NULL, /* Communication controller */
+    NULL, /* Generic system peripherial */
+    NULL, /* Input device controller */
+    NULL, /* Docking station */
+    NULL, /* Processor */
+    &sbc, /* Serial bus controller */
+    NULL, /* Wireless controller */
+	NULL, /* Intelligent controller */
+	NULL, /* Satellite communications controller */
+	NULL, /* Encryption controller */
+	NULL, /* Signal processing controller */
+	NULL, /* Processing accelerators */
+	NULL /* Non-Essential Instrumentation */
 };
 
