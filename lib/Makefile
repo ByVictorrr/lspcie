@@ -10,7 +10,6 @@ ifdef PCI_HAVE_PM_LINUX_SYSFS
 OBJS += sysfs
 OBJS += sysfs-class
 OBJS += sysfs-class-utils
-OBJS += sysfs-class-pattns
 endif
 
 
@@ -91,7 +90,6 @@ proc.o: proc.c $(INCL) pread.h
 sysfs.o: sysfs.c $(INCL) pread.h sysfs-class.h
 sysfs-class.o: sysfs-class.c $(INCL) sysfs-class.h 
 sysfs-class-utils.o: sysfs-class-utils.c $(INCL) sysfs-class.h 
-sysfs-class-pattns.o: sysfs-class-pattns.c sysfs-class.h
 generic.o: generic.c $(INCL)
 syscalls.o: syscalls.c $(INCL)
 obsd-device.o: obsd-device.c $(INCL)

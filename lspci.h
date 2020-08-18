@@ -96,7 +96,8 @@ char * find_driver(struct device *d, char *buf);
 
 /* ls-table.c */
 
-void show_table(struct device *first_dev);
+void show_table_entry(struct device *d);
+void print_hdr(int line_width);
 
 /* ls-tree.c */
 

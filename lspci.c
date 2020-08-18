@@ -998,9 +998,16 @@ show_machine(struct device *d)
 void
 show_device(struct device *d)
 {
+  u8 class;
   if (opt_machine)
     show_machine(d);
-  else
+  else if (table){
+    class = d->dev->device_class >> 8;
+    // Step 1 - check to see that its not a base io thing
+    if((d->dev->dev==0) & (class != PCI_BASE_CLASS_BRIDGE)){
+      show_table_entry(d);
+    }
+  }else
     {
       if (verbose)
 	show_verbose(d);
@@ -1019,6 +1026,8 @@ static void
 show(void)
 {
   struct device *d;
+  if(table)
+    print_hdr(200);
 
   for (d=first_dev; d; d=d->next)
     if (pci_filter_match(&filter, d->dev))
@@ -1145,8 +1154,6 @@ int main(int argc, char **argv)
 	grow_tree();
       if (opt_tree)
 	show_forest(opt_filter ? &filter : NULL);
-      if (table)
-  show_table(first_dev);
       else
 	show();
     }
