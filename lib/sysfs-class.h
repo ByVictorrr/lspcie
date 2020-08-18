@@ -46,6 +46,9 @@ struct pci_class_methods{
 #define IB_READ_FWV
 #define FAB_READ_DRV
 #define FAB_READ_FWV
+
+#define USB_READ_DRV
+#define USB_READ_FWV
 #define FC_READ_DRV
 #define FC_READ_FWV
 
@@ -86,5 +89,7 @@ extern const char *ib_vdir_relpath_pattns[2];
 extern const char *fab_vdir_relpath_pattns[2];
 /*======== Class 0x0c==============*/
 #define FC_VDIR_RELPATH_PATTNS
+#define USB_VDIR_RELPATH_PATTNS
 extern const char *fc_vdir_relpath_pattns[2];
+extern const char *usb_vdir_relpath_pattns[2];
 #endif

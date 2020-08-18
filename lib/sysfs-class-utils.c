@@ -322,7 +322,7 @@ set_pci_dev_fwvdir(struct pci_dev *dev, const struct pci_class_methods *pcm){
         return 1;
     }
     // Step 2 - get the relative path to the version directory
-    if (!(relvdir_pattn=get_pci_dev_drvdir_relpath_pattn(dev, pcm))){
+    if (!(relvdir_pattn=get_pci_dev_fwvdir_relpath_pattn(dev, pcm))){
         return 0;
     }// Step 3 - get the pci device base folder
     else if(!get_pci_dev_dirname(dev, ddir, MAX_PATH)){

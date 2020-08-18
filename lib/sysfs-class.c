@@ -194,6 +194,27 @@ fc_read_fwv(struct pci_dev *dev, const struct pci_class_methods *pcm, char *fw_v
     }
     return 1;
 }
+static int 
+usb_read_drv(struct pci_dev *dev, const struct pci_class_methods *pcm, char *dr_v, int drv_size){
+    if(!set_pci_dev_drvdir(dev, pcm)){
+        return 0;
+    }else if(!read_vfiles(dev->drvdir_path, PCI_DRV_FPATTNS, "driver:", dr_v, drv_size)){
+        return 0;
+    }
+    return 1;
+}
+
+
+static int 
+usb_read_fwv(struct pci_dev *dev, const struct pci_class_methods *pcm, char *fw_v, int fwv_size){
+    if(!set_pci_dev_fwvdir(dev, pcm)){
+        return 0;
+    }else if(!read_vfiles(dev->fwvdir_path, PCI_FWV_FPATTNS, "firmware:", fw_v, fwv_size)){
+        return 0;
+    }
+    return 1;
+}
+
 
 
 /*===================PCM defs===================================*/
@@ -329,6 +350,24 @@ const struct pci_class_methods fab = {
 };
 
 /*=================== Serial bus controller(0x0c)===========*/
+ const struct pci_class_methods usb = {
+    "USB controller",
+    #ifdef USB_VDIR_RELPATH_PATTNS
+        usb_vdir_relpath_pattns,
+    #else 
+        NULL,
+    #endif
+    #ifdef USB_READ_DRV
+       usb_read_drv,
+    #else 
+       NULL,
+    #endif
+    #ifdef USB_READ_FWV
+       usb_read_fwv,
+    #else 
+       NULL,
+    #endif
+};
  
 const struct pci_class_methods fc = {
     "Fibre Channel",
@@ -349,6 +388,8 @@ const struct pci_class_methods fc = {
     #endif
 };
 
+ 
+
 /*==============PCM Table ==================================*/
 const struct pci_class_methods *pcm_vers_map[PCI_CLASS_MAX][PCI_SCLASS_MAX] = {
     {NULL}, /* Unclassified devices */
@@ -363,6 +404,6 @@ const struct pci_class_methods *pcm_vers_map[PCI_CLASS_MAX][PCI_SCLASS_MAX] = {
     {NULL},
     {NULL},
     {NULL},
-    {NULL, NULL, NULL, NULL, &fc, NULL, NULL, NULL, NULL} // Serial bus controller
+    {NULL, NULL, NULL, &usb, &fc, NULL, NULL, NULL, NULL} // Serial bus controller
 };
 

@@ -46,6 +46,10 @@ const char *fab_vdir_relpath_pattns[2] = {
 
 
 /* ==========Class 0x0c ===================*/
+const char *usb_vdir_relpath_pattns[2] = {
+    [VDIR_DR] = "driver/module",
+    [VDIR_FW] = NULL
+};
 const char *fc_vdir_relpath_pattns[2] = {
     [VDIR_DR] = "host*/scsi_host/host*",
     [VDIR_FW] = "host*/scsi_host/host*"

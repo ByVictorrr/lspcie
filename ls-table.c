@@ -20,7 +20,7 @@
 
 /* Max String length for each entry */
 /* Location string is 10 */
-#define LOCN_SIZE 10
+#define LOCN_SIZE 11
 #define PCI_ADDR_SIZE 12
 #define CARD_INFO_SIZE 30
 #define VENDOR_INFO_SIZE 15
