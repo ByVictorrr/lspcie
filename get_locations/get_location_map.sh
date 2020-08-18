@@ -2,7 +2,12 @@
 CWD="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 O_FILE=$CWD/loc_map.txt
 PRE_PARSED_FILE=$CWD/tmp.txt
-topology --io | sed -r '/^\s*$/d' | tail -n +3 | awk '{print $4","$2}' > $PRE_PARSED_FILE
+LOCATION_COL=-1
+PCI_ADDR_COL=-1
+TOPO_OUTPUT=$(topology --io | sed -r '/^\s*$/d')
+TOP_HDR=$(echo $TOPO_OUTPUT | head -n 1)
+if 
+ awk '{print $4","$2}' > $PRE_PARSED_FILE
 
 if [ -f "$O_FILE" ]
 then
