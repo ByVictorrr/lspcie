@@ -502,19 +502,20 @@ read_vfiles(char *version_dir, const char *fpattn, char * string, char *vsbuff, 
             // if buffer is out of space
             fclose(vfile);
             return 0;
-       }else if((n = snprintf(vsbuff, buff_size, "%s %s", last_vbuff, vbuff)) < 0 
-                || n>= buff_size){
-            fprintf(stderr, "read_vfile: the data in the file is to long for destination buffer");
-            return 0;
-        }
-        if(strlen(last_vbuff)+strlen(vbuff)+1 > MAX_LINE){
-            fprintf(stderr, "read_vfile: the data in the file is to long for destination buffer");
-            return 0;
-        }
-        strcat(last_vbuff, vbuff);
- 
+       }
+       if(last_vbuff[0]=='\0'){
+           strcpy(last_vbuff, vbuff);
+       }else{
+            strcat(last_vbuff, " ");
+            strcat(last_vbuff, vbuff);
+       } 
         fclose(vfile);
-     }
+    }
+    if(strlen(last_vbuff)+1 > MAX_LINE){
+        fprintf(stderr, "read_vfile: the data in the file is to long for destination buffer");
+        return 0;
+    }
+    strcpy(vsbuff, last_vbuff);
 
     return i+1;
 }

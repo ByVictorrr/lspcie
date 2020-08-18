@@ -87,6 +87,14 @@ void pci_free_dev(struct pci_dev *d)
   pci_free_caps(d);
   pci_free_properties(d);
   pci_mfree(d);
+  /* free vdirs */
+  if(d->drvdir_path){
+    free(d->drvdir_path);
+  }
+  if(d->fwvdir_path){
+    free(d->fwvdir_path);
+  }
+
 }
 
 static inline void
