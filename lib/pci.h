@@ -160,12 +160,13 @@ struct pci_dev {
   struct pci_property *properties;	/* A linked list of extra properties */
   struct pci_cap *last_cap;		/* Last capability in the list */
 
-  /* For version files */
-  char *drvdir_path;
-  char *fwvdir_path;
-  char *optvdir_path;
-  enum VERSION_ITEMS{DRV_ITEMS, FWV_ITEMS, OPTV_ITEMS};
-  struct version_item *vitems[3];
+};
+/* Version info stuff */
+enum VERSION_ITEMS{DRV_ITEMS, FWV_ITEMS, OPTV_ITEMS};
+struct version_item{
+    char *src_path; 
+    char *data;
+    struct version_item *next;
 };
 
 #define PCI_ADDR_IO_MASK (~(pciaddr_t) 0x3)
@@ -177,9 +178,9 @@ u16 pci_read_word(struct pci_dev *, int pos) PCI_ABI;
 u32 pci_read_long(struct pci_dev *, int pos) PCI_ABI;
 int pci_read_block(struct pci_dev *, int pos, u8 *buf, int len) PCI_ABI;
 int pci_read_vpd(struct pci_dev *d, int pos, u8 *buf, int len) PCI_ABI;
-int pci_read_driver_version(struct pci_dev *d, char *dr_v, int drv_size) PCI_ABI;
-int pci_read_firmware_version(struct pci_dev *d, char *fw_v, int fwv_size) PCI_ABI;
-int pci_read_vers(struct pci_dev *d, char *dr_v, char *fw_v) PCI_ABI;
+int pci_read_driver_version(struct pci_dev *d, struct version_item *vitems) PCI_ABI;
+int pci_read_firmware_version(struct pci_dev *d, struct version_item *vitems) PCI_ABI;
+int pci_read_option_rom_version(struct pci_dev *d, struct version_item *vitems)PCI_ABI;
 
 int pci_write_byte(struct pci_dev *, int pos, u8 data) PCI_ABI;
 int pci_write_word(struct pci_dev *, int pos, u16 data) PCI_ABI;

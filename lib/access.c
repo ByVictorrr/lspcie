@@ -87,14 +87,6 @@ void pci_free_dev(struct pci_dev *d)
   pci_free_caps(d);
   pci_free_properties(d);
   pci_mfree(d);
-  /* free vdirs */
-  if(d->drvdir_path){
-    free(d->drvdir_path);
-  }
-  if(d->fwvdir_path){
-    free(d->fwvdir_path);
-  }
-
 }
 
 static inline void
@@ -146,16 +138,19 @@ pci_read_vpd(struct pci_dev *d, int pos, byte *buf, int len)
 /* =========================ADDED =============*/
 /* TODO: ADD parms for buff_size; */
 int 
-pci_read_driver_version(struct pci_dev *d, char *dr_v, int drv_size)
+pci_read_driver_version(struct pci_dev *d, struct version_item *vitems)
 {
-  // if the read_vers != NULL; then call sysfs_read_vers
-  return d->methods->read_drv ? d->methods->read_drv(d, dr_v, drv_size) : 0;
+  return d->methods->read_drv ? d->methods->read_drv(d, vitems) : 0;
 }
 int 
-pci_read_firmware_version(struct pci_dev *d, char *fw_v, int fwv_size)
+pci_read_firmware_version(struct pci_dev *d, struct version_item *vitems)
 {
-  // if the read_vers != NULL; then call sysfs_read_vers
-  return d->methods->read_fwv ? d->methods->read_fwv(d, fw_v, fwv_size) : 0;
+  return d->methods->read_fwv ? d->methods->read_fwv(d, vitems) : 0;
+}
+int 
+pci_read_option_rom_version(struct pci_dev *d, struct version_item *vitems)
+{
+  return d->methods->read_optv ? d->methods->read_optv(d, vitems) : 0;
 }
 
 /* ==============================================*/

@@ -116,10 +116,10 @@ show_table_entry(struct device *d)
     char dev_info_num[DEV_INFO_NUM_SIZE];
     struct table_entry e;
     int pos; 
+    struct version_item *vitemss[3], *vitems; /* 0= drv, 1=fwv, 2=optv*/
     // clear out local buffers
     memset(dev_info_num, 0, DEV_INFO_NUM_SIZE);
     memset(&e, 0, sizeof(struct table_entry));
-
     // Setting tab_entry
     // 1. PCI Adress Ouput
     set_slot_name(d, e.pci_addr);
@@ -151,15 +151,27 @@ show_table_entry(struct device *d)
     }
     if(table > 3){
     // 7. Driver/fw version (TODO: handle the ret value)
-        if (!pci_read_driver_version(d->dev, e.dr_v, DR_VERSION_SIZE) || e.dr_v[0] == '\0') {
+        if (!pci_read_driver_version(d->dev, vitemss[DRV_ITEMS])) {
+            // TODO store items in e.dr_v
+            vitems = vitemss[DRV_ITEMS];
+
             memset(e.dr_v, '.', 1);
         }
-        if (!pci_read_firmware_version(d->dev, e.fw_v, FW_VERSION_SIZE) || e.fw_v[0] == '\0') {
+        if (!pci_read_firmware_version(d->dev, vitemss[FWV_ITEMS])){
+            // TODO store items[FW_ITEMS]
+            vitems = vitemss[FWV_ITEMS];
+            // concat
             memset(e.fw_v, '.', 1);
         }
         printf("\t%-40.40s", e.dr_v);
         printf("\t%-40.40s", e.fw_v);
+    }else if(table > 4){
+        if (!pci_read_option_rom_version(d->dev, vitemss[OPTV_ITEMS])){
+            vitems = vitemss[OPTV_ITEMS];
+            memset(e.fw_v, '.', 1);
+        } 
     }
+
     printf("\n");
 }
 void 

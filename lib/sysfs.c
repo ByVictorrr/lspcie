@@ -492,37 +492,36 @@ static int sysfs_read_vpd(struct pci_dev *d, int pos, byte *buf, int len)
 
 #endif /* PCI_HAVE_DO_READ */
 
-static int sysfs_read_drv(struct pci_dev *d, char *dr_v, int drv_size){
+static int sysfs_read_drv(struct pci_dev *d, struct version_info *vitems){
   u8 class;
   const struct pci_class_methods *pcm;
-  // Step 1 - sub class and class 
   class = get_class(d);
-  // Step 2 - Get the function that is used to get version info
   if ((pcm = pcm_vers_map[class]) == NULL){
     d->access->warning("sysfs_read_drv: class not supported to read version info");
     return 0;
   }
-  /* Step 3 - Use this get_vers function to read versions
-  * Also used to check if the function exists in the pcm structure
-  */
-  return pcm->read_drv ?  pcm->read_drv(d, dr_v, drv_size) : 0;
+  return pcm->read_drv ?  pcm->read_drv(d, vitems) : 0;
 }
-static int sysfs_read_fwv(struct pci_dev *d, char *fw_v, int fwv_size){
+static int sysfs_read_fwv(struct pci_dev *d, struct version_info *vitems){
   u8 class;
   const struct pci_class_methods *pcm;
-  // Step 1 - sub class and class 
   class = get_class(d);
-  // Step 2 - Get the function that is used to get version info
   if ((pcm = pcm_vers_map[class]) == NULL){
     d->access->warning("sysfs_read_fwv: class not supported to read version info");
     return 0;
   }
-  /* Step 3 - Use this get_vers function to read versions
-  * Also used to check if the function exists in the pcm structure
-  */
-  return pcm->read_fwv ?  pcm->read_fwv(d, fw_v, fwv_size) : 0;
+  return pcm->read_fwv ?  pcm->read_fwv(d, vitems) : 0;
 }
-
+static int sysfs_read_optv(struct pci_dev *d, struct version_info *vitems){
+  u8 class;
+  const struct pci_class_methods *pcm;
+  class = get_class(d);
+  if ((pcm = pcm_vers_map[class]) == NULL){
+    d->access->warning("sysfs_read_optv: class not supported to read version info");
+    return 0;
+  }
+  return pcm->read_fwv ?  pcm->read_optv(d, vitems) : 0;
+}
 
 
 static void sysfs_cleanup_dev(struct pci_dev *d)
@@ -547,6 +546,7 @@ struct pci_methods pm_linux_sysfs = {
   sysfs_read_vpd,
   sysfs_read_drv,
   sysfs_read_fwv,
+  sysfs_read_optv,
   NULL,					/* init_dev */
   sysfs_cleanup_dev
 };

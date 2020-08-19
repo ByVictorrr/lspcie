@@ -46,8 +46,9 @@ struct pci_methods {
   int (*read)(struct pci_dev *, int pos, byte *buf, int len);
   int (*write)(struct pci_dev *, int pos, byte *buf, int len);
   int (*read_vpd)(struct pci_dev *, int pos, byte *buf, int len);
-  int (*read_drv)(struct pci_dev *, char *dr_v, int drv_size);
-  int (*read_fwv)(struct pci_dev *, char *fw_v, int fwv_size);
+  int (*read_drv)(struct pci_dev *, struct version_item *);
+  int (*read_fwv)(struct pci_dev *, struct version_item *);
+  int (*read_optv)(struct pci_dev *, struct version_item *);
   void (*init_dev)(struct pci_dev *);
   void (*cleanup_dev)(struct pci_dev *);
 };

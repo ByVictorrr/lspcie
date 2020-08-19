@@ -9,6 +9,7 @@
 #include <libgen.h>
 #include "pci.h"
 #include <unistd.h>
+#include <stdlib.h>
 
 
 /*==========================================================*/
@@ -18,10 +19,21 @@
 * Assumptions: pcm isnt null (checked in the calling function)
 */
 static int 
-msc_set_drv(struct pci_dev *dev, char *dr_v, int drv_size){
-    if(!set_pci_dev_drvdir(dev)){
+msc_read_drv(struct pci_dev *dev, struct version_item *vitems){
+    char *drvdir_path;
+    if(!(drvdir_path=get_pci_dev_vdir_path(dev, PCI_VDIR_DR_RELPATH_PATTN))){
         return 0;
-    }else if(!read_drvfiles(dev->drvdir_path, PCI_DRV_FPATTNS, "driver:")){
+    }else if(!read_vfiles(drvdir_path, PCI_DRV_FPATTN, "driver:", vitems)){
+        return 0;
+    }
+    return 1;
+}
+static int 
+msc_read_fwv(struct pci_dev *dev, struct version_item *vitems){
+    char *fwvdir_path;
+    if(!(fwvdir_path=get_pci_dev_vdir_path(dev, PCI_VDIR_FW_RELPATH_PATTN))){
+        return 0;
+    }else if(!read_vfiles(fwvdir_path, PCI_FWV_FPATTN, "firmware:", vitems)){
         return 0;
     }
     return 1;
@@ -29,19 +41,11 @@ msc_set_drv(struct pci_dev *dev, char *dr_v, int drv_size){
 
 
 static int 
-msc_set_fwv(struct pci_dev *dev){
-    if(!set_pci_dev_fwvdir(dev)){
+msc_read_optv(struct pci_dev *dev, struct version_item *vitems){
+    char *optvdir_path;
+    if(!(optvdir_path=get_pci_dev_vdir_path(dev, PCI_VDIR_OPT_RELPATH_PATTN))){
         return 0;
-    }else if(!read_vfiles(dev->fwvdir_path, PCI_FWV_FPATTNS, "firmware:", fw_v, fwv_size)){
-        return 0;
-    }
-    return 1;
-}
-static int 
-msc_set_optv(struct pci_dev *dev){
-    if(!set_pci_dev_optvdir(dev)){
-        return 0;
-    }else if(!read_vfiles(dev->optdir_path, PCI_FWV_FPATTNS, "firmware:", fw_v, fwv_size)){
+    }else if(!read_vfiles(optvdir_path, PCI_OPTV_FPATTN, "option rom:", vitems)){
         return 0;
     }
     return 1;
@@ -61,15 +65,16 @@ msc_set_optv(struct pci_dev *dev){
 #include <linux/sockios.h>
 
 static int 
-net_set_info(struct pci_dev *dev, struct ethtool_drvinfo *info){
+net_read_info(struct pci_dev *dev, struct ethtool_drvinfo *info){
     struct ifreq ifr;
     int fd;
+    char *vdir_path;
     // Step 1 - set pci->version_dir
-    if(!set_pci_dev_drvdir(dev)){
+    if(!(vdir_path=get_pci_dev_vdir_path(dev, PCI_VDIR_DR_RELPATH_PATTN))){
         return 0;
     }
     // Step 1 - Get the version directory pattern
-    strcpy(ifr.ifr_name, basename(dev->drvdir_path));
+    strcpy(ifr.ifr_name, basename(vdir_path));
     if((fd=socket(AF_INET, SOCK_DGRAM, 0)) < 0){
         dev->access->warning("net_read_info: socket call from ethtool access->warning");
         return 0;
@@ -84,38 +89,52 @@ net_set_info(struct pci_dev *dev, struct ethtool_drvinfo *info){
     return 1;
 }
 static int
-nc_set_drv(struct pci_dev * dev){
+nc_read_drv(struct pci_dev * dev, struct version_item *vitem){
     struct ethtool_drvinfo info;
-    struct version_item *drvitem = dev->vitem[DRV_ITEM];
-    if(!net_set_info(dev, &info)){
+    if(!net_read_info(dev, &info)){
         return 0;
     }
-    if(!(drvitem=malloc(sizeof(struct version_item)))){
-        fprintf("nc_set_drv: malloc error");
+    if(!(vitem=malloc(sizeof(struct version_item)))){
+        fprintf(stderr, "nc_set_drv: malloc error");
         return 0;
     }
-    drvitem->src_name = strdup("Ethtool");
-    drvitem->data = strdup(info.version);
+    vitem->src_path = strdup("Ethtool");
+    vitem->data = strdup(info.version);
     return 1; 
 }
 
 static int 
-nc_read_fwv(struct pci_dev * dev, char *fw_v, int fwv_size){
+nc_read_fwv(struct pci_dev * dev, struct version_item *vitem){
     struct ethtool_drvinfo info;
-    struct version_item *fwvitem = dev->vitem[FWV_ITEM];
     if(!net_read_info(dev, &info)){
         return 0;
     }
-    if(!(fwvitem=malloc(sizeof(struct version_item)))){
-        fprintf("nc_set_fwv: malloc error");
+    if(!(vitem=malloc(sizeof(struct version_item)))){
+        fprintf(stderr, "nc_set_fwv: malloc error");
         return 0;
     }
-    fwvitem->src_name = strdup("Ethtool");
-    fwvitem->data = strdup(info.fw_version);
+    vitem->src_path = strdup("Ethtool");
+    vitem->data = strdup(info.fw_version);
+    return 1; 
+}
+ 
+static int 
+nc_read_optv(struct pci_dev * dev, struct version_item *vitem){
+    struct ethtool_drvinfo info;
+    if(!net_read_info(dev, &info)){
+        return 0;
+    }
+    if(!(vitem=malloc(sizeof(struct version_item)))){
+        fprintf(stderr, "nc_set_fwv: malloc error");
+        return 0;
+    }
+    vitem->src_path = strdup("Ethtool");
+    vitem->data = strdup(info.fw_version);
     return 1; 
 }
  
 /*===================Display controller(0x03)==============*/
+/*
 static int 
 dc_read_drv(struct pci_dev *dev, char *dr_v, int drv_size){
     // Step 1 - set directory
@@ -139,14 +158,25 @@ dc_read_fwv(struct pci_dev *dev, char *fw_v, int fwv_size){
     return 1;
 }
 
-
+*/
 
 /*=================== Serial bus controller(0x0c)===========*/
 static int 
-sbc_read_drv(struct pci_dev *dev, char *dr_v, int drv_size){
-    if(!set_pci_dev_drvdir(dev)){
+sbc_read_drv(struct pci_dev *dev, struct version_item *vitems){
+    char *drvdir_path;
+    if(!(drvdir_path=get_pci_dev_vdir_path(dev, PCI_VDIR_DR_RELPATH_PATTN))){
         return 0;
-    }else if(!read_vfiles(dev->drvdir_path, PCI_DRV_FPATTNS, "driver:", dr_v, drv_size)){
+    }else if(!read_vfiles(drvdir_path, PCI_DRV_FPATTN, "driver:", vitems)){
+        return 0;
+    }
+    return 1;
+}
+static int 
+sbc_read_fwv(struct pci_dev *dev, struct version_item *vitems){
+    char *fwvdir_path;
+    if(!(fwvdir_path=get_pci_dev_vdir_path(dev, PCI_VDIR_FW_RELPATH_PATTN))){
+        return 0;
+    }else if(!read_vfiles(fwvdir_path, PCI_FWV_FPATTN, "firmware:", vitems)){
         return 0;
     }
     return 1;
@@ -154,10 +184,11 @@ sbc_read_drv(struct pci_dev *dev, char *dr_v, int drv_size){
 
 
 static int 
-sbc_read_fwv(struct pci_dev *dev, char *fw_v, int fwv_size){
-    if(!set_pci_dev_fwvdir(dev)){
+sbc_read_optv(struct pci_dev *dev, struct version_item *vitems){
+    char *optvdir_path;
+    if(!(optvdir_path=get_pci_dev_vdir_path(dev, PCI_VDIR_OPT_RELPATH_PATTN))){
         return 0;
-    }else if(!read_vfiles(dev->fwvdir_path, PCI_FWV_FPATTNS, "firmware:", fw_v, fwv_size)){
+    }else if(!read_vfiles(optvdir_path, PCI_OPTV_FPATTN, "option rom:", vitems)){
         return 0;
     }
     return 1;
@@ -179,6 +210,11 @@ const struct pci_class_methods msc = {
     #else 
        NULL,
     #endif
+    #ifdef MSC_READ_OPTV
+       msc_read_optv,
+    #else 
+       NULL,
+    #endif
 };
 /*========0x02(Network controllers)================*/
 
@@ -194,6 +230,11 @@ const struct pci_class_methods nc = {
     #else 
        NULL,
     #endif
+    #ifdef NC_READ_OPTV
+       nc_read_optv,
+    #else 
+       NULL,
+    #endif
 };
 
 /*=================== Display controller(0x03)===========*/
@@ -206,6 +247,11 @@ const struct pci_class_methods dc = {
     #endif
     #ifdef DC_READ_FWV
        dc_read_fwv,
+    #else 
+       NULL,
+    #endif
+    #ifdef DC_READ_OPTV
+       dc_read_optv,
     #else 
        NULL,
     #endif
@@ -225,6 +271,12 @@ const struct pci_class_methods dc = {
     #else 
        NULL,
     #endif
+    #ifdef SBC_READ_OPTV
+       sbc_read_optv,
+    #else 
+       NULL,
+    #endif
+
 };
  
 
