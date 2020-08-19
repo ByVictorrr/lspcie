@@ -159,9 +159,13 @@ struct pci_dev {
   void *aux;				/* Auxiliary data for use by the back-end */
   struct pci_property *properties;	/* A linked list of extra properties */
   struct pci_cap *last_cap;		/* Last capability in the list */
+
   /* For version files */
   char *drvdir_path;
   char *fwvdir_path;
+  char *optvdir_path;
+  enum VERSION_ITEMS{DRV_ITEMS, FWV_ITEMS, OPTV_ITEMS};
+  struct version_item *vitems[3];
 };
 
 #define PCI_ADDR_IO_MASK (~(pciaddr_t) 0x3)

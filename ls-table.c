@@ -120,7 +120,6 @@ show_table_entry(struct device *d)
     memset(dev_info_num, 0, DEV_INFO_NUM_SIZE);
     memset(&e, 0, sizeof(struct table_entry));
 
-
     // Setting tab_entry
     // 1. PCI Adress Ouput
     set_slot_name(d, e.pci_addr);
@@ -152,10 +151,10 @@ show_table_entry(struct device *d)
     }
     if(table > 3){
     // 7. Driver/fw version (TODO: handle the ret value)
-        if (!pci_read_driver_version(d->dev, e.dr_v, DR_VERSION_SIZE)) {
+        if (!pci_read_driver_version(d->dev, e.dr_v, DR_VERSION_SIZE) || e.dr_v[0] == '\0') {
             memset(e.dr_v, '.', 1);
         }
-        if (!pci_read_firmware_version(d->dev, e.fw_v, FW_VERSION_SIZE)) {
+        if (!pci_read_firmware_version(d->dev, e.fw_v, FW_VERSION_SIZE) || e.fw_v[0] == '\0') {
             memset(e.fw_v, '.', 1);
         }
         printf("\t%-40.40s", e.dr_v);

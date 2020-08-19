@@ -36,34 +36,7 @@ void trimstr(char* s) {
     } while (*s++ = *d++);
 }
 
-/**
-* Desc: function looks for data part of the string (i.e the version data) \
-        excluding the word parts of the string
-* @param string - the string that we are looking through
-* @return the starting address of the data part in the string \
-            NULL if an error occured or no match
-*/
-static const char *
-get_version_info(const char *string)
-{ 
-    const char* info_pattn = "[0-9].{1,}$"; 
-    regex_t re; 
-    regmatch_t pmatch;
-    const char *cursor;
-    if (regcomp(&re, info_pattn, REG_EXTENDED) != 0){
-        fprintf(stderr, "get_version_info: regcomp error\n");
-        return NULL; 
-    }
-    int status = regexec(&re, string, 1, &pmatch, 0); 
-    if (status != 0){
-        fprintf(stderr, "get_version_info: no match found\n");
-        return NULL; 
-    }
-    cursor=string;
-    regfree(&re);
 
-   return &cursor[pmatch.rm_so];
-} 
 
 /*============ Path Utility functions ==============================*/
 /**
@@ -327,47 +300,93 @@ set_pci_dev_fwvdir(struct pci_dev *dev){
     dev->fwvdir_path=vdir_name;
     return 1;
 }
+int 
+set_pci_dev_optvdir(struct pci_dev *dev){
+    /* dev directory, relative path from dev directory to v dir pattern */
+    char ddir[MAX_PATH];
+    const char *relvdir_pattn;
+    char *vdir_name;
+    // Step 0 - clear out the buffers used in this function
+    memset(ddir, '\0', MAX_PATH);
+    // Step 1 - check if the pci_dev drvdir is set already
+    if(dev->optvdir_path){
+        return 1;
+    }
+    // Step 3 - get the pci device base folder
+    else if(!get_pci_dev_dirname(dev, ddir, MAX_PATH)){
+        return 0;
+    } // Step 4 - go through each type and get the vers folder(abs path)
+    else if(!(vdir_name=find_pci_dev_vers_dir(ddir, PCI_VDIR_OPT_RELPATH_PATTNS))){
+        return 0;
+    }
+    dev->optvdir_path=vdir_name;
+    return 1;
+}
 
 /*===================read_vfile functions =============================================*/
 
-
-/**
-* Desc: Reads the version directory object and looks for \
-*       a matches with the regex fpattn
-* @param v_dir : the version directory that is used to look \
-                 through for vfiles matching the fpattn
-* @param fpattn : the regex to get the version files 
-* @param files_buff : Stores a list of files that match the \
-                     fpattn in the v_dir
-* @param buff_size : The max size of the buffer
-* @return an int that denotes how many files were stored in files_buff \n 
-         -1 represents something whent wrong 
-          0 represents buffer is to small
-*/
 static int
-get_vfiles(const char *vdir, const char *fpattn, FILE **files_buff, int buff_size){
+str_linenum_in_vfile(char *string, FILE *vfile){
+    #define MAX_LINE 100
+    char *line;
+    size_t len = 0;
+    int line_num = 0;  
+    ssize_t read;
+    if(!string)
+        return -1;
+    while((read = getline(&line, &len, vfile)) != -1){
+        if(strstr(line, string)){
+            rewind(vfile);
+            return line_num;
+        }
+        line_num++;
+    }
+    rewind(vfile);
+    return -1;
+}
+static const char *
+get_version_info(const char *string)
+{ 
+    const char* info_pattn = "[0-9].{1,}$"; 
+    regex_t re; 
+    regmatch_t pmatch;
+    const char *cursor;
+    if (regcomp(&re, info_pattn, REG_EXTENDED) != 0){
+        fprintf(stderr, "get_version_info: regcomp error\n");
+        return NULL; 
+    }
+    int status = regexec(&re, string, 1, &pmatch, 0); 
+    if (status != 0){
+        fprintf(stderr, "get_version_info: no match found\n");
+        return NULL; 
+    }
+    cursor=string;
+    regfree(&re);
+
+   return &cursor[pmatch.rm_so];
+} 
+static int
+set_vfiles(const char *vidr_path, struct version_item *head, const char *fpattn){
     struct dirent *entry;
     regex_t regex;
     FILE *file;
     DIR *dir;
     int i=0, n;
     char vfile_path[MAX_PATH];
+    struct version_item *next, *curr;
     memset(vfile_path, 0, MAX_PATH);
 
     // Step 1 - check params
-    if(!vdir){
-        fprintf(stderr, "get_vfiles: the vdir string is null");
+    if(!vdir_path){
+        fprintf(stderr, "get_vfiles: the vdir_path is null");
         return 0;
     }else if (!fpattn){
         fprintf(stderr, "get_vfiles: the fpattn object is null");
         return 0;
-    }else if (!files_buff){
-        fprintf(stderr, "get_vfiles: files_buff is null");
-        return 0;
     }else if(regcomp(&regex, fpattn, REG_EXTENDED)){ /* Compile the regex */
         fprintf(stderr, "get_vfiles: regex compilation error");
         return 0;
-    }else if(!(dir=opendir(vdir))){
+    }else if(!(dir=opendir(vdir_path))){
         fprintf(stderr, "get_vfiles: opendir error");
         return 0; 
     }
@@ -387,7 +406,19 @@ get_vfiles(const char *vdir, const char *fpattn, FILE **files_buff, int buff_siz
                     regfree(&regex);
                     return i+1;
                 }
-                files_buff[i++] = file; 
+                // need to do while found first null in ll
+                if(!head){
+                    head=curr=malloc(sizeof(struct version_item));
+                    curr->file_name=strdup(basename(vfile_path));
+                    curr->vfile = file;
+                }else{
+                    next=malloc(sizeof(struct version_item));
+                    next->file_name=strdup(basename(vfile_path));
+                    next->vfile = file;
+                    curr->next=next;
+                    curr=next;
+                }
+                
             }else
                 fprintf(stderr, "get_vfiles: Unable to open for reading %s", entry->d_name);
          }
@@ -395,127 +426,86 @@ get_vfiles(const char *vdir, const char *fpattn, FILE **files_buff, int buff_siz
     regfree(&regex);
     return i;
 }
-
-/**
-* Desc: looks for string in vfile (also it rewinds the vfile to start of file)
-* @param string : a string that is used to find in a file
-* @param vfile : a version file 
-* @return The line number the string is on or -1 if it doesnt exist
-**/
 static int
-line_string_in_vfile(char *string, FILE *vfile){
-    #define MAX_LINE 100
-    char *line;
-    size_t len = 0;
-    int line_num = 0;  
-    ssize_t read;
-    // Step 1 - start of a file
-    while((read = getline(&line, &len, vfile)) != -1){
-        if(strstr(line, string))
-            return line_num;
-        line_num++;
-    }
-    return -1;
-
-}
-/**
-* Desc: This function reads the version file and stores the info into vbuff
-* @param vfile: The file ponter used to read the version file
-* @param string: The string to look for inside a file to get the data on that line
-* @param vbuff: Where we store the data
-* @param buff_size: The max size the buff can hold
-* @return an int 1 if we correctly extracted the data from the file into the buffer \
-             int 0 if something went wrong like the buffer isnt big enough to hold the information
-**/
-// TODO : this function only reads the first line of the file
-static int
-read_vfile(FILE *vfile, char * string, char *vbuff, int buff_size){
+read_vfile(FILE *vfile, char * string, char *data){
     int str_linenum=0, linenum=0;  
     char *vinfo;
-    // if no string firmware read the full file and store it into buffer
-    // Step 1 - Search for in file the string = {"Firmware" or "Driver"}
-    str_linenum = line_string_in_vfile(string, vfile);
-    // Step 1 - start of a file
-    rewind(vfile);
-    while(fgets(vbuff, buff_size-1, vfile)){
-        // Step 2 - trim white spaces 
-        trimstr(vbuff);
-        // Step 3 - check if new line is on the read data
-        if(vbuff[strlen(vbuff)-1]=='\n')
-            vbuff[strlen(vbuff)-1]=0;
+    char line_buff[MAX_LINE];
+    memset(line_buff, 0, MAX_LINE);
+    /* Step 1 - get the line number the string is on 
+              - or -1 if string not found in vfile
+    */
+    str_linenum = str_linenum_in_vfile(string, vfile);
+    /* Step 2 - read through the vfile */
+    while(fgets(line_buff, MAX_LINE-1, vfile)){
+        /* Step 3 - trim white spaces */
+        /* Step 4 - if new line exists then take it out */
+        if(vbuff[strlen(line_buff)-1]=='\n')
+            vbuff[strlen(line_buff)-1]=0;
         
-        // Step 4  - no string found in the file
+        /* Step 5 - if the string is not found in vfile(read one line) */
         if(str_linenum == -1){
-           // Step 1 - look for only the info part
-           if(!(vinfo = get_version_info(vbuff))){
-               return 1;
+           /* Step 5.1 - get the version part of the line_buff*/
+           if(!(vinfo = get_version_info(line_buff))){
+               return 0;
+           /* Step 5.2 - copy the vinfo into vitem struct */
+           }else if(!(data=strdup(vinfo))){
+               fprintf(stderr, "read_vfile: strdup error \n");
+               return 0; 
            }
-           strcpy(vbuff, vinfo);
-           return 1; 
-        }
-        // Step 4 - if the string is a substring of the line
-        else if(str_linenum == linenum){
-            // remove substring
-            // strremove(vbuff, string);
+           return 1;
+        /* Step 6 - if the string is found on that line */
+        }else if(str_linenum == linenum){
+           /* Step 6.1 - get the version part of the line_buff*/
             if(!(vinfo = get_version_info(vbuff))){
-               return 1;
+               return 0;
+            }else if(!(data=strdup(vinfo))){
+               fprintf(stderr, "read_vfile: strdup error \n");
+               return 0; 
             }
-            strcpy(vbuff, vinfo);
             return 1;
         }
-
         linenum++; 
     }
     return 0; 
 }
 
 #define MAX_VFILES 20
-/**
-* Desc: Given the version_dir and file pattern read all those file patterns \
-        that match and store in the buffer
-* @param version_dir - version directory name (absolute path)
-* @param fpattn - the regex pattern of files to look for
-* @param string - in files look for this line and use it to store info on \
-                  that line in vbuff
-* @param vbuff - the buffer where the info is to be stored
-* @param buff_size - the size of the vbuffer
-* @return An int denoting the number of files read 
-*/
-int
-read_vfiles(char *version_dir, const char *fpattn, char * string, char *vsbuff, int buff_size){
-    FILE *vfiles[MAX_VFILES], *vfile;
-    char vbuff[MAX_LINE], last_vbuff[MAX_LINE];
-    DIR *vdir;
+static int
+read_vfiles(char *version_dir, const char *fpattn, struct version_item *vitems, char *string){
+    FILE *vfile;
     int num_vfiles, i;
-    int n;
+    struct version_item *curr, *next;
+
     memset(last_vbuff, 0, MAX_LINE);
+
     // Step 1 - Get the number of matched vfiles and get the files
-    if(!(num_vfiles = get_vfiles(version_dir, fpattn, vfiles, MAX_VFILES)))
+    if(!(num_vfiles = set_vfiles(version_dir, vitems, fpattn)))
         return 0;
 
     // Step 2 - Iterate through the vfiles
-    for(i=0; i< num_vfiles; i++){
-        vfile = vfiles[i];
-        memset(vbuff, 0, MAX_LINE);
+    curr=vitems;
+    while(curr && curr->vfile){
+        vfile = curr->vfile;
         // Step 3 - read the file
-        if(!read_vfile(vfile, string, vbuff, MAX_LINE)){
+        if(!read_vfile(curr->vfile, string, curr->data)){ 
             // if buffer is out of space
-            fclose(vfile);
+            fclose(curr->vfile);
             return 0;
        }
-       if(last_vbuff[0]=='\0'){
-           strcpy(last_vbuff, vbuff);
-       }else{
-            strcat(last_vbuff, " ");
-            strcat(last_vbuff, vbuff);
-       } 
-        fclose(vfile);
+       fclose(vfile);
     }
-    if(strlen(last_vbuff)+1 > MAX_LINE){
-        fprintf(stderr, "read_vfile: the data in the file is to long for destination buffer");
-        return 0;
-    }
-    strcpy(vsbuff, last_vbuff);
-
     return i+1;
+}
+int
+read_drvfiles(struct pci_dev *d, const char fpattn, const char *string){
+    return _read_vfiles(d->drvdir_path, fpattn, d->vitems[DRV_ITEMS], string);
+}
+
+read_fwvfiles(struct pci_dev *d, const char fpattn, const char *string){
+    return _read_vfiles(d->fwvdir_path, fpattn, d->vitems[FW_ITEMS], string);
+}
+int
+read_optvfiles(struct pci_dev *d, const char fpattn, const char *string){
+    return _read_vfiles(d->optvdir_path, fpattn, d->vitems[OPT_ITEMS], string);
 }
