@@ -107,7 +107,23 @@ set_phy_slot(struct device *d, char *buff){
         buff[0] = '-';
     }
 }
+void free_version_items(struct version_item* vitems){
+    struct version_item *next;
+    while(vitems){
+        if(vitems->src_path){
+            free(vitems->src_path);
+            vitems->src_path=NULL;
+        }
+        if(vitems->data){
+            free(vitems->data);
+            vitems->data=NULL;
+        }
 
+        next=vitems->next;
+        free(vitems);
+        vitems=next;
+    }
+}
 void 
 show_table_entry(struct device *d)
 {
@@ -165,11 +181,14 @@ show_table_entry(struct device *d)
         }
         printf("\t%-40.40s", e.dr_v);
         printf("\t%-40.40s", e.fw_v);
+        free_version_items(vitemss[DRV_ITEMS]);
+        free_version_items(vitemss[FWV_ITEMS]);
     }else if(table > 4){
         if (!pci_read_option_rom_version(d->dev, vitemss[OPTV_ITEMS])){
             vitems = vitemss[OPTV_ITEMS];
             memset(e.fw_v, '.', 1);
         } 
+        free_version_items(vitemss[OPTV_ITEMS]);
     }
 
     printf("\n");

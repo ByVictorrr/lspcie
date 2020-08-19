@@ -185,6 +185,8 @@ _find_pci_dev_vers_dir(const char * cwd, const char *rel_vpath_pattn){
         }
     }
     fprintf(stderr, "find_pci_dev_vers_dir: Could not find a file pattern of %s in %s\n", rel_vpath_pattn, cwd); 
+
+    closedir(dir);
     regfree(&regex);
     return NULL;
 
@@ -283,7 +285,7 @@ set_vfiles(const char *vdir_path, struct version_item *head, const char *fpattn)
     FILE *file;
     DIR *dir;
     int i=0, n;
-    struct version_item *next, *curr;
+    struct version_item *curr;
     char *vfile_path;
 
     // Step 1 - check params
@@ -305,25 +307,30 @@ set_vfiles(const char *vdir_path, struct version_item *head, const char *fpattn)
     while((entry = readdir(dir))){
         /* if the regex matches the file name open the file*/
          if(entry->d_type == DT_REG && !regexec(&regex, entry->d_name, 0, NULL, 0)){
-            size_t nitems = strlen(vdir_path)+strlen(entry->d_name);
+            size_t nitems = strlen(vdir_path)+strlen(entry->d_name)+1;
             if(!(vfile_path = calloc(nitems+1, sizeof(char)))){
                 fprintf(stderr, "get_vfiles: opendir error");
                 return i;
             }
-            n=snprintf(vfile_path, nitems+1, "%s/%s", vdir_path, entry->d_name);
-            if (n < 0 || n >= nitems+1){
+            n=snprintf(vfile_path, nitems, "%s/%s", vdir_path, entry->d_name);
+            if (n < 0){
                 fprintf(stderr, "get_vfiles: Folder name too long\n");
                 regfree(&regex);
                 return 0;
             }else{
                 if(!head){
-                    head=curr=malloc(sizeof(struct version_item));
+                    if(!(head=curr=malloc(sizeof(struct version_item)))){
+                        fprintf(stderr, "malloc error\n");
+                        return i;
+                    }
                     curr->src_path=vfile_path;
                 }else{
-                    next=malloc(sizeof(struct version_item));
-                    next->src_path=vfile_path;
-                    curr->next=next;
-                    curr=next;
+                    if(!(curr->next=malloc(sizeof(struct version_item)))){
+                        fprintf(stderr, "malloc error\n");
+                        return i;
+                    }
+                    curr=curr->next;
+                    curr->src_path=vfile_path;
                 }
                i++; 
             }
