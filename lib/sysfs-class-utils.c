@@ -186,7 +186,6 @@ _find_pci_dev_vers_dir(const char * cwd, const char *rel_vpath_pattn){
     }
     fprintf(stderr, "find_pci_dev_vers_dir: Could not find a file pattern of %s in %s\n", rel_vpath_pattn, cwd); 
 
-    closedir(dir);
     regfree(&regex);
     return NULL;
 
@@ -279,7 +278,7 @@ get_version_info(const char *string)
    return &cursor[pmatch.rm_so];
 } 
 static int
-set_vfiles(const char *vdir_path, struct version_item *head, const char *fpattn){
+set_vfiles(const char *vdir_path, struct version_item **head, const char *fpattn){
     struct dirent *entry;
     regex_t regex;
     FILE *file;
@@ -287,7 +286,6 @@ set_vfiles(const char *vdir_path, struct version_item *head, const char *fpattn)
     int i=0, n;
     struct version_item *curr;
     char *vfile_path;
-
     // Step 1 - check params
     if(!vdir_path){
         fprintf(stderr, "get_vfiles: the vdir_path is null");
@@ -312,18 +310,20 @@ set_vfiles(const char *vdir_path, struct version_item *head, const char *fpattn)
                 fprintf(stderr, "get_vfiles: opendir error");
                 return i;
             }
-            n=snprintf(vfile_path, nitems, "%s/%s", vdir_path, entry->d_name);
+            n=snprintf(vfile_path, nitems+1, "%s/%s", vdir_path, entry->d_name);
             if (n < 0){
                 fprintf(stderr, "get_vfiles: Folder name too long\n");
                 regfree(&regex);
                 return 0;
             }else{
-                if(!head){
-                    if(!(head=curr=malloc(sizeof(struct version_item)))){
+                if(!(*head)){
+                    if(!(*head=curr=malloc(sizeof(struct version_item)))){
                         fprintf(stderr, "malloc error\n");
                         return i;
                     }
                     curr->src_path=vfile_path;
+                    curr->next=NULL;
+                    curr->data=NULL;
                 }else{
                     if(!(curr->next=malloc(sizeof(struct version_item)))){
                         fprintf(stderr, "malloc error\n");
@@ -331,6 +331,10 @@ set_vfiles(const char *vdir_path, struct version_item *head, const char *fpattn)
                     }
                     curr=curr->next;
                     curr->src_path=vfile_path;
+                    curr->next=NULL;
+                    curr->data=NULL;
+
+
                 }
                i++; 
             }
@@ -358,6 +362,7 @@ read_vfile(struct version_item *vitem, char * str_in_file){
     /* Step 2 - read through the vfile */
     while(fgets(line_buff, MAX_LINE-1, vfile)){
         /* Step 3 - trim white spaces */
+        trimstr(line_buff);
         /* Step 4 - if new line exists then take it out */
         if(line_buff[strlen(line_buff)-1]=='\n')
             line_buff[strlen(line_buff)-1]=0;
@@ -370,11 +375,12 @@ read_vfile(struct version_item *vitem, char * str_in_file){
                return 0;
            /* Step 5.2 - copy the vinfo into vitem struct */
            }else if(!(vitem->data=strdup(vinfo))){
-               fprintf(stderr, "read_vfile: strdup error \n");
-               fclose(vfile);
-               return 0; 
+                fprintf(stderr, "read_vfile: strdup error \n");
+                fclose(vfile);
+                return 0; 
            }
-           return 1;
+ 
+          return 1;
         /* Step 6 - if the string is found on that line */
         }else if(str_linenum == linenum){
            /* Step 6.1 - get the version part of the line_buff*/
@@ -382,9 +388,9 @@ read_vfile(struct version_item *vitem, char * str_in_file){
                fclose(vfile);
                return 0;
             }else if(!(vitem->data=strdup(vinfo))){
-               fprintf(stderr, "read_vfile: strdup error \n");
-               fclose(vfile);
-               return 0; 
+                    fprintf(stderr, "read_vfile: strdup error \n");
+                    fclose(vfile);
+                    return 0; 
             }
             return 1;
         }
@@ -396,16 +402,16 @@ read_vfile(struct version_item *vitem, char * str_in_file){
 }
 
 int
-read_vfiles(char *version_dir, const char *fpattn, char *str_in_file, struct version_item *vitems){
+read_vfiles(char *version_dir, const char *fpattn, char *str_in_file, struct version_item **head){
     FILE *vfile;
     int num_vfiles, i;
     struct version_item *curr;
     // Step 1 - Get the number of matched vfiles and get the files
-    if(!(num_vfiles = set_vfiles(version_dir, vitems, fpattn)))
+    if(!(num_vfiles = set_vfiles(version_dir, head, fpattn)))
         return 0;
 
     // Step 2 - Iterate through all items
-    for(i=0, curr=vitems; curr; i++, curr=curr->next){
+    for(i=0, curr=*head; curr; i++, curr=curr->next){
         if(!read_vfile(curr, str_in_file))
             break;
     }

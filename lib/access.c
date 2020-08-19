@@ -138,17 +138,17 @@ pci_read_vpd(struct pci_dev *d, int pos, byte *buf, int len)
 /* =========================ADDED =============*/
 /* TODO: ADD parms for buff_size; */
 int 
-pci_read_driver_version(struct pci_dev *d, struct version_item *vitems)
+pci_read_driver_version(struct pci_dev *d, struct version_item **vitems)
 {
   return d->methods->read_drv ? d->methods->read_drv(d, vitems) : 0;
 }
 int 
-pci_read_firmware_version(struct pci_dev *d, struct version_item *vitems)
+pci_read_firmware_version(struct pci_dev *d, struct version_item **vitems)
 {
   return d->methods->read_fwv ? d->methods->read_fwv(d, vitems) : 0;
 }
 int 
-pci_read_option_rom_version(struct pci_dev *d, struct version_item *vitems)
+pci_read_option_rom_version(struct pci_dev *d, struct version_item **vitems)
 {
   return d->methods->read_optv ? d->methods->read_optv(d, vitems) : 0;
 }

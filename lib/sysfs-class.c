@@ -19,7 +19,7 @@
 * Assumptions: pcm isnt null (checked in the calling function)
 */
 static int 
-msc_read_drv(struct pci_dev *dev, struct version_item *vitems){
+msc_read_drv(struct pci_dev *dev, struct version_item **vitems){
     char *drvdir_path;
     if(!(drvdir_path=get_pci_dev_vdir_path(dev, PCI_VDIR_DR_RELPATH_PATTN))){
         return 0;
@@ -29,7 +29,7 @@ msc_read_drv(struct pci_dev *dev, struct version_item *vitems){
     return 1;
 }
 static int 
-msc_read_fwv(struct pci_dev *dev, struct version_item *vitems){
+msc_read_fwv(struct pci_dev *dev, struct version_item **vitems){
     char *fwvdir_path;
     if(!(fwvdir_path=get_pci_dev_vdir_path(dev, PCI_VDIR_FW_RELPATH_PATTN))){
         return 0;
@@ -41,7 +41,7 @@ msc_read_fwv(struct pci_dev *dev, struct version_item *vitems){
 
 
 static int 
-msc_read_optv(struct pci_dev *dev, struct version_item *vitems){
+msc_read_optv(struct pci_dev *dev, struct version_item **vitems){
     char *optvdir_path;
     if(!(optvdir_path=get_pci_dev_vdir_path(dev, PCI_VDIR_OPT_RELPATH_PATTN))){
         return 0;
@@ -89,47 +89,50 @@ net_read_info(struct pci_dev *dev, struct ethtool_drvinfo *info){
     return 1;
 }
 static int
-nc_read_drv(struct pci_dev * dev, struct version_item *vitem){
+nc_read_drv(struct pci_dev * dev, struct version_item **vitem){
     struct ethtool_drvinfo info;
     if(!net_read_info(dev, &info)){
         return 0;
     }
-    if(!(vitem=malloc(sizeof(struct version_item)))){
+    if(!(*vitem=malloc(sizeof(struct version_item)))){
         fprintf(stderr, "nc_set_drv: malloc error");
         return 0;
     }
-    vitem->src_path = strdup("Ethtool");
-    vitem->data = strdup(info.version);
+    (*vitem)->src_path = strdup("Ethtool");
+    (*vitem)->data = strdup(info.version);
+    (*vitem)->next = NULL;
     return 1; 
 }
 
 static int 
-nc_read_fwv(struct pci_dev * dev, struct version_item *vitem){
+nc_read_fwv(struct pci_dev * dev, struct version_item **vitem){
     struct ethtool_drvinfo info;
     if(!net_read_info(dev, &info)){
         return 0;
     }
-    if(!(vitem=malloc(sizeof(struct version_item)))){
+    if(!(*vitem=malloc(sizeof(struct version_item)))){
         fprintf(stderr, "nc_set_fwv: malloc error");
         return 0;
     }
-    vitem->src_path = strdup("Ethtool");
-    vitem->data = strdup(info.fw_version);
+    (*vitem)->src_path = strdup("Ethtool");
+    (*vitem)->data = strdup(info.fw_version);
+    (*vitem)->next = NULL;
     return 1; 
 }
  
 static int 
-nc_read_optv(struct pci_dev * dev, struct version_item *vitem){
+nc_read_optv(struct pci_dev * dev, struct version_item **vitem){
     struct ethtool_drvinfo info;
     if(!net_read_info(dev, &info)){
         return 0;
     }
-    if(!(vitem=malloc(sizeof(struct version_item)))){
+    if(!(*vitem=malloc(sizeof(struct version_item)))){
         fprintf(stderr, "nc_set_fwv: malloc error");
         return 0;
     }
-    vitem->src_path = strdup("Ethtool");
-    vitem->data = strdup(info.fw_version);
+    (*vitem)->src_path = strdup("Ethtool");
+    (*vitem)->data = strdup(info.fw_version);
+    (*vitem)->next = NULL;
     return 1; 
 }
  
@@ -162,7 +165,7 @@ dc_read_fwv(struct pci_dev *dev, char *fw_v, int fwv_size){
 
 /*=================== Serial bus controller(0x0c)===========*/
 static int 
-sbc_read_drv(struct pci_dev *dev, struct version_item *vitems){
+sbc_read_drv(struct pci_dev *dev, struct version_item **vitems){
     char *drvdir_path;
     if(!(drvdir_path=get_pci_dev_vdir_path(dev, PCI_VDIR_DR_RELPATH_PATTN))){
         return 0;
@@ -172,7 +175,7 @@ sbc_read_drv(struct pci_dev *dev, struct version_item *vitems){
     return 1;
 }
 static int 
-sbc_read_fwv(struct pci_dev *dev, struct version_item *vitems){
+sbc_read_fwv(struct pci_dev *dev, struct version_item **vitems){
     char *fwvdir_path;
     if(!(fwvdir_path=get_pci_dev_vdir_path(dev, PCI_VDIR_FW_RELPATH_PATTN))){
         return 0;
@@ -184,7 +187,7 @@ sbc_read_fwv(struct pci_dev *dev, struct version_item *vitems){
 
 
 static int 
-sbc_read_optv(struct pci_dev *dev, struct version_item *vitems){
+sbc_read_optv(struct pci_dev *dev, struct version_item **vitems){
     char *optvdir_path;
     if(!(optvdir_path=get_pci_dev_vdir_path(dev, PCI_VDIR_OPT_RELPATH_PATTN))){
         return 0;

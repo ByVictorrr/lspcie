@@ -15,9 +15,9 @@ enum VDIR_RELPATHS{VDIR_DR, VDIR_FW};
 
 struct pci_class_methods{
     const char *name; /* Name of the device */
-    int (*read_drv)(struct pci_dev *, struct version_info *);
-    int (*read_fwv)(struct pci_dev *, struct version_info *); 
-    int (*read_optv)(struct pci_dev *, struct version_info *); 
+    int (*read_drv)(struct pci_dev *, struct version_info **);
+    int (*read_fwv)(struct pci_dev *, struct version_info **); 
+    int (*read_optv)(struct pci_dev *, struct version_info **); 
 };
 
 
@@ -38,20 +38,20 @@ struct pci_class_methods{
 
 #define NET_READ_DRV
 #define NET_READ_FWV
+
 /*
 #define DC_READ_DRV
 #define DC_READ_FWV
 #define DC_READ_OPTV
-
 */
+
 #define SBC_READ_DRV
 #define SBC_READ_FWV
 #define SBC_READ_OPTV
 
-
 extern inline char * sysfs_name(struct pci_access *a);
 extern char * get_pci_dev_vdir_path(struct pci_dev *dev, const char *vidr_relpath_pattn);
-extern int read_vfiles(char *version_dir, const char *fpattn, char *str_in_file, struct version_item *vitems);
+extern int read_vfiles(char *version_dir, const char *fpattn, char *str_in_file, struct version_item **vitems);
 extern const struct pci_class_methods *pcm_vers_map[PCI_CLASS_MAX];
 
 

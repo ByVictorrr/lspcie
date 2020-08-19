@@ -178,9 +178,9 @@ u16 pci_read_word(struct pci_dev *, int pos) PCI_ABI;
 u32 pci_read_long(struct pci_dev *, int pos) PCI_ABI;
 int pci_read_block(struct pci_dev *, int pos, u8 *buf, int len) PCI_ABI;
 int pci_read_vpd(struct pci_dev *d, int pos, u8 *buf, int len) PCI_ABI;
-int pci_read_driver_version(struct pci_dev *d, struct version_item *vitems) PCI_ABI;
-int pci_read_firmware_version(struct pci_dev *d, struct version_item *vitems) PCI_ABI;
-int pci_read_option_rom_version(struct pci_dev *d, struct version_item *vitems)PCI_ABI;
+int pci_read_driver_version(struct pci_dev *d, struct version_item **vitems) PCI_ABI;
+int pci_read_firmware_version(struct pci_dev *d, struct version_item **vitems) PCI_ABI;
+int pci_read_option_rom_version(struct pci_dev *d, struct version_item **vitems)PCI_ABI;
 
 int pci_write_byte(struct pci_dev *, int pos, u8 data) PCI_ABI;
 int pci_write_word(struct pci_dev *, int pos, u16 data) PCI_ABI;

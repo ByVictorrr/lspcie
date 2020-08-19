@@ -19,7 +19,8 @@
 #define DRIVER_SIZE 11
 #define DEVICE_INFO_SIZE 35
 #define DR_VERSION_SIZE 30
-#define FW_VERSION_SIZE 100
+#define FW_VERSION_SIZE 30
+#define OPT_VERSION_SIZE 30
 
 
 struct table_entry{
@@ -31,6 +32,7 @@ struct table_entry{
     char dev_info[DEVICE_INFO_SIZE];
     char dr_v[DR_VERSION_SIZE];
     char fw_v[FW_VERSION_SIZE];
+    char opt_v[OPT_VERSION_SIZE];
 };
 
 /**
@@ -107,16 +109,35 @@ set_phy_slot(struct device *d, char *buff){
         buff[0] = '-';
     }
 }
-void free_version_items(struct version_item* vitems){
+static void fill_vbuff(struct version_item *vitems, char *buff, int size){
+
+    #define MAX_BUFF 100
+    char *temp[MAX_BUFF];
+    memset(temp, 0, MAX_BUFF);
+    while(vitems){
+        /*
+        if(strlen(buff)+strlen(vitems->data)+1 > size)
+            return;
+            */
+
+        if(buff[0] = '\0'){
+            strcpy(temp, vitems->data);
+            strcpy(buff, vitems->data);
+        }else{
+            int n = snprintf(buff, size, "%s %s", temp, vitems->data);
+        }
+        vitems=vitems->next;
+    }
+
+}
+static void free_version_items(struct version_item* vitems){
     struct version_item *next;
     while(vitems){
         if(vitems->src_path){
             free(vitems->src_path);
-            vitems->src_path=NULL;
         }
         if(vitems->data){
             free(vitems->data);
-            vitems->data=NULL;
         }
 
         next=vitems->next;
@@ -132,7 +153,7 @@ show_table_entry(struct device *d)
     char dev_info_num[DEV_INFO_NUM_SIZE];
     struct table_entry e;
     int pos; 
-    struct version_item *vitemss[3], *vitems; /* 0= drv, 1=fwv, 2=optv*/
+    struct version_item *vitemss[3]={NULL}, *vitems=NULL; /* 0= drv, 1=fwv, 2=optv*/
     // clear out local buffers
     memset(dev_info_num, 0, DEV_INFO_NUM_SIZE);
     memset(&e, 0, sizeof(struct table_entry));
@@ -167,28 +188,36 @@ show_table_entry(struct device *d)
     }
     if(table > 3){
     // 7. Driver/fw version (TODO: handle the ret value)
-        if (!pci_read_driver_version(d->dev, vitemss[DRV_ITEMS])) {
+        if (!pci_read_driver_version(d->dev, &vitemss[DRV_ITEMS])) {
             // TODO store items in e.dr_v
-            vitems = vitemss[DRV_ITEMS];
-
             memset(e.dr_v, '.', 1);
+        }else{
+            vitems = vitemss[DRV_ITEMS];
+            fill_vbuff(vitems, e.dr_v, DR_VERSION_SIZE);
+            free_version_items(vitems);
         }
-        if (!pci_read_firmware_version(d->dev, vitemss[FWV_ITEMS])){
+        if (!pci_read_firmware_version(d->dev, &vitemss[FWV_ITEMS])){
             // TODO store items[FW_ITEMS]
             vitems = vitemss[FWV_ITEMS];
             // concat
             memset(e.fw_v, '.', 1);
+        }else{
+            vitems = vitemss[FWV_ITEMS];
+            fill_vbuff(vitems, e.fw_v, FW_VERSION_SIZE);
+            free_version_items(vitems);
         }
-        printf("\t%-40.40s", e.dr_v);
-        printf("\t%-40.40s", e.fw_v);
-        free_version_items(vitemss[DRV_ITEMS]);
-        free_version_items(vitemss[FWV_ITEMS]);
-    }else if(table > 4){
-        if (!pci_read_option_rom_version(d->dev, vitemss[OPTV_ITEMS])){
-            vitems = vitemss[OPTV_ITEMS];
+        printf("\t%-20.20s", e.dr_v);
+        printf("\t%-20.20s", e.fw_v);
+    }
+    if(table > 4){
+        if (!pci_read_option_rom_version(d->dev, &vitemss[OPTV_ITEMS])){
             memset(e.fw_v, '.', 1);
-        } 
-        free_version_items(vitemss[OPTV_ITEMS]);
+        }else{
+            vitems = vitemss[OPTV_ITEMS];
+            fill_vbuff(vitems, e.opt_v, OPT_VERSION_SIZE);
+            free_version_items(vitems);
+        }
+        printf("\t%-20.20s", e.opt_v);
     }
 
     printf("\n");
@@ -206,8 +235,11 @@ print_hdr(int line_width){
         printf("\t%-40.40s", "Device_info");
     }
     if(table > 3){
-        printf("\t%-20.20s", "Driver Version");
-        printf("\t%-20.20s", "Firmware Version");
+        printf("\t%-20.20s", "Driver_Version");
+        printf("\t%-20.20s", "Firmware_Version");
+    }
+    if(table > 4 ){
+        printf("\t%-20.20s", "Option_Rom_Version");
     }
 
     printf("\n");

@@ -520,7 +520,7 @@ static int sysfs_read_optv(struct pci_dev *d, struct version_info *vitems){
     d->access->warning("sysfs_read_optv: class not supported to read version info");
     return 0;
   }
-  return pcm->read_fwv ?  pcm->read_optv(d, vitems) : 0;
+  return pcm->read_optv ?  pcm->read_optv(d, vitems) : 0;
 }
 
 
