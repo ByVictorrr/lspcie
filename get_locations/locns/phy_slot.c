@@ -413,7 +413,7 @@ int main(){
 	u8 *buf;
 	
 	/* location pair list */
-	struct locn_bus_pair *head;
+	struct locn_bus_pair *head = NULL;
 	const char *devmem;
 
 
