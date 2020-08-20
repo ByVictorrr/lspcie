@@ -89,24 +89,18 @@ static void dmi_decode(const struct dmi_header *h, struct locn_bus_pair *item)
 {
 	const u8 *data = h->data;
 
-	if (h->length < 0x0C) break;
+	if (h->length < 0x0C)
+		return;
 	// Step 1 - set the locn (r*)
-	item->locn = dmi_string(h, data[0x04]); 
-	if (h->length < 0x11) break;
+	item->locn = strdup(dmi_string(h, data[0x04])); 
+	if (h->length < 0x11)
+		return;
 	// Step 2 - set bus addr
 	dmi_slot_segment_bus_func(WORD(data + 0x0D), data[0x0F], data[0x10], &item->bus_addr);
 }
 
-static void to_dmi_header(struct dmi_header *h, u8 *data)
-{
-	h->type = data[0];
-	h->length = data[1];
-	h->handle = WORD(data + 2);
-	h->data = data;
-}
 
-
-static void dmi_table_decode(u8 *buf, u32 len, u16 num, u32 flags, struct locn_bus_pair **head)
+static void dmi_table_decode(u8 *buf, u32 len, u16 num,u32 flags, struct locn_bus_pair **head)
 {
 	
 	struct locn_bus_pair *curr;
@@ -119,7 +113,6 @@ static void dmi_table_decode(u8 *buf, u32 len, u16 num, u32 flags, struct locn_b
 	{
 		u8 *next;
 		struct dmi_header h;
-		int display;
 
 		to_dmi_header(&h, data);
 
@@ -152,7 +145,6 @@ static void dmi_table_decode(u8 *buf, u32 len, u16 num, u32 flags, struct locn_b
 			break;
 
 		if (h.type == 9){
-			head;
 			if(!*head){
 				if(!(*head=curr=calloc(1, sizeof(struct locn_bus_pair)))){
 					perror("calloc");
@@ -230,7 +222,7 @@ static void dmi_table(off_t base, u32 len, u16 num, u32 ver, const char *devmem,
 		return;
 	}
 
-	dmi_table_decode(buf, len, num, ver >> 8, flags, head);
+	dmi_table_decode(buf, len, num, flags, head);
 
 	free(buf);
 }
@@ -239,7 +231,6 @@ static void dmi_table(off_t base, u32 len, u16 num, u32 ver, const char *devmem,
 static int smbios3_decode(u8 *buf, const char *devmem, u32 flags, struct locn_bus_pair **head)
 {
 	/* Dependencies */
-	static void dmi_table(off_t base, u32 len, u16 num, u32 ver, const char *devmem, u32 flags);
 	u32 ver;
 	u64 offset;
 
@@ -272,9 +263,84 @@ static int smbios3_decode(u8 *buf, const char *devmem, u32 flags, struct locn_bu
 	return 1;
 }
 
+/*
+ * Probe for EFI interface
+ */
+#define EFI_NOT_FOUND   (-1)
+#define EFI_NO_SMBIOS   (-2)
+static int address_from_efi(off_t *address)
+{
+#if defined(__linux__)
+	FILE *efi_systab;
+	const char *filename;
+	char linebuf[64];
+#elif defined(__FreeBSD__)
+	char addrstr[KENV_MVALLEN + 1];
+#endif
+	const char *eptype;
+	int ret;
+
+	*address = 0; /* Prevent compiler warning */
+
+#if defined(__linux__)
+	/*
+	 * Linux up to 2.6.6: /proc/efi/systab
+	 * Linux 2.6.7 and up: /sys/firmware/efi/systab
+	 */
+	if ((efi_systab = fopen(filename = "/sys/firmware/efi/systab", "r")) == NULL
+	 && (efi_systab = fopen(filename = "/proc/efi/systab", "r")) == NULL)
+	{
+		/* No EFI interface, fallback to memory scan */
+		return EFI_NOT_FOUND;
+	}
+	ret = EFI_NO_SMBIOS;
+	while ((fgets(linebuf, sizeof(linebuf) - 1, efi_systab)) != NULL)
+	{
+		char *addrp = strchr(linebuf, '=');
+		*(addrp++) = '\0';
+		if (strcmp(linebuf, "SMBIOS3") == 0
+		 || strcmp(linebuf, "SMBIOS") == 0)
+		{
+			*address = strtoull(addrp, NULL, 0);
+			eptype = linebuf;
+			ret = 0;
+			break;
+		}
+	}
+	if (fclose(efi_systab) != 0)
+		perror(filename);
+
+	if (ret == EFI_NO_SMBIOS)
+		fprintf(stderr, "%s: SMBIOS entry point missing\n", filename);
+#elif defined(__FreeBSD__)
+	/*
+	 * On FreeBSD, SMBIOS anchor base address in UEFI mode is exposed
+	 * via kernel environment:
+	 * https://svnweb.freebsd.org/base?view=revision&revision=307326
+	 */
+	ret = kenv(KENV_GET, "hint.smbios.0.mem", addrstr, sizeof(addrstr));
+	if (ret == -1)
+	{
+		if (errno != ENOENT)
+			perror("kenv");
+		return EFI_NOT_FOUND;
+	}
+
+	*address = strtoull(addrstr, NULL, 0);
+	eptype = "SMBIOS";
+	ret = 0;
+#else
+	ret = EFI_NOT_FOUND;
+#endif
+
+	if (ret == 0)
+		printf("# %s entry point at 0x%08llx\n",
+		       eptype, (unsigned long long)*address);
+
+	return ret;
+}
 
 
-} 
 int main(){
 	/* dependencies*/
 	int ret = 0;                /* Returned value */
@@ -284,18 +350,9 @@ int main(){
 	int efi;
 	u8 *buf;
 	
-	/* dmidecode.h */
-	static int smbios3_decode(u8 *buf, const char *devmem, u32 flags);
-	static int smbios_decode(u8 *buf, const char *devmem, u32 flags);
-	static int legacy_decode(u8 *buf, const char *devmem, u32 flags);
-	static int address_from_efi(off_t *address);
-
-	/* util.h */
-	void *mem_chunk(off_t base, size_t len, const char *devmem);
-	void *read_file(off_t base, size_t *max_len, const char *filename);
 	/* location pair list */
 	struct locn_bus_pair *head;
-	char *devmem;
+	const char *devmem;
 
 
 	/* Case 1 - */
@@ -313,22 +370,24 @@ int main(){
 		printf("Getting SMBIOS data from sysfs.\n");
 		if (size >= 24 && memcmp(buf, "_SM3_", 5) == 0)
 		{
-			if (smbios3_decode(buf, SYS_TABLE_FILE, FLAG_NO_FILE_OFFSET))
+			if (smbios3_decode(buf, SYS_TABLE_FILE, FLAG_NO_FILE_OFFSET, &head))
 				found++;
 		}
 		else if (size >= 31 && memcmp(buf, "_SM_", 4) == 0)
 		{
-			if (smbios_decode(buf, SYS_TABLE_FILE, FLAG_NO_FILE_OFFSET))
+			if (smbios_decode(buf, SYS_TABLE_FILE, FLAG_NO_FILE_OFFSET, &head))
 				found++;
 		}
 		else if (size >= 15 && memcmp(buf, "_DMI_", 5) == 0)
 		{
-			if (legacy_decode(buf, SYS_TABLE_FILE, FLAG_NO_FILE_OFFSET))
+			if (legacy_decode(buf, SYS_TABLE_FILE, FLAG_NO_FILE_OFFSET, &head))
 				found++;
 		}
 
 		if (found)
 			goto done;
+		printf("Failed to get SMBIOS data from sysfs.\n");
+	}
 /* Next try EFI (ia64, Intel-based Mac) */
 	efi = address_from_efi(&fp);
 	switch (efi)
@@ -350,12 +409,12 @@ int main(){
 
 	if (memcmp(buf, "_SM3_", 5) == 0)
 	{
-		if (smbios3_decode(buf, devmem, 0))
+		if (smbios3_decode(buf, devmem, 0, &head))
 			found++;
 	}
 	else if (memcmp(buf, "_SM_", 4) == 0)
 	{
-		if (smbios_decode(buf, devmem, 0))
+		if (smbios_decode(buf, devmem, 0, &head))
 			found++;
 	}
 	goto done;
@@ -374,7 +433,7 @@ memory_scan:
 	{
 		if (memcmp(buf + fp, "_SM3_", 5) == 0)
 		{
-			if (smbios3_decode(buf + fp, devmem, 0))
+			if (smbios3_decode(buf + fp, devmem, 0, &head))
 			{
 				found++;
 				goto done;
@@ -387,7 +446,7 @@ memory_scan:
 	{
 		if (memcmp(buf + fp, "_SM_", 4) == 0 && fp <= 0xFFE0)
 		{
-			if (smbios_decode(buf + fp, devmem, 0))
+			if (smbios_decode(buf + fp, devmem, 0, &head))
 			{
 				found++;
 				goto done;
@@ -395,7 +454,7 @@ memory_scan:
 		}
 		else if (memcmp(buf + fp, "_DMI_", 5) == 0)
 		{
-			if (legacy_decode(buf + fp, devmem, 0))
+			if (legacy_decode(buf + fp, devmem, 0, &head))
 			{
 				found++;
 				goto done;
