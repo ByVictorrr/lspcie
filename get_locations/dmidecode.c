@@ -108,6 +108,36 @@ int is_printable(const u8 *data, int len)
 	return 1;
 }
 
+const char *dmi_string(const struct dmi_header *dm, u8 s)
+{
+	char *bp = (char *)dm->data;
+	size_t i, len;
+
+	if (s == 0)
+		return "Not Specified";
+
+	bp += dm->length;
+	while (s > 1 && *bp)
+	{
+		bp += strlen(bp);
+		bp++;
+		s--;
+	}
+
+	if (!*bp)
+		return bad_index;
+
+	if (!(opt.flags & FLAG_DUMP))
+	{
+		/* ASCII filtering */
+		len = strlen(bp);
+		for (i = 0; i < len; i++)
+			if (bp[i] < 32 || bp[i] == 127)
+				bp[i] = '.';
+	}
+
+	return bp;
+}
 
 static const char *dmi_smbios_structure_type(u8 code)
 {

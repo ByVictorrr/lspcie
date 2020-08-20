@@ -13,7 +13,7 @@
 #
 
 CC      = gcc
-CFLAGS  = -W -Wall -Wshadow -Wstrict-prototypes -Wpointer-arith -Wcast-qual \
+CFLAGS  = -W -g -O0 -Wall -Wshadow -Wstrict-prototypes -Wpointer-arith -Wcast-qual \
           -Wcast-align -Wwrite-strings -Wmissing-prototypes -Winline -Wundef
 
 # Let lseek and mmap support 64-bit wide offsets
@@ -23,7 +23,7 @@ CFLAGS += -D_FILE_OFFSET_BITS=64
 #CFLAGS += -DALIGNMENT_WORKAROUND
 
 # When debugging, disable -O2 and enable -g.
-CFLAGS += -O2
+#CFLAGS += -O2
 #CFLAGS += -g
 
 # Pass linker flags here
