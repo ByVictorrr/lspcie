@@ -92,7 +92,7 @@ static void dmi_decode(const struct dmi_header *h, struct locn_bus_pair *item)
 	if (h->length < 0x0C)
 		return;
 	// Step 1 - set the locn (r*)
-	item->locn = strdup(dmi_string(h, data[0x04])); 
+	item->locn = dmi_string(h, data[0x04]); 
 	if (h->length < 0x11)
 		return;
 	// Step 2 - set bus addr
@@ -262,6 +262,68 @@ static int smbios3_decode(u8 *buf, const char *devmem, u32 flags, struct locn_bu
 
 	return 1;
 }
+
+static int smbios_decode(u8 *buf, const char *devmem, u32 flags, struct locn_bus_pair **head)
+{
+	u16 ver;
+
+	/* Don't let checksum run beyond the buffer */
+	if (buf[0x05] > 0x20)
+	{
+		fprintf(stderr,
+			"Entry point length too large (%u bytes, expected %u).\n",
+			(unsigned int)buf[0x05], 0x1FU);
+		return 0;
+	}
+
+	if (!checksum(buf, buf[0x05])
+	 || memcmp(buf + 0x10, "_DMI_", 5) != 0
+	 || !checksum(buf + 0x10, 0x0F))
+		return 0;
+
+	ver = (buf[0x06] << 8) + buf[0x07];
+	/* Some BIOS report weird SMBIOS version, fix that up */
+	switch (ver)
+	{
+		case 0x021F:
+		case 0x0221:
+			fprintf(stderr,
+				"SMBIOS version fixup (2.%d -> 2.%d).\n",
+				ver & 0xFF, 3);
+			ver = 0x0203;
+			break;
+		case 0x0233:
+			fprintf(stderr,
+				"SMBIOS version fixup (2.%d -> 2.%d).\n",
+				51, 6);
+			ver = 0x0206;
+			break;
+	}
+	printf("SMBIOS %u.%u present.\n",
+			ver >> 8, ver & 0xFF);
+
+	dmi_table(DWORD(buf + 0x18), WORD(buf + 0x16), WORD(buf + 0x1C),
+		ver << 8, devmem, flags, head);
+
+	return 1;
+}
+
+static int legacy_decode(u8 *buf, const char *devmem, u32 flags, struct locn_bus_pair **head)
+{
+	if (!checksum(buf, 0x0F))
+		return 0;
+
+	printf("Legacy DMI %u.%u present.\n",
+		buf[0x0E] >> 4, buf[0x0E] & 0x0F);
+
+	dmi_table(DWORD(buf + 0x08), WORD(buf + 0x06), WORD(buf + 0x0C),
+		((buf[0x0E] & 0xF0) << 12) + ((buf[0x0E] & 0x0F) << 8),
+		devmem, flags, head);
+
+
+	return 1;
+}
+
 
 /*
  * Probe for EFI interface
