@@ -10,7 +10,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>
-
+#include "dmi_phy_slots/dmi_phy_slots.h"
 #include "lspci.h"
 /* Options */
 
@@ -969,9 +969,6 @@ show_machine(struct device *d)
       if (iommu_group = pci_get_string_property(p, PCI_FILL_IOMMU_GROUP))
 	printf("IOMMUGroup:\t%s\n", iommu_group);
     }
-    else if (table){
-
-    }
   else
     {
       show_slot_name(d, NULL);
@@ -992,6 +989,7 @@ show_machine(struct device *d)
       putchar('\n');
     }
 }
+// fill_locn_
 
 /*** Main show function ***/
 
@@ -999,9 +997,10 @@ void
 show_device(struct device *d)
 {
   u8 class;
-  if (opt_machine)
+  if (opt_machine){
     show_machine(d);
-  else if (table){
+  }else if (table){
+    // Step 1 - check to see if lspci found the slot
     class = d->dev->device_class >> 8;
     // Step 1 - check to see that its not a base io thing
     if((d->dev->dev==0) & (class != PCI_BASE_CLASS_BRIDGE)){
@@ -1009,7 +1008,7 @@ show_device(struct device *d)
     }
   }else
     {
-      if (verbose)
+      if(verbose)
 	show_verbose(d);
       else
 	show_terse(d);
@@ -1021,17 +1020,62 @@ show_device(struct device *d)
   if (verbose || opt_hex)
     putchar('\n');
 }
+static char * 
+find_dmi_physlot(const struct dmi_physlot_bus_pair *dtable, struct pci_dev *p){
+  struct dmi_physlot_bus_pair *curr;
+  if(p->phy_slot){
+    return p->phy_slot;
+  }
+  for(curr=dtable; curr; curr=curr->next)
+    if(curr->bus_addr.domain == p->domain_16 &&
+      curr->bus_addr.bus == p->bus &&
+      curr->bus_addr.dev == p->dev &&
+      curr->bus_addr.func == p->func){
+        return curr->phy_slot;
+  }
+  return NULL;
+}
+static char *
+get_dmi_physlot(const struct dmi_physlot_bus_pair *dtable, struct device *d){
+  // if not in table 
+  char *phy_slot;
+  struct device *par_br_dev;
+  if(!(phy_slot=find_dmi_physlot(dtable, d->dev))){
+    par_br_dev = d->parent_bus->parent_bridge->br_dev;
+    phy_slot = get_dmi_physlot(dtable, par_br_dev);
+  }
+  return phy_slot;
+}
+
+
 
 static void
 show(void)
 {
   struct device *d;
+  struct dmi_physlot_bus_pair *slot_bus_table = NULL;
+  int use_special_slotn=0;
+
   if(table)
     print_hdr(200);
-
-  for (d=first_dev; d; d=d->next)
+  // Step 1 - if -vT (show special slot number)
+  if(verbose && table){    
+    if(!dmi_fill_physlot_bus_pairs(&slot_bus_table)){
+      printf("using special slot numbers");
+      use_special_slotn=1;
+      grow_tree();
+    }
+  }
+  // Assume the devices are sorted
+  for (d=first_dev; d; d=d->next){
+    // fill slot number 
+    if(use_special_slotn){
+      d->dev->phy_slot = get_dmi_physlot(slot_bus_table, d);
+    }
     if (pci_filter_match(&filter, d->dev))
       show_device(d);
+  }
+  // TODO: free table if not null
 }
 
 /* Main */

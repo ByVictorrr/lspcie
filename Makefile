@@ -69,12 +69,12 @@ force:
 lib/config.h lib/config.mk:
 	cd lib && ./configure
 
-lspci: lspci.o ls-vpd.o ls-caps.o ls-caps-vendor.o ls-ecaps.o ls-kernel.o ls-tree.o ls-map.o ls-table.o common.o lib/$(PCILIB) 
+lspci: lspci.o ls-vpd.o ls-caps.o ls-caps-vendor.o ls-ecaps.o ls-kernel.o ls-tree.o ls-map.o ls-table.o common.o lib/$(PCILIB) dmi_phy_slots/util.o dmi_phy_slots/dmi_phy_slots.o
 setpci: setpci.o common.o lib/$(PCILIB)
 
 LSPCIINC=lspci.h pciutils.h $(PCIINC) 
-lspci.o: lspci.c $(LSPCIINC)
-ls-table.o: ls-table.c $(LSPCIINC) get_locations/phy_slot.h
+lspci.o: lspci.c $(LSPCIINC) dmi_phy_slots/dmi_phy_slots.h
+ls-table.o: ls-table.c $(LSPCIINC) 
 ls-vpd.o: ls-vpd.c $(LSPCIINC)
 ls-caps.o: ls-caps.c $(LSPCIINC)
 ls-ecaps.o: ls-ecaps.c $(LSPCIINC)
@@ -82,8 +82,8 @@ ls-kernel.o: ls-kernel.c $(LSPCIINC)
 ls-tree.o: ls-tree.c $(LSPCIINC)
 ls-map.o: ls-map.c $(LSPCIINC)
 
-get_locations/phy_slot.o: get_locations/phy_slot.c get_locations/phy_slot.h get_locations/types.h get_locations/util.h get_locations/config.h
-get_locations/util.o: get_locations/util.c get_locations/types.h get_locations/util.h get_locations/config.h
+dmi_phy_slots/dmi_phy_slots.o: dmi_phy_slots/dmi_phy_slots.c dmi_phy_slots/dmi_phy_slots.h dmi_phy_slots/types.h dmi_phy_slots/util.h dmi_phy_slots/config.h
+dmi_phy_slots/util.o: dmi_phy_slots/util.c dmi_phy_slots/types.h dmi_phy_slots/util.h dmi_phy_slots/config.h
 
 setpci.o: setpci.c pciutils.h $(PCIINC)
 common.o: common.c pciutils.h $(PCIINC)

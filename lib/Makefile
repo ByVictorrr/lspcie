@@ -10,7 +10,6 @@ ifdef PCI_HAVE_PM_LINUX_SYSFS
 OBJS += sysfs
 OBJS += sysfs-class
 OBJS += sysfs-class-utils
-OBJS += get_locations/phy_slot
 endif
 
 
@@ -91,8 +90,6 @@ proc.o: proc.c $(INCL) pread.h
 sysfs.o: sysfs.c $(INCL) pread.h sysfs-class.h
 sysfs-class.o: sysfs-class.c $(INCL) sysfs-class.h 
 sysfs-class-utils.o: sysfs-class-utils.c $(INCL) sysfs-class.h 
-get_locations/phy_slot.o: get_locations/phy_slot.c get_locations/phy_slot.h get_locations/types.h get_locations/util.h get_locations/config.h 
-get_locations/util.o: get_locations/util.c get_locations/types.h get_locations/util.h get_locations/config.h
 generic.o: generic.c $(INCL)
 syscalls.o: syscalls.c $(INCL)
 obsd-device.o: obsd-device.c $(INCL)

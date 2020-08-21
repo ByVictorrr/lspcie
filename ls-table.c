@@ -103,8 +103,7 @@ set_phy_slot(struct device *d, char *buff){
     struct pci_dev *p = d->dev;
     pci_fill_info(p, PCI_FILL_PHYS_SLOT | PCI_FILL_NUMA_NODE | PCI_FILL_DT_NODE);
     if(p->phy_slot){
-        phy_slot = (int)strtol(d->dev->phy_slot, NULL, 16)&0x1f;
-        sprintf(buff, "%d", phy_slot);
+        strcpy(buff, p->phy_slot);
     }else{
         buff[0] = '-';
     }
