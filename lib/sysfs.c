@@ -51,6 +51,7 @@ sysfs_init(struct pci_access *a)
 {
   a->fd = -1;
   a->fd_vpd = -1;
+  // 
 }
 
 static void
@@ -280,8 +281,11 @@ sysfs_fill_slots(struct pci_access *a)
       else
 	{
 	  for (d = a->devices; d; d = d->next)
-	    if (dom == (unsigned)d->domain && bus == d->bus && dev == d->dev && !d->phy_slot)
+	    if (dom == (unsigned)d->domain && bus == d->bus && dev == d->dev && !d->phy_slot){
+        // char *value = find_phy_slot(struct pci_dev *d)
+        char *value ;
 	      d->phy_slot = pci_set_property(d, PCI_FILL_PHYS_SLOT, entry->d_name);
+      }
 	}
       fclose(file);
     }

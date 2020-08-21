@@ -8,6 +8,7 @@
 
 #include "lib/pci.h"
 #include "lib/sysdep.h"
+#include "get_locations/phy_slot.h"
 
 #ifdef PCI_OS_WINDOWS
 #include "compat/getopt.h"

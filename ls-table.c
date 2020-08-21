@@ -18,9 +18,9 @@
 #define VENDOR_INFO_SIZE 15
 #define DRIVER_SIZE 11
 #define DEVICE_INFO_SIZE 35
-#define DR_VERSION_SIZE 100
-#define FW_VERSION_SIZE 100
-#define OPT_VERSION_SIZE 100
+#define DR_VERSION_SIZE 200
+#define FW_VERSION_SIZE 200
+#define OPT_VERSION_SIZE 200
 
 
 struct table_entry{
@@ -120,31 +120,28 @@ fill_vbuff_tuple(struct version_item *vitems, char *buff, int size){
     memset(src_buff, 0, MAX_BUFF);
     memset(data_buff, 0, MAX_BUFF);
     int data_len, srcpath_len, data_buff_len, src_buff_len;
+    src_buff[0]='(';
+    data_buff[0]='(';
     for(vitem=vitems, i=0; vitem && vitem->data && vitem->src_path; vitem=vitem->next, i++){
-        data_len = strlen(vitem->data);
-        srcpath_len = strlen(vitem->src_path);
         // First iteration
+        data_len = strlen(vitem->data);
+        srcpath_len = strlen(basename(vitem->src_path));
         if(!i){
-            n1 = snprintf(data_buff, MAX_BUFF, "\(%s,", vitems->data);
-            n2 = snprintf(src_buff, MAX_BUFF, "\(%s,", basename(vitems->src_path));
+            n1 = snprintf(&data_buff[1], data_len, "%s", vitem->data);
+            n2 = snprintf(&src_buff[1], srcpath_len, "%s", basename(vitem->src_path));
             src_buff_len = strlen(src_buff);
             data_buff_len = strlen(data_buff);
-        // Last iteration
-        }else if(vitem->next==NULL){
-            n1 = snprintf(&data_buff[data_buff_len], MAX_BUFF, "%s\)", vitems->data);
-            n2 = snprintf(&src_buff[src_buff_len], MAX_BUFF, "%s\)", basename(vitems->src_path));
-            src_buff_len = strlen(src_buff);
-            data_buff_len = strlen(data_buff);
-            
-        // Neither the first or last iteration
+        // middle iteration
         }else{
-            n1 = snprintf(&data_buff[data_buff_len], MAX_BUFF, ",%s", vitems->data);
-            n2 = snprintf(&src_buff[src_buff_len], MAX_BUFF, ",%s", basename(vitems->src_path));
+            n1 = snprintf(&data_buff[data_buff_len], data_len+2, ",%s", vitem->data);
+            n2 = snprintf(&src_buff[src_buff_len], srcpath_len+2, ",%s", basename(vitem->src_path));
             src_buff_len = strlen(src_buff);
             data_buff_len = strlen(data_buff);
         }
 
     }
+    src_buff[strlen(src_buff)]=')';
+    data_buff[strlen(data_buff)]=')';
 
     n1 = snprintf(buff, size, "%s=%s", src_buff, data_buff);
 }
@@ -253,9 +250,11 @@ show_table_entry(struct device *d)
         }
      
 
-        printf("\t%-20.20s", e.dr_v);
-        printf("\t%-20.20s", e.fw_v);
-        printf("\t%-20.20s", e.opt_v);
+/*
+        printf("\t%-40.40s", e.dr_v);
+        printf("\t%-40.40s", e.fw_v);
+*/
+        printf("\t%s", e.opt_v);
 
     }else if(table > 3){
     // 7. Driver/fw version (TODO: handle the ret value)

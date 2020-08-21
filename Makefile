@@ -74,13 +74,16 @@ setpci: setpci.o common.o lib/$(PCILIB)
 
 LSPCIINC=lspci.h pciutils.h $(PCIINC) 
 lspci.o: lspci.c $(LSPCIINC)
-ls-table.o: ls-table.c $(LSPCIINC)
+ls-table.o: ls-table.c $(LSPCIINC) get_locations/phy_slot.h
 ls-vpd.o: ls-vpd.c $(LSPCIINC)
 ls-caps.o: ls-caps.c $(LSPCIINC)
 ls-ecaps.o: ls-ecaps.c $(LSPCIINC)
 ls-kernel.o: ls-kernel.c $(LSPCIINC)
 ls-tree.o: ls-tree.c $(LSPCIINC)
 ls-map.o: ls-map.c $(LSPCIINC)
+
+get_locations/phy_slot.o: get_locations/phy_slot.c get_locations/phy_slot.h get_locations/types.h get_locations/util.h get_locations/config.h
+get_locations/util.o: get_locations/util.c get_locations/types.h get_locations/util.h get_locations/config.h
 
 setpci.o: setpci.c pciutils.h $(PCIINC)
 common.o: common.c pciutils.h $(PCIINC)
