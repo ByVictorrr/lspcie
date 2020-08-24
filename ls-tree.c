@@ -80,6 +80,10 @@ grow_tree(void)
       struct pci_dev *dd = d->dev;
       word class = dd->device_class;
       byte ht = get_conf_byte(d, PCI_HEADER_TYPE) & 0x7f;
+      // set the host bridge br
+      if(class == 0x600)
+        host_bridge.br_dev=d;
+
       if ((class >> 8) == PCI_BASE_CLASS_BRIDGE &&
 	  (ht == PCI_HEADER_TYPE_BRIDGE || ht == PCI_HEADER_TYPE_CARDBUS))
 	{
@@ -97,6 +101,7 @@ grow_tree(void)
 	      b->secondary = get_conf_byte(d, PCI_CB_CARD_BUS);
 	      b->subordinate = get_conf_byte(d, PCI_CB_SUBORDINATE_BUS);
 	    }
+  
 	  *last_br = b;
 	  last_br = &b->chain;
 	  b->next = b->child = NULL;

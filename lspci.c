@@ -298,7 +298,7 @@ show_slot_name(struct device *d, char *buf)
     if(table) pos = sprintf(buf, "%04x:", p->domain);
     else printf("%04x:", p->domain);
   }
-  if(table) show_slot_path(d, buf+pos);
+  if(table) show_slot_path(d, buf);
   else show_slot_path(d, NULL);
 }
 
