@@ -298,7 +298,7 @@ show_slot_name(struct device *d, char *buf)
     if(table) pos = sprintf(buf, "%04x:", p->domain);
     else printf("%04x:", p->domain);
   }
-  if(table) show_slot_path(d, buf);
+  if(table) show_slot_path(d, buf+pos);
   else show_slot_path(d, NULL);
 }
 
@@ -1006,6 +1006,7 @@ show_device(struct device *d)
     if((d->dev->dev==0) & (class != PCI_BASE_CLASS_BRIDGE)){
       show_table_entry(d);
     }
+    return;
   }else
     {
       if(verbose)
@@ -1061,7 +1062,7 @@ show(void)
   // Step 1 - if -vT (show special slot number)
   if(verbose && table){    
     if(!dmi_fill_physlot_bus_pairs(&slot_bus_table)){
-      printf("using special slot numbers");
+     // printf("using special slot numbers\n");
       use_special_slotn=1;
       grow_tree();
     }
@@ -1071,12 +1072,14 @@ show(void)
     // fill slot number 
     if(use_special_slotn){
       d->dev->phy_slot = get_dmi_physlot(slot_bus_table, d);
+        // TODO: free table if not null
     }
     if (pci_filter_match(&filter, d->dev))
       show_device(d);
   }
-  // TODO: free table if not null
+
 }
+
 
 /* Main */
 

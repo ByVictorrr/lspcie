@@ -31,7 +31,7 @@ struct pci_bus_addr{
 };
 struct dmi_physlot_bus_pair{
 	struct pci_bus_addr bus_addr;
-    char *phy_slot;
+    const char *phy_slot;
 	struct dmi_physlot_bus_pair *next;
 };
 

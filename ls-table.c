@@ -12,7 +12,7 @@
 
 /* Max String length for each entry */
 /* Location string is 10 */
-#define PHYS_SLOT_SIZE 5
+#define PHYS_SLOT_SIZE 20
 #define PCI_ADDR_SIZE 12
 #define CARD_INFO_SIZE 30
 #define VENDOR_INFO_SIZE 15
@@ -101,7 +101,6 @@ static void
 set_phy_slot(struct device *d, char *buff){
     int phy_slot;
     struct pci_dev *p = d->dev;
-    pci_fill_info(p, PCI_FILL_PHYS_SLOT | PCI_FILL_NUMA_NODE | PCI_FILL_DT_NODE);
     if(p->phy_slot){
         strcpy(buff, p->phy_slot);
     }else{
@@ -209,7 +208,7 @@ show_table_entry(struct device *d)
     set_driver(d, e.driver);
    
 
-    printf("%-12.12s\t%-12.12s\t%-40.40s\t%-12.12s\t%-12.12s", 
+    printf("%-12.12s\t%-20.20s\t%-40.40s\t%-12.12s\t%-12.12s", 
             e.pci_addr, 
             e.phy_slot, 
             e.card_info,

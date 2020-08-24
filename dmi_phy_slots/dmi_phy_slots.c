@@ -57,7 +57,7 @@ const char *dmi_string(const struct dmi_header *dm, u8 s)
 		if (bp[i] < 32 || bp[i] == 127)
 			bp[i] = '.';
 
-	return bp;
+	return strdup(bp);
 }
 static int dmi_slot_segment_bus_func(u16 code1, u8 code2, u8 code3, struct pci_bus_addr *bus_addr)
 {
@@ -175,11 +175,14 @@ static void dmi_table(off_t base, u32 len, u16 num, u32 ver, const char *devmem,
 
 	if (ver > SUPPORTED_SMBIOS_VER)
 	{
+		/*
 		printf("# SMBIOS implementations newer than version %u.%u.%u are not\n"
 		       "# fully supported by this version of dmidecode.\n",
 		       SUPPORTED_SMBIOS_VER >> 16,
 		       (SUPPORTED_SMBIOS_VER >> 8) & 0xFF,
 		       SUPPORTED_SMBIOS_VER & 0xFF);
+			   */
+			   ;
 	}
 
 
@@ -243,8 +246,10 @@ static int smbios3_decode(u8 *buf, const char *devmem, u32 flags, struct dmi_phy
 		return 0;
 
 	ver = (buf[0x07] << 16) + (buf[0x08] << 8) + buf[0x09];
+	/*
 	printf("SMBIOS %u.%u.%u present.\n",
 		       buf[0x07], buf[0x08], buf[0x09]);
+			   */
 
 	offset = QWORD(buf + 0x10);
 	if (!(flags & FLAG_NO_FILE_OFFSET) && offset.h && sizeof(off_t) < 8)
@@ -295,8 +300,10 @@ static int smbios_decode(u8 *buf, const char *devmem, u32 flags, struct dmi_phys
 			ver = 0x0206;
 			break;
 	}
+	/*
 	printf("SMBIOS %u.%u present.\n",
 			ver >> 8, ver & 0xFF);
+			*/
 
 	dmi_table(DWORD(buf + 0x18), WORD(buf + 0x16), WORD(buf + 0x1C),
 		ver << 8, devmem, flags, head);
@@ -309,9 +316,11 @@ static int legacy_decode(u8 *buf, const char *devmem, u32 flags, struct dmi_phys
 	if (!checksum(buf, 0x0F))
 		return 0;
 
+/*
 	printf("Legacy DMI %u.%u present.\n",
 		buf[0x0E] >> 4, buf[0x0E] & 0x0F);
 
+*/
 	dmi_table(DWORD(buf + 0x08), WORD(buf + 0x06), WORD(buf + 0x0C),
 		((buf[0x0E] & 0xF0) << 12) + ((buf[0x0E] & 0x0F) << 8),
 		devmem, flags, head);
@@ -391,9 +400,11 @@ static int address_from_efi(off_t *address)
 	ret = EFI_NOT_FOUND;
 #endif
 
+	/*
 	if (ret == 0)
 		printf("# %s entry point at 0x%08llx\n",
 		       eptype, (unsigned long long)*address);
+			   */
 
 	return ret;
 }
@@ -411,6 +422,7 @@ int dmi_fill_physlot_bus_pairs(struct dmi_physlot_bus_pair **table){
 	/* location pair list */
 	const char *devmem;
 
+	struct dmi_physlot_bus_pair *curr;
 
 	/* Case 1 - */
 	/*
@@ -424,7 +436,9 @@ int dmi_fill_physlot_bus_pairs(struct dmi_physlot_bus_pair **table){
 	size = 0x20;
 	if((buf = read_file(0, &size, SYS_ENTRY_FILE)) != NULL)
 	{
+		/*
 		printf("Getting SMBIOS data from sysfs.\n");
+		*/
 		if (size >= 24 && memcmp(buf, "_SM3_", 5) == 0)
 		{
 			if (smbios3_decode(buf, SYS_TABLE_FILE, FLAG_NO_FILE_OFFSET, table))
@@ -443,7 +457,9 @@ int dmi_fill_physlot_bus_pairs(struct dmi_physlot_bus_pair **table){
 
 		if (found)
 			goto done;
+		/*
 		printf("Failed to get SMBIOS data from sysfs.\n");
+		*/
 	}
 /* Next try EFI (ia64, Intel-based Mac) */
 	efi = address_from_efi(&fp);
@@ -456,8 +472,10 @@ int dmi_fill_physlot_bus_pairs(struct dmi_physlot_bus_pair **table){
 			goto exit_free;
 	}
 
+/*
 	printf("Found SMBIOS entry point in EFI, reading table from %s.\n",
 		       devmem);
+			   */
 	if ((buf = mem_chunk(fp, 0x20, devmem)) == NULL)
 	{
 		ret = 1;
@@ -477,7 +495,9 @@ int dmi_fill_physlot_bus_pairs(struct dmi_physlot_bus_pair **table){
 	goto done;
 
 memory_scan:
+/*
 	printf("Scanning %s for entry point.\n", devmem);
+	*/
 	/* Fallback to memory scan (x86, x86_64) */
 	if ((buf = mem_chunk(0xF0000, 0x10000, devmem)) == NULL)
 	{
@@ -520,11 +540,22 @@ memory_scan:
 	}
 
 done:
+	/*
 	if (!found )
 		printf("# No SMBIOS nor DMI entry point found, sorry.\n");
+		*/
+		/*
+	for(curr=*table; curr; curr=curr->next){
+	struct pci_bus_addr *bus_addr = &(curr->bus_addr);
+	printf("pci: %04x:%02x:%02x:%d, locn: %s\n", 
+		bus_addr->domain, bus_addr->bus, bus_addr->dev, bus_addr->func,
+		curr->phy_slot);
+	}
+	*/
 
 	free(buf);
 exit_free:
+
 	
 	return ret;
 }
