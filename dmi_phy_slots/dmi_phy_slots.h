@@ -31,9 +31,10 @@ struct pci_bus_addr{
 };
 struct dmi_physlot_bus_pair{
 	struct pci_bus_addr bus_addr;
-    const char *phy_slot;
+    char *phy_slot;
 	struct dmi_physlot_bus_pair *next;
 };
 
-int dmi_fill_physlot_bus_pairs(struct dmi_physlot_bus_pair **table);
+int dmi_fill_physlot_bus_pairs(struct dmi_physlot_bus_pair **table); 
+void free_dmi_physlot_bus_pairs(struct dmi_physlot_bus_pair *table);
 #endif

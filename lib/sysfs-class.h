@@ -62,7 +62,7 @@ extern const struct pci_class_methods *pcm_vers_map[PCI_CLASS_MAX];
 
 #define PCI_FWV_FPATTN "(\
 ^version$|firmware_version|firmware_rev|\
-.{0,}fw_version|beiscsi_fw_ver\
+^fw_version$|beiscsi_fw_ver\
 )"
 #define PCI_OPTV_FPATTN "(\
 option_rom_version|optrom_.{1,}_version\

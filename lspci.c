@@ -1055,10 +1055,11 @@ show(void)
 {
   struct device *d;
   struct dmi_physlot_bus_pair *slot_bus_table = NULL;
+  struct dmi_physlot_bus_pair *curr;
   int use_special_slotn=0;
 
   if(table)
-    print_hdr(200);
+    print_hdr(250);
   // Step 1 - if -vT (show special slot number)
   if(verbose && table){    
     if(!dmi_fill_physlot_bus_pairs(&slot_bus_table)){
@@ -1072,11 +1073,12 @@ show(void)
     // fill slot number 
     if(use_special_slotn){
       d->dev->phy_slot = get_dmi_physlot(slot_bus_table, d);
-        // TODO: free table if not null
     }
     if (pci_filter_match(&filter, d->dev))
       show_device(d);
-  }
+    }
+    // TODO: free table if not null
+    free_dmi_physlot_bus_pairs(slot_bus_table);
 
 }
 

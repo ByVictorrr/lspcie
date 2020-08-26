@@ -149,24 +149,25 @@ fill_vbuff(struct version_item *vitems, char *buff, int size){
 
     char *temp[MAX_BUFF];
     memset(temp, 0, MAX_BUFF);
-    while(vitems){
-
-        if(buff[0] = '\0'){
-            if(strlen(vitems->data)+1 > size)
+    struct version_item *vitem;
+    int i;
+    for(vitem=vitems, i=0; vitem; vitem=vitem->next, i++){
+        if(i==0){
+            if(strlen(vitem->data)+1 > size)
                 return;
             else{
-            strcpy(temp, vitems->data);
-            strcpy(buff, vitems->data);
+                strcpy(temp, vitem->data);
+                strcpy(buff, vitem->data);
             }
         }else{
-            int n = snprintf(buff, size, "%s %s", temp, vitems->data);
+            int n = snprintf(buff, size, "%s %s", temp, vitem->data);
             if(n < 0){
                 return;
             }
+            strcpy(buff, temp);
         }
-        vitems=vitems->next;
+     
     }
-
 }
 static void free_version_items(struct version_item* vitems){
     struct version_item *next;
@@ -224,6 +225,7 @@ show_table_entry(struct device *d)
         sprintf(dev_info_num,"[%4.4x:%4.4x]", d->dev->vendor_id, d->dev->device_id);
         printf("%s",dev_info_num);
     }
+    /*
     if(table > 5){
         if (!pci_read_driver_version(d->dev, &vitemss[DRV_ITEMS])) {
             memset(e.dr_v, '.', 1);
@@ -248,13 +250,13 @@ show_table_entry(struct device *d)
         }
      
 
-/*
         printf("\t%-40.40s", e.dr_v);
         printf("\t%-40.40s", e.fw_v);
-*/
         printf("\t%s", e.opt_v);
 
-    }else if(table > 3){
+    }
+    */
+    if(table > 3){
     // 7. Driver/fw version (TODO: handle the ret value)
         if (!pci_read_driver_version(d->dev, &vitemss[DRV_ITEMS])) {
             // TODO store items in e.dr_v
@@ -273,9 +275,9 @@ show_table_entry(struct device *d)
         }
         printf("\t%-20.20s", e.dr_v);
         printf("\t%-20.20s", e.fw_v);
-        if(table > 4){
+        }if(table > 4){
             if (!pci_read_option_rom_version(d->dev, &vitemss[OPTV_ITEMS])){
-                memset(e.fw_v, '.', 1);
+                memset(e.opt_v, '.', 1);
             }else{
                 vitems = vitemss[OPTV_ITEMS];
                 fill_vbuff(vitems, e.opt_v, OPT_VERSION_SIZE);
@@ -283,7 +285,6 @@ show_table_entry(struct device *d)
             }
             printf("\t%-20.20s", e.opt_v);
 
-        }
       }
 
     printf("\n");
@@ -291,7 +292,7 @@ show_table_entry(struct device *d)
 void 
 print_hdr(int line_width){
     int i;
-    printf("%-12.12s\t%-12.12s\t%-40.40s\t%-12.12s\t%-12.12s", 
+    printf("%-12.12s\t%-20.20s\t%-40.40s\t%-12.12s\t%-12.12s", 
             "PCI_Address", 
             "Slot#", 
             "Card_info",
