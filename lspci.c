@@ -991,10 +991,54 @@ show_machine(struct device *d)
       putchar('\n');
     }
 }
-// fill_locn_
-
+/* Following the same output as topology io dev */
+static int 
+is_io_dev(struct pci_dev *p){
+  int is_io = 0;
+  u8 class = p->device_class >> 8;
+  u8 sclass = p->device_class & 0x00FF;
+  u16 vendor = p->vendor_id;
+  switch(class){
+    case 0x01: /* mass storage controller */
+      /* scsi or raid or sata or nvme*/
+      if(sclass == 0x00 || sclass == 0x06 || sclass == 0x04 || sclass == 0x08)
+        is_io = 1;
+      break;
+    case 0x02: /* nic */
+      /* eth or ib or network */
+      if(sclass == 0x00 || sclass == 0x07 || sclass == 0x80)
+        is_io = 1;
+      break;
+    case 0x03: /* display controller */
+      /* vga or 3d */
+      if(sclass == 0x00 || sclass == 0x02)
+        is_io = 1;
+      break;
+    case 0x04: /* multimedia controller */
+      is_io = 1;
+      /*bridge */
+      break;
+    case 0x06: 
+      /* not intel */
+      if(vendor != 0x8086) 
+        is_io = 1;
+      break;
+    case 0x09: /* input device */
+      is_io = 1;
+      break;
+    case 0x0c: /* serial bus controller */
+      /* firbre channel or usb */
+      if(sclass == 0x03 || sclass == 0x04)
+        is_io = 1;
+      break;
+    case 0x40: /* co processor */
+      is_io = 1;
+      break;
+     }
+  return is_io;
+}
 /*** Main show function ***/
-
+// 0001:57:05.5 
 void
 show_device(struct device *d)
 {
@@ -1002,10 +1046,8 @@ show_device(struct device *d)
   if (opt_machine){
     show_machine(d);
   }else if (table){
-    class = d->dev->device_class >> 8;
-    if((d->dev->dev==0) & (class != PCI_BASE_CLASS_BRIDGE)){
+    if(is_io_dev(d->dev))
       show_table_entry(d);
-    }
     return;
   }else
     {
@@ -1065,8 +1107,10 @@ show(void)
   /* Table mode */
   if(table){
     print_hdr(250);
+    /*
     if(!freopen("/dev/null", "w", stderr))
       fprintf(stderr, "show: no able to redirect stderr to /dev/null");
+      */
   }
   /* if -vT (show special slot number) */
   if(verbose && table){    
