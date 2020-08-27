@@ -246,7 +246,7 @@ str_linenum_in_vfile(char *string, FILE *vfile){
 static const char *
 get_version_info(const char *string)
 { 
-    const char* info_pattn = "[0-9].{1,}$"; 
+    const char* info_pattn = "[A-Za-z]{0,}[0-9].{0,}$"; 
     regex_t re; 
     regmatch_t pmatch;
     const char *cursor;
