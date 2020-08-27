@@ -5,6 +5,7 @@
 #include <regex.h>
 #include <stdio.h>
 #include <string.h>
+#include <linux/limits.h>
 #include <errno.h>
 #include "pci.h"
 inline u8 get_class(struct pci_dev * d){
@@ -14,19 +15,6 @@ inline u8 get_subclass(struct pci_dev *d){
      return (d->device_class & PCI_SUBCLASS_MASK);
 }
 
-char *strremove(char *str, const char *sub) {
-    char *p, *q, *r;
-    if ((q = r = strstr(str, sub)) != NULL) {
-        size_t len = strlen(sub);
-        while ((r = strstr(p = r + len, sub)) != NULL) {
-            memmove(q, p, r - p);
-            q += r - p;
-        }
-        memmove(q, p, strlen(p) + 1);
-        return str;
-    }
-    return NULL;
-}
 void trimstr(char* s) {
     const char* d = s;
     do {
@@ -35,8 +23,6 @@ void trimstr(char* s) {
         }
     } while (*s++ = *d++);
 }
-
-
 
 /*============ Path Utility functions ==============================*/
 /**
@@ -51,9 +37,9 @@ static char *
 base_dirname(const char *path, char *b_dirname, int size){
     char *token;
     char buff[MAX_PATH] = {'\0'};
-    // Step 0 - check if either parm is NULL
-    if(!path || !b_dirname){
-        fprintf(stderr, "get_base_dir: both parameters need to be non NULL");
+    /* Step 0 - check if either parm is NULL */
+    if(!path || !b_dirname || !size){
+        fprintf(stderr, "get_base_dir: both parameters (path and b_dirname) to be non NULL\n");
         return NULL;
     // Step 1.5 - check to see if path is ""
     }else if(strlen(path) == 0){
@@ -61,7 +47,7 @@ base_dirname(const char *path, char *b_dirname, int size){
     }
     // Step 1 - cpy data from path to buff (so we can use strtok)
     if(strlen(path)+1 > MAX_PATH){
-        fprintf(stderr, "get_base_dir: *path arg is to large");
+        fprintf(stderr, "get_base_dir: path arg is to large");
         return NULL;
     }
     strcpy(buff, path);
@@ -88,7 +74,7 @@ static char
     char buff[MAX_PATH] = {'\0'};
     int exists=0;
     // Step 0 - check if either parm is NULL
-    if(!path || !n_relpath){
+    if(!path || !n_relpath || !size){
         fprintf(stderr, "next_relpath: both parameters need to be non NULL");
         return NULL;
     }
@@ -137,20 +123,19 @@ _find_pci_dev_vers_dir(const char * cwd, const char *rel_vpath_pattn){
     DIR *dir;
     struct dirent *dp;
     regex_t regex;
-    #define BASE_DIRNAME_SIZE 100
-    #define NEXT_RELPATH_SIZE 100
-    char b_dirname[BASE_DIRNAME_SIZE];
-    char n_relvpath_pattn[NEXT_RELPATH_SIZE];
+    char b_dirname[MAX_PATH];
+    char n_relvpath_pattn[MAX_PATH];
     char n_cwd[MAX_PATH];
     char *vdir, *ptr_bdirname, *ptr_nrelvpath;
     int n;
-    memset(b_dirname, 0, BASE_DIRNAME_SIZE);
-    memset(n_relvpath_pattn, 0, NEXT_RELPATH_SIZE);
-    ptr_bdirname = base_dirname(rel_vpath_pattn, b_dirname, BASE_DIRNAME_SIZE);
-    ptr_nrelvpath = next_relpath(rel_vpath_pattn, n_relvpath_pattn, NEXT_RELPATH_SIZE);
+    memset(b_dirname, 0, MAX_PATH);
+    memset(n_relvpath_pattn, 0, MAX_PATH);
+    ptr_bdirname = base_dirname(rel_vpath_pattn, b_dirname, MAX_PATH);
+    ptr_nrelvpath = next_relpath(rel_vpath_pattn, n_relvpath_pattn, MAX_PATH);
+
     if(!ptr_bdirname && !ptr_nrelvpath){
         if(!(vdir=strdup(cwd))){
-            fprintf(stderr, "find_pci_dev_vers_dir: strdup access->warning\n"); 
+            fprintf(stderr, "find_pci_dev_vers_dir: strdup error\n"); 
             return NULL;
         }
         return vdir;
@@ -162,6 +147,7 @@ _find_pci_dev_vers_dir(const char * cwd, const char *rel_vpath_pattn){
     /* Step 4 - compose the regex (look for the base dirname found above*/
     if (regcomp(&regex, b_dirname, 0)){
        fprintf(stderr, "find_pci_dev_vers_dir: Could not compile regex\n"); 
+       closedir(dir);
        return NULL;
     }
     /* Step 5 - go through dir and try to find b_dirname */
@@ -174,9 +160,7 @@ _find_pci_dev_vers_dir(const char * cwd, const char *rel_vpath_pattn){
                 n = snprintf(n_cwd, MAX_PATH, "%s/%s", cwd, dp->d_name);
                 if (n < 0 || n >= MAX_PATH){
                     fprintf(stderr, "find_pci_dev_vers_dir: Folder name too long\n");
-                    closedir(dir);
-                    regfree(&regex);
-                    return NULL;
+                    goto cleanup;
                 }
                 closedir(dir);
                 regfree(&regex);
@@ -186,7 +170,10 @@ _find_pci_dev_vers_dir(const char * cwd, const char *rel_vpath_pattn){
     }
     fprintf(stderr, "find_pci_dev_vers_dir: Could not find a file pattern of %s in %s\n", rel_vpath_pattn, cwd); 
 
+cleanup:
     regfree(&regex);
+    closedir(dir);
+
     return NULL;
 
 }
@@ -308,18 +295,17 @@ set_vfiles(const char *vdir_path, struct version_item **head, const char *fpattn
             size_t nitems = strlen(vdir_path)+strlen(entry->d_name)+1;
             if(!(vfile_path = calloc(nitems+1, sizeof(char)))){
                 fprintf(stderr, "get_vfiles: opendir error");
-                return i;
+                goto free_reg;
             }
             n=snprintf(vfile_path, nitems+1, "%s/%s", vdir_path, entry->d_name);
             if (n < 0){
                 fprintf(stderr, "get_vfiles: Folder name too long\n");
-                regfree(&regex);
-                return 0;
+                goto free_reg;
             }else{
                 if(!(*head)){
                     if(!(*head=curr=malloc(sizeof(struct version_item)))){
                         fprintf(stderr, "malloc error\n");
-                        return i;
+                        goto free_reg;
                     }
                     curr->src_path=vfile_path;
                     curr->next=NULL;
@@ -327,20 +313,20 @@ set_vfiles(const char *vdir_path, struct version_item **head, const char *fpattn
                 }else{
                     if(!(curr->next=malloc(sizeof(struct version_item)))){
                         fprintf(stderr, "malloc error\n");
-                        return i;
+                        goto free_reg;
                     }
                     curr=curr->next;
                     curr->src_path=vfile_path;
                     curr->next=NULL;
                     curr->data=NULL;
-
-
                 }
                i++; 
             }
          }
     }
+free_reg:
     regfree(&regex);
+
     return i;
 }
 static int
@@ -349,6 +335,7 @@ read_vfile(struct version_item *vitem, char * str_in_file){
     char *vinfo;
     char line_buff[MAX_LINE];
     FILE *vfile;
+    int ret=0;
     memset(line_buff, 0, MAX_LINE);
     if(!(vfile=fopen(vitem->src_path, "r"))){
         fprintf(stderr, "read_vfile: fopen error\n");
@@ -370,35 +357,32 @@ read_vfile(struct version_item *vitem, char * str_in_file){
         /* Step 5 - if the string is not found in vfile(read one line) */
         if(str_linenum == -1){
            /* Step 5.1 - get the version part of the line_buff*/
-           if(!(vinfo = get_version_info(line_buff))){
-               fclose(vfile);
-               return 0;
+           if(!(vinfo = get_version_info(line_buff)))
+                goto close_file;
+
            /* Step 5.2 - copy the vinfo into vitem struct */
-           }else if(!(vitem->data=strdup(vinfo))){
+           else if(!(vitem->data=strdup(vinfo))){
                 fprintf(stderr, "read_vfile: strdup error \n");
-                fclose(vfile);
-                return 0; 
+                goto close_file;
            }
- 
-          return 1;
+          ret = 1;
         /* Step 6 - if the string is found on that line */
         }else if(str_linenum == linenum){
            /* Step 6.1 - get the version part of the line_buff*/
-            if(!(vinfo = get_version_info(line_buff))){
-               fclose(vfile);
-               return 0;
-            }else if(!(vitem->data=strdup(vinfo))){
-                    fprintf(stderr, "read_vfile: strdup error \n");
-                    fclose(vfile);
-                    return 0; 
+            if(!(vinfo = get_version_info(line_buff)))
+               goto close_file;
+            else if(!(vitem->data=strdup(vinfo))){
+                fprintf(stderr, "read_vfile: strdup error \n");
+                goto close_file;
             }
-            return 1;
+           ret=1; 
         }
         linenum++; 
     }
-
+close_file:
     fclose(vfile);
-    return 0; 
+
+    return ret;
 }
 
 int

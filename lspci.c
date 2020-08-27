@@ -39,7 +39,9 @@ static char help_msg[] =
 "Basic display modes:\n"
 "-mm\t\tProduce machine-readable output (single -m for an obsolete format)\n"
 "-t\t\tShow bus tree\n"
-"-T\t\tShow table of IO card (-TT for more info; -TTT for even more info)"
+"-T\t\tShow table of IO card (-TT for more info; -TTT for even more info;)\n"
+"-TTTT[T]\tShows table of the above information with firmware and driver version (-TTTTT shows additional optrom versions)\n"
+"-vT[T[T[...]]\tShow special slot numbers using the SMBIOS/DMI\n"
 "\n"
 "Display options:\n"
 "-v\t\tBe verbose (-vv or -vvv for higher verbosity)\n"
@@ -1000,9 +1002,7 @@ show_device(struct device *d)
   if (opt_machine){
     show_machine(d);
   }else if (table){
-    // Step 1 - check to see if lspci found the slot
     class = d->dev->device_class >> 8;
-    // Step 1 - check to see that its not a base io thing
     if((d->dev->dev==0) & (class != PCI_BASE_CLASS_BRIDGE)){
       show_table_entry(d);
     }
@@ -1023,7 +1023,7 @@ show_device(struct device *d)
 }
 static char * 
 find_dmi_physlot(const struct dmi_physlot_bus_pair *dtable, struct pci_dev *p){
-  struct dmi_physlot_bus_pair *curr;
+  const struct dmi_physlot_bus_pair *curr;
   if(p->phy_slot){
     return p->phy_slot;
   }
@@ -1038,12 +1038,17 @@ find_dmi_physlot(const struct dmi_physlot_bus_pair *dtable, struct pci_dev *p){
 }
 static char *
 get_dmi_physlot(const struct dmi_physlot_bus_pair *dtable, struct device *d){
-  // if not in table 
   char *phy_slot;
   struct device *par_br_dev;
-  if(!(phy_slot=find_dmi_physlot(dtable, d->dev))){
-    par_br_dev = d->parent_bus->parent_bridge->br_dev;
-    phy_slot = get_dmi_physlot(dtable, par_br_dev);
+  struct bus *par_bus;
+  struct bridge *par_bridge;
+  struct pci_dev *p=d->dev;
+  if(p && !(phy_slot=find_dmi_physlot(dtable, p))){
+    if((par_bus = d->parent_bus) && (par_bridge = par_bus->parent_bridge) 
+       && (par_br_dev=par_bridge->br_dev))
+      phy_slot = get_dmi_physlot(dtable, par_br_dev);
+    else
+      return NULL;
   }
   return phy_slot;
 }
@@ -1055,29 +1060,29 @@ show(void)
 {
   struct device *d;
   struct dmi_physlot_bus_pair *slot_bus_table = NULL;
-  struct dmi_physlot_bus_pair *curr;
   int use_special_slotn=0;
 
-  if(table)
+  /* Table mode */
+  if(table){
     print_hdr(250);
-  // Step 1 - if -vT (show special slot number)
+    if(!freopen("/dev/null", "w", stderr))
+      fprintf(stderr, "show: no able to redirect stderr to /dev/null");
+  }
+  /* if -vT (show special slot number) */
   if(verbose && table){    
     if(!dmi_fill_physlot_bus_pairs(&slot_bus_table)){
-     // printf("using special slot numbers\n");
       use_special_slotn=1;
       grow_tree();
     }
   }
-  // Assume the devices are sorted
+  // Assume the devices are sorted 
   for (d=first_dev; d; d=d->next){
-    // fill slot number 
     if(use_special_slotn){
       d->dev->phy_slot = get_dmi_physlot(slot_bus_table, d);
     }
     if (pci_filter_match(&filter, d->dev))
       show_device(d);
     }
-    // TODO: free table if not null
     free_dmi_physlot_bus_pairs(slot_bus_table);
 
 }
