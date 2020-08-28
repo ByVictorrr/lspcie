@@ -21,37 +21,39 @@
 static int 
 msc_read_drv(struct pci_dev *dev, struct version_item **vitems){
     char *drvdir_path;
-    if(!(drvdir_path=get_pci_dev_vdir_path(dev, PCI_VDIR_DR_RELPATH_PATTN))){
+    int ret = 1;
+    if(!(drvdir_path=get_pci_dev_vdir_path(dev, PCI_VDIR_DR_RELPATH_PATTN)))
         return 0;
-    }else if(!read_vfiles(drvdir_path, PCI_DRV_FPATTN, "driver:", vitems)){
-        return 0;
-    }
-    return 1;
+    else if(!read_vfiles(drvdir_path, PCI_DRV_FPATTN, "driver:", vitems))
+        ret = 0;
+    free(drvdir_path);
+    return ret;
 }
 static int 
 msc_read_fwv(struct pci_dev *dev, struct version_item **vitems){
     char *fwvdir_path;
-    if(!(fwvdir_path=get_pci_dev_vdir_path(dev, PCI_VDIR_FW_RELPATH_PATTN))){
+    int ret = 1;
+    if(!(fwvdir_path=get_pci_dev_vdir_path(dev, PCI_VDIR_FW_RELPATH_PATTN)))
         return 0;
-    }else if(!read_vfiles(fwvdir_path, PCI_FWV_FPATTN, "firmware:", vitems)){
-        return 0;
-    }
-    return 1;
+    else if(!read_vfiles(fwvdir_path, PCI_FWV_FPATTN, "firmware:", vitems))
+        ret = 0;
+    free(fwvdir_path);
+    return ret;
 }
 
 
 static int 
 msc_read_optv(struct pci_dev *dev, struct version_item **vitems){
     char *optvdir_path;
-    if(!(optvdir_path=get_pci_dev_vdir_path(dev, PCI_VDIR_OPT_RELPATH_PATTN))){
+    int ret=1;
+    if(!(optvdir_path=get_pci_dev_vdir_path(dev, PCI_VDIR_OPT_RELPATH_PATTN)))
         return 0;
-    }else if(!read_vfiles(optvdir_path, PCI_OPTV_FPATTN, "option rom:", vitems)){
-        return 0;
-    }
-    return 1;
+    else if(!read_vfiles(optvdir_path, PCI_OPTV_FPATTN, "option rom:", vitems))
+        ret = 0;
+    free(optvdir_path);
+
+    return ret;
 }
-
-
 
 
 /*=========================================================*/
@@ -69,12 +71,14 @@ net_read_info(struct pci_dev *dev, struct ethtool_drvinfo *info){
     struct ifreq ifr;
     int fd;
     char *vdir_path;
+    memset(&ifr, 0, sizeof(ifr));
     // Step 1 - set pci->version_dir
     if(!(vdir_path=get_pci_dev_vdir_path(dev, PCI_VDIR_DR_RELPATH_PATTN))){
         return 0;
     }
     // Step 1 - Get the version directory pattern
     strcpy(ifr.ifr_name, basename(vdir_path));
+    free(vdir_path);
     if((fd=socket(AF_INET, SOCK_DGRAM, 0)) < 0){
         dev->access->warning("net_read_info: socket call from ethtool access->warning");
         return 0;
@@ -167,34 +171,37 @@ dc_read_fwv(struct pci_dev *dev, char *fw_v, int fwv_size){
 static int 
 sbc_read_drv(struct pci_dev *dev, struct version_item **vitems){
     char *drvdir_path;
-    if(!(drvdir_path=get_pci_dev_vdir_path(dev, PCI_VDIR_DR_RELPATH_PATTN))){
+    int ret = 1;
+    if(!(drvdir_path=get_pci_dev_vdir_path(dev, PCI_VDIR_DR_RELPATH_PATTN)))
         return 0;
-    }else if(!read_vfiles(drvdir_path, PCI_DRV_FPATTN, "driver:", vitems)){
-        return 0;
-    }
-    return 1;
+    else if(!read_vfiles(drvdir_path, PCI_DRV_FPATTN, "driver:", vitems))
+        ret = 0;
+    free(drvdir_path);
+    return ret;
 }
 static int 
 sbc_read_fwv(struct pci_dev *dev, struct version_item **vitems){
     char *fwvdir_path;
-    if(!(fwvdir_path=get_pci_dev_vdir_path(dev, PCI_VDIR_FW_RELPATH_PATTN))){
+    int ret = 1;
+    if(!(fwvdir_path=get_pci_dev_vdir_path(dev, PCI_VDIR_FW_RELPATH_PATTN)))
         return 0;
-    }else if(!read_vfiles(fwvdir_path, PCI_FWV_FPATTN, "firmware:", vitems)){
-        return 0;
-    }
-    return 1;
+    else if(!read_vfiles(fwvdir_path, PCI_FWV_FPATTN, "firmware:", vitems))
+        ret = 0;
+    free(fwvdir_path);
+    return ret;
 }
 
 
 static int 
 sbc_read_optv(struct pci_dev *dev, struct version_item **vitems){
     char *optvdir_path;
-    if(!(optvdir_path=get_pci_dev_vdir_path(dev, PCI_VDIR_OPT_RELPATH_PATTN))){
+    int ret = 1;
+    if(!(optvdir_path=get_pci_dev_vdir_path(dev, PCI_VDIR_OPT_RELPATH_PATTN)))
         return 0;
-    }else if(!read_vfiles(optvdir_path, PCI_OPTV_FPATTN, "option rom:", vitems)){
-        return 0;
-    }
-    return 1;
+    else if(!read_vfiles(optvdir_path, PCI_OPTV_FPATTN, "option rom:", vitems))
+        ret = 0;
+    free(optvdir_path);
+    return ret;
 }
 
 

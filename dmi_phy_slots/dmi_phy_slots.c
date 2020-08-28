@@ -390,11 +390,14 @@ static int address_from_efi(off_t *address)
 	return ret;
 }
 void free_dmi_physlot_bus_pairs(struct dmi_physlot_bus_pair *table){
-	while(table){
-		if(table->phy_slot){
-			free(table->phy_slot);
+	struct dmi_physlot_bus_pair *curr=table, *next;
+	while(curr){
+		if(curr->phy_slot){
+			free(curr->phy_slot);
 		}
-		table=table->next;
+		next=curr->next;
+		free(curr);
+		curr=next;
 	}
 
 }

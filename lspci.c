@@ -14,6 +14,7 @@
 #include "lspci.h"
 /* Options */
 
+int json;           /* Show json format of table */
 int table;          /* Show table of IO card */
 int verbose;				/* Show detailed information */
 static int opt_hex;			/* Show contents of config space as hexadecimal numbers */
@@ -31,7 +32,7 @@ char *opt_pcimap;			/* Override path to Linux modules.pcimap */
 
 const char program_name[] = "lspci";
 
-static char options[] = "Tnvbxs:d:tPi:mgp:qkMDQ" GENERIC_OPTIONS ;
+static char options[] = "Tjnvbxs:d:tPi:mgp:qkMDQ" GENERIC_OPTIONS ;
 
 static char help_msg[] =
 "Usage: lspci [<switches>]\n"
@@ -42,6 +43,7 @@ static char help_msg[] =
 "-T\t\tShow table of IO card (-TT for more info; -TTT for even more info;)\n"
 "-TTTT[T]\tShows table of the above information with firmware and driver version (-TTTTT shows additional optrom versions)\n"
 "-vT[T[T[...]]\tShow special slot numbers using the SMBIOS/DMI\n"
+"-jT[T[...]]\t\tShows an array of json objects representing IO cards\n"
 "\n"
 "Display options:\n"
 "-v\t\tBe verbose (-vv or -vvv for higher verbosity)\n"
@@ -164,7 +166,6 @@ scan_devices(void)
 	first_dev = d;
       }
 }
-
 /*** Config space accesses ***/
 
 static void
@@ -1107,10 +1108,8 @@ show(void)
   /* Table mode */
   if(table){
     print_hdr(250);
-    /*
     if(!freopen("/dev/null", "w", stderr))
       fprintf(stderr, "show: no able to redirect stderr to /dev/null");
-      */
   }
   /* if -vT (show special slot number) */
   if(verbose && table){    
@@ -1162,7 +1161,10 @@ int main(int argc, char **argv)
     case 'T':
     table++;
   break;
-      case 'b':
+    case 'j':
+    json++;
+  break;
+    case 'b':
 	pacc->buscentric = 1;
 	break;
       case 's':

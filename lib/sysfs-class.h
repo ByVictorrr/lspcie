@@ -4,6 +4,8 @@
 #include "pci.h"
 #include "internal.h"
 
+#define MAX_LINE 100
+
 #define MAX_PATH 1024
 #define MAX_PATTN 100
 #define MAX_FILENAME 10
@@ -11,7 +13,6 @@
 #define PCI_SCLASS_MAX 256
 #define PCI_VENDOR_MAX 0xffff
 enum VDIR_RELPATHS{VDIR_DR, VDIR_FW};
-
 
 struct pci_class_methods{
     const char *name; /* Name of the device */

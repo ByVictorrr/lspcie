@@ -65,7 +65,6 @@ insert_dev(struct device *d, struct bridge *b)
   d->bus_next = NULL;
   d->parent_bus = bus;
 }
-
 void
 grow_tree(void)
 {
@@ -80,7 +79,7 @@ grow_tree(void)
       struct pci_dev *dd = d->dev;
       word class = dd->device_class;
       byte ht = get_conf_byte(d, PCI_HEADER_TYPE) & 0x7f;
-      // set the host bridge br
+      /* set the host bridge br(maybe just for d->dev=0000:00:00.0*/
       if(class == 0x600)
         host_bridge.br_dev=d;
 

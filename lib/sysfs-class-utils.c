@@ -226,22 +226,24 @@ get_pci_dev_vdir_path(struct pci_dev *dev, const char *vdir_rel_path_pattn){
 /*================= read vfile functions==================*/
 static int
 str_linenum_in_vfile(char *string, FILE *vfile){
-    #define MAX_LINE 100
-    char *line;
+    char *line = NULL;
     size_t len = 0;
     int line_num = 0;  
-    ssize_t read;
+    int ret = -1;
     if(!string)
         return -1;
-    while((read = getline(&line, &len, vfile)) != -1){
+    while(getline(&line, &len, vfile) != -1){
         if(strstr(line, string)){
-            rewind(vfile);
-            return line_num;
+            goto rewind_f;
+            ret = line_num;
         }
         line_num++;
     }
+rewind_f:
     rewind(vfile);
-    return -1;
+    if(line) free(line);
+
+    return ret;
 }
 static const char *
 get_version_info(const char *string)
@@ -295,17 +297,17 @@ set_vfiles(const char *vdir_path, struct version_item **head, const char *fpattn
             size_t nitems = strlen(vdir_path)+strlen(entry->d_name)+1;
             if(!(vfile_path = calloc(nitems+1, sizeof(char)))){
                 fprintf(stderr, "get_vfiles: opendir error");
-                goto free_reg;
+                goto cleanup;
             }
             n=snprintf(vfile_path, nitems+1, "%s/%s", vdir_path, entry->d_name);
             if (n < 0){
                 fprintf(stderr, "get_vfiles: Folder name too long\n");
-                goto free_reg;
+                goto cleanup;
             }else{
                 if(!(*head)){
                     if(!(*head=curr=malloc(sizeof(struct version_item)))){
                         fprintf(stderr, "malloc error\n");
-                        goto free_reg;
+                        goto cleanup;
                     }
                     curr->src_path=vfile_path;
                     curr->next=NULL;
@@ -313,7 +315,7 @@ set_vfiles(const char *vdir_path, struct version_item **head, const char *fpattn
                 }else{
                     if(!(curr->next=malloc(sizeof(struct version_item)))){
                         fprintf(stderr, "malloc error\n");
-                        goto free_reg;
+                        goto cleanup;
                     }
                     curr=curr->next;
                     curr->src_path=vfile_path;
@@ -324,8 +326,9 @@ set_vfiles(const char *vdir_path, struct version_item **head, const char *fpattn
             }
          }
     }
-free_reg:
+cleanup:
     regfree(&regex);
+    closedir(dir);
 
     return i;
 }
