@@ -36,24 +36,34 @@ struct table_entry{
 };
 
 
+
 /*===================Tabulated entry (for printing)===============*/
 /* Come back to */
 
-static void
-set_card_info(struct device *d, char *buff){
+static char *
+get_card_info(struct device *d){
     word subsys_v, subsys_d;
-    char ssnamebuf[256];
+    char ssnamebuf[256], *c_info;
     struct pci_dev *p = d->dev;
     memset(ssnamebuf, 0, 256);
     get_subid(d, &subsys_v, &subsys_d);
     if (subsys_v && subsys_v != 0xffff)
-	    sprintf(buff,"%s",
-		pci_lookup_name(pacc, ssnamebuf, sizeof(ssnamebuf),
+        c_info = pci_lookup_name(pacc, ssnamebuf, sizeof(ssnamebuf),
 			PCI_LOOKUP_SUBSYSTEM | PCI_LOOKUP_DEVICE, p->vendor_id, p->device_id,
-			subsys_v, subsys_d));
+			subsys_v, subsys_d);
+            return strdup(c_info);
     else
-	    sprintf(buff,"%s", "?");
+        return NULL;
+        
 
+}
+static char
+set_buff(char *(*get_data)(struct device *d), struct device *d, char *buff){
+    char *ret;
+    if(!(ret=get_card_info(d)))
+    {
+        strcpy(buff, ret);
+    }
 }
 static void
 set_slot_name(struct device *d, char *buf){
@@ -143,7 +153,7 @@ static void free_version_items(struct version_item* vitems){
     }
 }
 void 
-show_json_obj(struct device *d, json_value *arr)
+show_json_obj(struct device *d, json_value)
 {
     struct version_item *vitemss[3]={NULL}, *vitems=NULL; /* 0= drv, 1=fwv, 2=optv*/
     #define MAX_BUFF 1024
@@ -224,6 +234,7 @@ show_table_entry(struct device *d)
             fill_vbuff(vitems, e.dr_v, DR_VERSION_SIZE);
             free_version_items(vitems);
         }
+    if(table > 4){
         if (!pci_read_firmware_version(d->dev, &vitemss[FWV_ITEMS])){
             memset(e.fw_v, '.', 1);
         }else{
@@ -233,7 +244,8 @@ show_table_entry(struct device *d)
         }
         printf("\t%-20.20s", e.dr_v);
         printf("\t%-20.20s", e.fw_v);
-        }
+    }
+    if( table > 5 ){
         if (!pci_read_option_rom_version(d->dev, &vitemss[OPTV_ITEMS])){
             memset(e.opt_v, '.', 1);
         }else{
