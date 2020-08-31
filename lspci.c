@@ -41,10 +41,16 @@ static char help_msg[] =
 "-mm\t\tProduce machine-readable output (single -m for an obsolete format)\n"
 "-t\t\tShow bus tree\n"
 "-T\t\tShow table of IO card (-TT for more info; -TTT for even more info;)\n"
-"-TTTT[T]\tShows table of the above information with firmware and driver version (-TTTTT shows additional optrom versions)\n"
-"-vT[T[T[...]]\tShow special slot numbers using the SMBIOS/DMI\n"
-"-jT[T[...]]\t\tShows an array of json objects representing IO cards\n"
-"\n"
+"-j\t\tShow an array of pci devices as json objects\n"
+"-TTTT\tShows table of the above information with firmware, driver, and optrom versions\n"
+// COME back
+"-[j|T]*n\t\tDisplay for:\nj"
+"n=1:\t\tPCI Address, Slot #, Vendor name, Driver name\n"
+"n=2:\t\tSame as n=1, but with an addtional field of Device info\n"
+"n=3:\t\tSame as n=2, but with an addtional fields of vendor and device id\n"
+"n=4:\t\tSame as n=3, but with an additonal Driver version"
+"n=5:\t\tSame as n=4, but with an additonal Firmware version"
+"n=6:\t\tSame as n=5, but with an additonal Optrom version"
 "Display options:\n"
 "-v\t\tBe verbose (-vv or -vvv for higher verbosity)\n"
 #ifdef PCI_OS_LINUX
@@ -1046,6 +1052,9 @@ show_device(struct device *d)
   u8 class;
   if (opt_machine){
     show_machine(d);
+  }else if (json && table){
+    // make json objects
+
   }else if (table){
     if(is_io_dev(d->dev))
       show_table_entry(d);

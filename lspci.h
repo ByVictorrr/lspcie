@@ -31,6 +31,10 @@ extern int table;
 extern struct pci_filter filter;
 extern char *opt_pcimap;
 
+
+
+
+
 /*** PCI devices and access to their config space ***/
 
 struct device {

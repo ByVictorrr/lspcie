@@ -38,6 +38,7 @@ struct table_entry{
 
 /*===================Tabulated entry (for printing)===============*/
 /* Come back to */
+
 static void
 set_card_info(struct device *d, char *buff){
     word subsys_v, subsys_d;
@@ -79,7 +80,6 @@ set_vendor(struct device *d, char *buff){
 }
 static void
 set_driver(struct device *d, char * buff){
-    
     char buf[DRIVER_BUF_SIZE];
     const char *driver;
     memset(buf, 0, DRIVER_BUF_SIZE);
@@ -88,7 +88,6 @@ set_driver(struct device *d, char * buff){
 }
 static void
 set_phy_slot(struct device *d, char *buff){
-    int phy_slot;
     struct pci_dev *p = d->dev;
     if(p->phy_slot){
         strcpy(buff, p->phy_slot);
@@ -143,17 +142,48 @@ static void free_version_items(struct version_item* vitems){
         vitems=next;
     }
 }
+void 
+show_json_obj(struct device *d, json_value *arr)
+{
+    struct version_item *vitemss[3]={NULL}, *vitems=NULL; /* 0= drv, 1=fwv, 2=optv*/
+    #define MAX_BUFF 1024
+    char buff[MAX_BUFF];
+    json_value *dev_obj = json_object_new(0);
+
+    memset(buff, 0, MAX_BUFF);
+    // Step 1 - pci address output
+    set_slot_name(d, buff);
+    json_object_push(dev_obj, "pci address", json_string_new(buff));
+    // Step  2 - phys slot 
+    memset(buff, 0, MAX_BUFF);
+    set_phy_slot(d, buff);
+    json_object_push(dev_obj, "slot #", json_string_new(buff));
+    // Step 3 - card info 
+    memset(buff, 0, MAX_BUFF);
+    set_phy_slot(d, buff);
+    json_object_push(dev_obj, "card info", json_string_new(buff));
+    // Step 4 - vendor name
+    memset(buff, 0, MAX_BUFF);
+    set_vendor(d, buff);
+    json_object_push(dev_obj, "vendor", json_string_new(buff));
+    // Step 5 - driver
+    memset(buff, 0, MAX_BUFF);
+    set_driver(d, buff);
+    json_object_push(dev_obj, "driver", json_string_new(buff));
+    return dev_obj;
+}
 #define DEV_INFO_NUM_SIZE 10
+
 void 
 show_table_entry(struct device *d)
 {
-    static json_value *arr=NULL;
     char dev_info_num[DEV_INFO_NUM_SIZE];
     struct table_entry e;
     int pos; 
     struct version_item *vitemss[3]={NULL}, *vitems=NULL; /* 0= drv, 1=fwv, 2=optv*/
     memset(dev_info_num, 0, DEV_INFO_NUM_SIZE);
     memset(&e, 0, sizeof(struct table_entry));
+    json_value *ob = get_dev_json_obj(d);
 
     // Setting tab_entry
     // 1. PCI Adress Ouput
@@ -167,9 +197,6 @@ show_table_entry(struct device *d)
     // 5. Driver (driver name)
     set_driver(d, e.driver);
     /* Could it be the case that we want json object format*/
-    if(!arr && json){
-        arr = json_array_new(0);
-    }
    
 
     printf("%-12.12s\t%-20.20s\t%-40.40s\t%-12.12s\t%-12.12s", 
@@ -188,6 +215,7 @@ show_table_entry(struct device *d)
         sprintf(dev_info_num,"[%4.4x:%4.4x]", d->dev->vendor_id, d->dev->device_id);
         printf("%s",dev_info_num);
     }
+    // Show versions
     if(table > 3){
         if (!pci_read_driver_version(d->dev, &vitemss[DRV_ITEMS])) {
             memset(e.dr_v, '.', 1);
@@ -206,7 +234,6 @@ show_table_entry(struct device *d)
         printf("\t%-20.20s", e.dr_v);
         printf("\t%-20.20s", e.fw_v);
         }
-    if(table > 4){
         if (!pci_read_option_rom_version(d->dev, &vitemss[OPTV_ITEMS])){
             memset(e.opt_v, '.', 1);
         }else{
@@ -217,35 +244,11 @@ show_table_entry(struct device *d)
         printf("\t%-20.20s", e.opt_v);
 
     }
-    // alternative output
-    if(json){
-        json_value *dev_obj = json_object_new(0);
-        json_object_push(dev_obj, "pci address", json_string_new(e.pci_addr));
-        json_object_push(dev_obj, "slot #", json_string_new(e.phy_slot));
-        json_object_push(dev_obj, "card info", json_string_new(e.card_info));
-        json_object_push(dev_obj, "vendor", json_string_new(e.vendor));
-        json_object_push(dev_obj, "driver", json_string_new(e.driver));
-        json_object_push(dev_obj, "device info", json_string_new(e.dev_info));
-        if(table > 3){
-            //fw and dr (both objects)
-            json_value *fwv_obj = json_object_new(0), *drv_obj=json_object_new(0);
-            // TODO BUILD THESE objects based on what the vitems
-            json_object_push(dev_obj, "driver version", drv_obj);
-            json_object_push(dev_obj, "firmware version", fwv_obj);
-        }
-        if(table > 4){
-            //opt(object)
-            json_value *optv_obj = json_object_new(0);
-            // TODO BUILD THESE objects based on what the vitems
-            json_object_push(dev_obj, "option rom version", optv_obj);
-        }
-        json_array_push(arr, obj); 
-    }
-
     printf("\n");
 }
 void 
 print_hdr(int line_width){
+    int i;
     printf("%-12.12s\t%-20.20s\t%-40.40s\t%-12.12s\t%-12.12s", 
             "PCI_Address", 
             "Slot#", 

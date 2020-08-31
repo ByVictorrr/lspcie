@@ -2,7 +2,7 @@
 # (c) 1998--2020 Martin Mares <mj@ucw.cz>
 
 OPT=-O2
-CFLAGS=$(OPT) -Wall -W -Wno-parentheses -Wstrict-prototypes -Wmissing-prototypes -g -O0
+CFLAGS=$(OPT) -Wall -W -Wno-parentheses -Wstrict-prototypes -Wmissing-prototypes -g -O3 
 
 VERSION=3.7.0
 DATE=2020-05-31
@@ -69,12 +69,12 @@ force:
 lib/config.h lib/config.mk:
 	cd lib && ./configure
 
-lspci: lspci.o ls-vpd.o ls-caps.o ls-caps-vendor.o ls-ecaps.o ls-kernel.o ls-tree.o ls-map.o ls-table.o common.o lib/$(PCILIB) dmi_phy_slots/util.o dmi_phy_slots/dmi_phy_slots.o
+lspci: lspci.o ls-vpd.o ls-caps.o ls-caps-vendor.o ls-ecaps.o ls-kernel.o ls-tree.o ls-map.o ls-table.o common.o lib/$(PCILIB) dmi_phy_slots/util.o dmi_phy_slots/dmi_phy_slots.o json-builder.o json.o
 setpci: setpci.o common.o lib/$(PCILIB)
 
 LSPCIINC=lspci.h pciutils.h $(PCIINC) 
 lspci.o: lspci.c $(LSPCIINC) dmi_phy_slots/dmi_phy_slots.h
-ls-table.o: ls-table.c $(LSPCIINC) 
+ls-table.o: ls-table.c $(LSPCIINC) json-builder.h
 ls-vpd.o: ls-vpd.c $(LSPCIINC)
 ls-caps.o: ls-caps.c $(LSPCIINC)
 ls-ecaps.o: ls-ecaps.c $(LSPCIINC)
@@ -84,11 +84,13 @@ ls-map.o: ls-map.c $(LSPCIINC)
 
 dmi_phy_slots/dmi_phy_slots.o: dmi_phy_slots/dmi_phy_slots.c dmi_phy_slots/dmi_phy_slots.h dmi_phy_slots/types.h dmi_phy_slots/util.h dmi_phy_slots/config.h
 dmi_phy_slots/util.o: dmi_phy_slots/util.c dmi_phy_slots/types.h dmi_phy_slots/util.h dmi_phy_slots/config.h
+json.o: json.c json.h
+json-builder.o: json-builder.c json-builder.h
 
 setpci.o: setpci.c pciutils.h $(PCIINC)
 common.o: common.c pciutils.h $(PCIINC)
 
-lspci: LDLIBS+=$(LIBKMOD_LIBS)
+lspci: LDLIBS+=$(LIBKMOD_LIBS) -lm
 ls-kernel.o: CFLAGS+=$(LIBKMOD_CFLAGS)
 
 update-pciids: update-pciids.sh
@@ -104,6 +106,7 @@ example.o: example.c $(PCIINC)
 
 %: %.o
 	$(CC) $(LDFLAGS) $(TARGET_ARCH) $^ $(LDLIBS) -o $@
+
 
 %.8 %.7 %.5: %.man
 	M=`echo $(DATE) | sed 's/-01-/-January-/;s/-02-/-February-/;s/-03-/-March-/;s/-04-/-April-/;s/-05-/-May-/;s/-06-/-June-/;s/-07-/-July-/;s/-08-/-August-/;s/-09-/-September-/;s/-10-/-October-/;s/-11-/-November-/;s/-12-/-December-/;s/\(.*\)-\(.*\)-\(.*\)/\3 \2 \1/'` ; sed <$< >$@ "s/@TODAY@/$$M/;s/@VERSION@/pciutils-$(VERSION)/;s#@IDSDIR@#$(IDSDIR)#"
