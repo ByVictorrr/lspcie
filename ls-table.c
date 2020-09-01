@@ -21,6 +21,7 @@
 #define DR_VERSION_SIZE 200
 #define FW_VERSION_SIZE 200
 #define OPT_VERSION_SIZE 200
+#define DEV_INFO_NUM_SIZE 10
 
 
 struct table_entry{
@@ -34,36 +35,71 @@ struct table_entry{
     char fw_v[FW_VERSION_SIZE];
     char opt_v[OPT_VERSION_SIZE];
 };
-
-
+/* Following the same output as topology io dev */
+int 
+is_io_dev(struct pci_dev *p){
+  int is_io = 0;
+  u8 class = p->device_class >> 8;
+  u8 sclass = p->device_class & 0x00FF;
+  u16 vendor = p->vendor_id;
+  switch(class){
+    case 0x01: /* mass storage controller */
+      /* scsi or raid or sata or nvme*/
+      if(sclass == 0x00 || sclass == 0x06 || sclass == 0x04 || sclass == 0x08)
+        is_io = 1;
+      break;
+    case 0x02: /* nic */
+      /* eth or ib or network */
+      if(sclass == 0x00 || sclass == 0x07 || sclass == 0x80)
+        is_io = 1;
+      break;
+    case 0x03: /* display controller */
+      /* vga or 3d */
+      if(sclass == 0x00 || sclass == 0x02)
+        is_io = 1;
+      break;
+    case 0x04: /* multimedia controller */
+      is_io = 1;
+      /*bridge */
+      break;
+    case 0x06: 
+      /* not intel */
+      if(vendor != 0x8086) 
+        is_io = 1;
+      break;
+    case 0x09: /* input device */
+      is_io = 1;
+      break;
+    case 0x0c: /* serial bus controller */
+      /* firbre channel or usb */
+      if(sclass == 0x03 || sclass == 0x04)
+        is_io = 1;
+      break;
+    case 0x40: /* co processor */
+      is_io = 1;
+      break;
+     }
+  return is_io;
+}
 
 /*===================Tabulated entry (for printing)===============*/
 /* Come back to */
 
-static char *
-get_card_info(struct device *d){
+static void
+set_card_info(struct device *d, char *buff){
     word subsys_v, subsys_d;
-    char ssnamebuf[256], *c_info;
+    char ssnamebuf[256];
     struct pci_dev *p = d->dev;
     memset(ssnamebuf, 0, 256);
     get_subid(d, &subsys_v, &subsys_d);
     if (subsys_v && subsys_v != 0xffff)
-        c_info = pci_lookup_name(pacc, ssnamebuf, sizeof(ssnamebuf),
+	    sprintf(buff,"%s",
+		pci_lookup_name(pacc, ssnamebuf, sizeof(ssnamebuf),
 			PCI_LOOKUP_SUBSYSTEM | PCI_LOOKUP_DEVICE, p->vendor_id, p->device_id,
-			subsys_v, subsys_d);
-            return strdup(c_info);
+			subsys_v, subsys_d));
     else
-        return NULL;
-        
+	    sprintf(buff,"%s", "?");
 
-}
-static char
-set_buff(char *(*get_data)(struct device *d), struct device *d, char *buff){
-    char *ret;
-    if(!(ret=get_card_info(d)))
-    {
-        strcpy(buff, ret);
-    }
 }
 static void
 set_slot_name(struct device *d, char *buf){
@@ -153,39 +189,107 @@ static void free_version_items(struct version_item* vitems){
     }
 }
 void 
-show_json_obj(struct device *d, json_value)
+show_json_obj(struct device *d, int (*filter)(struct pci_dev *p))
 {
+    static int device_num = 0;
     struct version_item *vitemss[3]={NULL}, *vitems=NULL; /* 0= drv, 1=fwv, 2=optv*/
     #define MAX_BUFF 1024
     char buff[MAX_BUFF];
-    json_value *dev_obj = json_object_new(0);
+    json_value *dev_obj;
+    if(!filter(d->dev))
+        return;
 
+    dev_obj = json_object_new(0);
     memset(buff, 0, MAX_BUFF);
     // Step 1 - pci address output
     set_slot_name(d, buff);
-    json_object_push(dev_obj, "pci address", json_string_new(buff));
+    json_object_push(dev_obj, "PCI Address", json_string_new(buff));
     // Step  2 - phys slot 
     memset(buff, 0, MAX_BUFF);
     set_phy_slot(d, buff);
-    json_object_push(dev_obj, "slot #", json_string_new(buff));
+    json_object_push(dev_obj, "Slot #", json_string_new(buff));
     // Step 3 - card info 
     memset(buff, 0, MAX_BUFF);
-    set_phy_slot(d, buff);
-    json_object_push(dev_obj, "card info", json_string_new(buff));
+    set_card_info(d, buff);
+    json_object_push(dev_obj, "Card Info", json_string_new(buff));
     // Step 4 - vendor name
     memset(buff, 0, MAX_BUFF);
     set_vendor(d, buff);
-    json_object_push(dev_obj, "vendor", json_string_new(buff));
+    json_object_push(dev_obj, "Vendor", json_string_new(buff));
     // Step 5 - driver
     memset(buff, 0, MAX_BUFF);
     set_driver(d, buff);
-    json_object_push(dev_obj, "driver", json_string_new(buff));
-    return dev_obj;
+    json_object_push(dev_obj, "Driver", json_string_new(buff));
+    // Step 6 - device info
+    if (json > 1){
+        memset(buff, 0, MAX_BUFF);
+        set_dev_info(d, buff, MAX_BUFF);
+        json_object_push(dev_obj, "Device Info", json_string_new(buff));
+    }
+    // Step 7 - vendor id and device id
+    if (json > 2){
+        memset(buff, 0, MAX_BUFF);
+        sprintf(buff,"%4.4x", d->dev->vendor_id);
+        json_object_push(dev_obj, "Vendor ID", json_string_new(buff));
+        memset(buff, 0, MAX_BUFF);
+        sprintf(buff,"%4.4x", d->dev->device_id);
+        json_object_push(dev_obj, "Device ID", json_string_new(buff));
+    }
+    // Show versions
+    if(json > 3){
+        if (pci_read_driver_version(d->dev, &vitemss[DRV_ITEMS])) {
+            json_value *drv_obj = json_object_new(0);
+            struct version_item *vitem; 
+
+            for(vitem = vitems = vitemss[DRV_ITEMS] ;vitem; vitem=vitem->next)
+                json_object_push(drv_obj, basename(vitem->src_path), json_string_new(vitem->data));
+            json_object_push(dev_obj, "Driver Versions", drv_obj);
+            free_version_items(vitems);
+        }
+    }
+    if(json > 4){
+        if (pci_read_firmware_version(d->dev, &vitemss[FWV_ITEMS])){
+            json_value *fwv_obj = json_object_new(0);
+            struct version_item *vitem; 
+            for(vitem = vitems = vitemss[FWV_ITEMS] ;vitem; vitem=vitem->next)
+                json_object_push(fwv_obj, basename(vitem->src_path), json_string_new(vitem->data));
+            json_object_push(dev_obj, "Firmware Versions", fwv_obj);
+            free_version_items(vitems);
+        }
+    }
+    if( json > 5 ){
+       if (pci_read_option_rom_version(d->dev, &vitemss[OPTV_ITEMS])){
+        json_value *optv_obj = json_object_new(0);
+        struct version_item *vitem; 
+        for(vitem = vitems = vitemss[OPTV_ITEMS] ;vitem; vitem=vitem->next)
+            json_object_push(optv_obj, basename(vitem->src_path), json_string_new(vitem->data));
+        json_object_push(dev_obj, "Option ROM Versions", optv_obj);
+        free_version_items(vitems);
+       }
+    }
+
+    json_serialize_opts settings;
+    settings.mode = json_serialize_mode_multiline;
+    settings.opts = json_serialize_opt_CRLF;
+    settings.indent_size = 2;
+
+    char * print = malloc(json_measure_ex(dev_obj, settings));
+    json_serialize_ex(print, dev_obj, settings);
+
+    printf("%s", print);
+    json_builder_free(dev_obj);
+    if(print)
+        free(print);
+    device_num++;
+    if(device_num != num_io_devs){
+        printf(",\n");
+    }else{
+        printf("\n");
+    }
 }
-#define DEV_INFO_NUM_SIZE 10
 
 void 
-show_table_entry(struct device *d)
+show_table_entry(struct device *d, int (*filter)(struct pci_dev *p))
 {
     char dev_info_num[DEV_INFO_NUM_SIZE];
     struct table_entry e;
@@ -193,7 +297,8 @@ show_table_entry(struct device *d)
     struct version_item *vitemss[3]={NULL}, *vitems=NULL; /* 0= drv, 1=fwv, 2=optv*/
     memset(dev_info_num, 0, DEV_INFO_NUM_SIZE);
     memset(&e, 0, sizeof(struct table_entry));
-    json_value *ob = get_dev_json_obj(d);
+    if(!filter(d->dev))
+        return;
 
     // Setting tab_entry
     // 1. PCI Adress Ouput
@@ -234,6 +339,8 @@ show_table_entry(struct device *d)
             fill_vbuff(vitems, e.dr_v, DR_VERSION_SIZE);
             free_version_items(vitems);
         }
+        printf("\t%-20.20s", e.dr_v);
+    }
     if(table > 4){
         if (!pci_read_firmware_version(d->dev, &vitemss[FWV_ITEMS])){
             memset(e.fw_v, '.', 1);
@@ -242,7 +349,6 @@ show_table_entry(struct device *d)
             fill_vbuff(vitems, e.fw_v, FW_VERSION_SIZE);
             free_version_items(vitems);
         }
-        printf("\t%-20.20s", e.dr_v);
         printf("\t%-20.20s", e.fw_v);
     }
     if( table > 5 ){
@@ -267,16 +373,14 @@ print_hdr(int line_width){
             "Card_info",
             "Vendor",
             "Driver");
-    if(table > 1){
+    if(table > 1)
         printf("\t%-40.40s", "Device_info");
-    }
-    if(table > 3){
+    if(table > 3)
         printf("\t%-20.20s", "Driver_Version");
+    if(table > 4)
         printf("\t%-20.20s", "Firmware_Version");
-    }
-    if(table > 4 ){
+    if(table > 5)
         printf("\t%-20.20s", "Option_Rom_Version");
-    }
 
     printf("\n");
     for(i=0; i<line_width; i++)

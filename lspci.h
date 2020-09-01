@@ -28,6 +28,8 @@
 
 extern int verbose;
 extern int table;
+extern int json;
+extern int num_io_devs;
 extern struct pci_filter filter;
 extern char *opt_pcimap;
 
@@ -100,7 +102,10 @@ char * find_driver(struct device *d, char *buf);
 
 /* ls-table.c */
 
-void show_table_entry(struct device *d);
+void show_table_entry(struct device *d, int (*filter)(struct pci_dev *p));
+void show_json_obj(struct device *d, int (*filter)(struct pci_dev *p));
+int is_io_dev(struct pci_dev *p);
+ 
 void print_hdr(int line_width);
 
 /* ls-tree.c */

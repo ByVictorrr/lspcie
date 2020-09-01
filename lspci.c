@@ -48,9 +48,9 @@ static char help_msg[] =
 "n=1:\t\tPCI Address, Slot #, Vendor name, Driver name\n"
 "n=2:\t\tSame as n=1, but with an addtional field of Device info\n"
 "n=3:\t\tSame as n=2, but with an addtional fields of vendor and device id\n"
-"n=4:\t\tSame as n=3, but with an additonal Driver version"
-"n=5:\t\tSame as n=4, but with an additonal Firmware version"
-"n=6:\t\tSame as n=5, but with an additonal Optrom version"
+"n=4:\t\tSame as n=3, but with an additonal Driver version\n"
+"n=5:\t\tSame as n=4, but with an additonal Firmware version\n"
+"n=6:\t\tSame as n=5, but with an additonal Optrom version\n"
 "Display options:\n"
 "-v\t\tBe verbose (-vv or -vvv for higher verbosity)\n"
 #ifdef PCI_OS_LINUX
@@ -282,7 +282,7 @@ show_slot_path(struct device *d, char *buf)
       else
 	      printf("/%02x:%02x.%d", p->bus, p->dev, p->func);
     }else{
-      if (table)
+      if (table || json)
 	      pos = sprintf(buf,"/%02x.%d", p->dev, p->func);
       else
 	      printf("/%02x.%d", p->dev, p->func);
@@ -290,7 +290,7 @@ show_slot_path(struct device *d, char *buf)
 	  return pos;
 	}
     }
-    if(table)
+    if(table || json)
       pos = sprintf(buf,"%02x:%02x.%d", p->bus, p->dev, p->func);
     else
       printf("%02x:%02x.%d", p->bus, p->dev, p->func);
@@ -304,10 +304,10 @@ show_slot_name(struct device *d, char *buf)
   struct pci_dev *p = d->dev;
   int pos;
   if (!opt_machine ? opt_domains : (p->domain || opt_domains >= 2)){
-    if(table) pos = sprintf(buf, "%04x:", p->domain);
+    if(table || json) pos = sprintf(buf, "%04x:", p->domain);
     else printf("%04x:", p->domain);
   }
-  if(table) show_slot_path(d, buf+pos);
+  if(table || json) show_slot_path(d, buf+pos);
   else show_slot_path(d, NULL);
 }
 
@@ -998,66 +998,21 @@ show_machine(struct device *d)
       putchar('\n');
     }
 }
-/* Following the same output as topology io dev */
-static int 
-is_io_dev(struct pci_dev *p){
-  int is_io = 0;
-  u8 class = p->device_class >> 8;
-  u8 sclass = p->device_class & 0x00FF;
-  u16 vendor = p->vendor_id;
-  switch(class){
-    case 0x01: /* mass storage controller */
-      /* scsi or raid or sata or nvme*/
-      if(sclass == 0x00 || sclass == 0x06 || sclass == 0x04 || sclass == 0x08)
-        is_io = 1;
-      break;
-    case 0x02: /* nic */
-      /* eth or ib or network */
-      if(sclass == 0x00 || sclass == 0x07 || sclass == 0x80)
-        is_io = 1;
-      break;
-    case 0x03: /* display controller */
-      /* vga or 3d */
-      if(sclass == 0x00 || sclass == 0x02)
-        is_io = 1;
-      break;
-    case 0x04: /* multimedia controller */
-      is_io = 1;
-      /*bridge */
-      break;
-    case 0x06: 
-      /* not intel */
-      if(vendor != 0x8086) 
-        is_io = 1;
-      break;
-    case 0x09: /* input device */
-      is_io = 1;
-      break;
-    case 0x0c: /* serial bus controller */
-      /* firbre channel or usb */
-      if(sclass == 0x03 || sclass == 0x04)
-        is_io = 1;
-      break;
-    case 0x40: /* co processor */
-      is_io = 1;
-      break;
-     }
-  return is_io;
-}
+
 /*** Main show function ***/
 // 0001:57:05.5 
 void
 show_device(struct device *d)
 {
-  u8 class;
+  
   if (opt_machine){
     show_machine(d);
-  }else if (json && table){
-    // make json objects
-
+  }else if (json){
+    show_json_obj(d, is_io_dev);
+    return;
   }else if (table){
     if(is_io_dev(d->dev))
-      show_table_entry(d);
+      show_table_entry(d, is_io_dev);
     return;
   }else
     {
@@ -1105,23 +1060,38 @@ get_dmi_physlot(const struct dmi_physlot_bus_pair *dtable, struct device *d){
   return phy_slot;
 }
 
+int get_num_io_devs(int (*is_io)(struct pci_dev *p)){
+  int num=0;
+  struct device *d;
+  for (d=first_dev; d; d=d->next)
+    if (pci_filter_match(&filter, d->dev) && is_io(d->dev))
+        num++;
+  return num; 
+}
 
+int num_io_devs;
 
+ 
 static void
 show(void)
 {
   struct device *d;
   struct dmi_physlot_bus_pair *slot_bus_table = NULL;
   int use_special_slotn=0;
-
-  /* Table mode */
-  if(table){
-    print_hdr(250);
-    if(!freopen("/dev/null", "w", stderr))
+  if(!freopen("/dev/null", "w", stderr))
       fprintf(stderr, "show: no able to redirect stderr to /dev/null");
-  }
-  /* if -vT (show special slot number) */
-  if(verbose && table){    
+ 
+  // Step 1 - count how many json || table will show
+  num_io_devs = get_num_io_devs(is_io_dev);
+
+  if(json)
+    printf("[\n"); 
+  else if(table)
+     print_hdr(250);
+  
+
+  /* if -v<T|j> (show special slot number) */
+  if(verbose && (table || json)){    
     if(!dmi_fill_physlot_bus_pairs(&slot_bus_table)){
       use_special_slotn=1;
       grow_tree();
@@ -1136,6 +1106,10 @@ show(void)
       show_device(d);
     }
     free_dmi_physlot_bus_pairs(slot_bus_table);
+
+    if(json){
+      printf("]\n");
+    }
 
 }
 
