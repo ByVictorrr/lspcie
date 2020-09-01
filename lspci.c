@@ -15,6 +15,7 @@
 /* Options */
 
 int json;           /* Show json format of table */
+int num_io_devs;    /* For json array format */
 int table;          /* Show table of IO card */
 int verbose;				/* Show detailed information */
 static int opt_hex;			/* Show contents of config space as hexadecimal numbers */
@@ -42,9 +43,8 @@ static char help_msg[] =
 "-t\t\tShow bus tree\n"
 "-T\t\tShow table of IO card (-TT for more info; -TTT for even more info;)\n"
 "-j\t\tShow an array of pci devices as json objects\n"
-"-TTTT\tShows table of the above information with firmware, driver, and optrom versions\n"
 // COME back
-"-[j|T]*n\t\tDisplay for:\nj"
+"-[j|T]*n\tDisplay for:\n"
 "n=1:\t\tPCI Address, Slot #, Vendor name, Driver name\n"
 "n=2:\t\tSame as n=1, but with an addtional field of Device info\n"
 "n=3:\t\tSame as n=2, but with an addtional fields of vendor and device id\n"
@@ -1069,7 +1069,7 @@ int get_num_io_devs(int (*is_io)(struct pci_dev *p)){
   return num; 
 }
 
-int num_io_devs;
+
 
  
 static void
@@ -1091,17 +1091,14 @@ show(void)
   
 
   /* if -v<T|j> (show special slot number) */
-  if(verbose && (table || json)){    
-    if(!dmi_fill_physlot_bus_pairs(&slot_bus_table)){
+  if(verbose && (table || json))
+    if(!dmi_fill_physlot_bus_pairs(&slot_bus_table))
       use_special_slotn=1;
-      grow_tree();
-    }
-  }
+
   // Assume the devices are sorted 
   for (d=first_dev; d; d=d->next){
-    if(use_special_slotn){
+    if(use_special_slotn)
       d->dev->phy_slot = get_dmi_physlot(slot_bus_table, d);
-    }
     if (pci_filter_match(&filter, d->dev))
       show_device(d);
     }
@@ -1111,6 +1108,15 @@ show(void)
       printf("]\n");
     }
 
+}
+struct device *find_device(u16 domain_16, u8 bus, u8 dev, u8 func){
+  struct device *d;
+  struct pci_dev *p;
+  for(d=first_dev; d; d=d->next)
+    if((p=d->dev) && p->domain_16 == domain_16 && p->bus == bus &&
+      p->dev == dev && p->func == func)
+        return d;
+  return NULL;
 }
 
 
@@ -1221,6 +1227,8 @@ int main(int argc, char **argv)
     }
   if (opt_query_all)
     pacc->id_lookup_mode |= PCI_LOOKUP_NETWORK | PCI_LOOKUP_SKIP_LOCAL;
+  
+ 
 
   pci_init(pacc);
   if (opt_map_mode)
@@ -1231,8 +1239,14 @@ int main(int argc, char **argv)
     }
   else
     {
+
       scan_devices();
       sort_them();
+       // Show special slot
+      if((json || table ) && verbose){
+        need_topology = 1;
+        host_bridge.br_dev = find_device(0x0000, 0x00, 0x00, 0);
+      }
       if (need_topology)
 	grow_tree();
       if (opt_tree)

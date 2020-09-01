@@ -12,12 +12,14 @@
 
 
 /* Max String length for each entry */
-#define PCI_ADDR_SIZE 12
+#define PCI_ADDR_SIZE 13
 #define PHYS_SLOT_SIZE 20
-#define CARD_INFO_SIZE 30
+#define CARD_INFO_SIZE 100
 #define VENDOR_INFO_SIZE 15
 #define DRIVER_SIZE 11
-#define DEVICE_INFO_SIZE 35
+#define DEVICE_INFO_SIZE 100
+#define VENDOR_ID_SIZE 5
+#define DEVICE_ID_SIZE 5
 #define DR_VERSION_SIZE 200
 #define FW_VERSION_SIZE 200
 #define OPT_VERSION_SIZE 200
@@ -31,6 +33,8 @@ struct table_entry{
     char vendor[VENDOR_INFO_SIZE];
     char driver[DRIVER_SIZE];
     char dev_info[DEVICE_INFO_SIZE];
+    char ven_id[VENDOR_ID_SIZE];
+    char dev_id[DEVICE_ID_SIZE];
     char dr_v[DR_VERSION_SIZE];
     char fw_v[FW_VERSION_SIZE];
     char opt_v[OPT_VERSION_SIZE];
@@ -194,46 +198,41 @@ show_json_obj(struct device *d, int (*filter)(struct pci_dev *p))
     static int device_num = 0;
     struct version_item *vitemss[3]={NULL}, *vitems=NULL; /* 0= drv, 1=fwv, 2=optv*/
     #define MAX_BUFF 1024
-    char buff[MAX_BUFF];
+    struct table_entry e;
     json_value *dev_obj;
     if(!filter(d->dev))
         return;
-
+    
     dev_obj = json_object_new(0);
-    memset(buff, 0, MAX_BUFF);
+    memset(&e, 0, sizeof(struct table_entry));
     // Step 1 - pci address output
-    set_slot_name(d, buff);
-    json_object_push(dev_obj, "PCI Address", json_string_new(buff));
+    set_slot_name(d, e.pci_addr);
     // Step  2 - phys slot 
-    memset(buff, 0, MAX_BUFF);
-    set_phy_slot(d, buff);
-    json_object_push(dev_obj, "Slot #", json_string_new(buff));
+    set_phy_slot(d, e.phy_slot);
     // Step 3 - card info 
-    memset(buff, 0, MAX_BUFF);
-    set_card_info(d, buff);
-    json_object_push(dev_obj, "Card Info", json_string_new(buff));
+    set_card_info(d, e.card_info);
     // Step 4 - vendor name
-    memset(buff, 0, MAX_BUFF);
-    set_vendor(d, buff);
-    json_object_push(dev_obj, "Vendor", json_string_new(buff));
+    set_vendor(d, e.vendor);
     // Step 5 - driver
-    memset(buff, 0, MAX_BUFF);
-    set_driver(d, buff);
-    json_object_push(dev_obj, "Driver", json_string_new(buff));
+    set_driver(d, e.driver);
+
+    json_object_push(dev_obj, "PCI Address", json_string_new(e.pci_addr));
+    json_object_push(dev_obj, "Slot #", json_string_new(e.phy_slot));
+    json_object_push(dev_obj, "Card Info", json_string_new(e.card_info));
+    json_object_push(dev_obj, "Vendor", json_string_new(e.vendor));
+    json_object_push(dev_obj, "Driver", json_string_new(e.driver));
     // Step 6 - device info
     if (json > 1){
-        memset(buff, 0, MAX_BUFF);
-        set_dev_info(d, buff, MAX_BUFF);
-        json_object_push(dev_obj, "Device Info", json_string_new(buff));
+        set_dev_info(d, e.dev_info, sizeof(e.dev_info)/(sizeof(char)));
+        json_object_push(dev_obj, "Device Info", json_string_new(e.dev_info));
     }
     // Step 7 - vendor id and device id
     if (json > 2){
-        memset(buff, 0, MAX_BUFF);
-        sprintf(buff,"%4.4x", d->dev->vendor_id);
-        json_object_push(dev_obj, "Vendor ID", json_string_new(buff));
-        memset(buff, 0, MAX_BUFF);
-        sprintf(buff,"%4.4x", d->dev->device_id);
-        json_object_push(dev_obj, "Device ID", json_string_new(buff));
+    
+        sprintf(e.ven_id, "%4.4x", d->dev->vendor_id);
+        json_object_push(dev_obj, "Vendor ID", json_string_new(e.ven_id));
+        sprintf(e.dev_id ,"%4.4x", d->dev->device_id);
+        json_object_push(dev_obj, "Device ID", json_string_new(e.dev_id));
     }
     // Show versions
     if(json > 3){
@@ -323,11 +322,15 @@ show_table_entry(struct device *d, int (*filter)(struct pci_dev *p))
 
      // 6. Device_info
     if (table > 1){
-        pos = set_dev_info(d, e.dev_info, DEVICE_INFO_SIZE);
+
+        set_dev_info(d, e.dev_info, DEVICE_INFO_SIZE);
         printf("\t%-40.40s",e.dev_info);
     }
     if (table > 2){
-        sprintf(dev_info_num,"[%4.4x:%4.4x]", d->dev->vendor_id, d->dev->device_id);
+
+        sprintf(e.dev_id ,"%4.4x", d->dev->device_id);
+        sprintf(e.ven_id ,"%4.4x", d->dev->vendor_id);
+        sprintf(dev_info_num,"[%s:%s]", e.ven_id, e.dev_id);
         printf("%s",dev_info_num);
     }
     // Show versions

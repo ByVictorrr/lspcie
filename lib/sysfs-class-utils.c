@@ -352,7 +352,7 @@ read_vfile(struct version_item *vitem, char * str_in_file){
     /* Step 2 - read through the vfile */
     while(fgets(line_buff, MAX_LINE-1, vfile)){
         /* Step 3 - trim white spaces */
-        trimstr(line_buff);
+        // trimstr(line_buff);
         /* Step 4 - if new line exists then take it out */
         if(line_buff[strlen(line_buff)-1]=='\n')
             line_buff[strlen(line_buff)-1]=0;
