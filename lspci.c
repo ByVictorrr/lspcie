@@ -1109,7 +1109,8 @@ show(void)
     }
 
 }
-struct device *find_device(u16 domain_16, u8 bus, u8 dev, u8 func){
+static struct device 
+*find_device(u16 domain_16, u8 bus, u8 dev, u8 func){
   struct device *d;
   struct pci_dev *p;
   for(d=first_dev; d; d=d->next)
@@ -1118,6 +1119,20 @@ struct device *find_device(u16 domain_16, u8 bus, u8 dev, u8 func){
         return d;
   return NULL;
 }
+static void 
+device_cleanup(void){
+  struct device *d, *next;
+  for(d=first_dev; d; d=next){
+    if(d->config)
+      free(d->config);
+    if(d->present)
+      free(d->present);
+    next=d->next;
+    free(d);
+  }
+}
+
+
 
 
 /* Main */
@@ -1254,8 +1269,12 @@ int main(int argc, char **argv)
       else
 	show();
     }
+
+  delete_tree();
+  device_cleanup();
   show_kernel_cleanup();
   pci_cleanup(pacc);
+  // delete_tree();
 
   return (seen_errors ? 2 : 0);
 }

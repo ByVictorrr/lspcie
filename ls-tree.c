@@ -65,6 +65,20 @@ insert_dev(struct device *d, struct bridge *b)
   d->bus_next = NULL;
   d->parent_bus = bus;
 }
+void
+delete_tree(void){
+  struct device *d, *next;
+  struct bridge *br;
+  struct bus *bu;
+
+  for(d=first_dev; d; d=d->next){
+    if((br = d->bridge)){
+      if ((bu=find_bus(br, br->domain, br->secondary)))
+        free(bu);
+      free(br);
+    }
+  }
+}
 
 void
 grow_tree(void)

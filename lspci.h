@@ -131,6 +131,7 @@ extern struct bridge host_bridge;
 
 void grow_tree(void);
 void show_forest(struct pci_filter *filter);
+void delete_tree(void);
 
 /* ls-map.c */
 

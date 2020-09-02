@@ -293,7 +293,7 @@ show_table_entry(struct device *d, int (*filter)(struct pci_dev *p))
     char dev_info_num[DEV_INFO_NUM_SIZE];
     struct table_entry e;
     int pos; 
-    struct version_item *vitemss[3]={NULL}, *vitems=NULL; /* 0= drv, 1=fwv, 2=optv*/
+    struct version_item *vitemss[3]={NULL, NULL, NULL}, *vitems=NULL; /* 0= drv, 1=fwv, 2=optv*/
     memset(dev_info_num, 0, DEV_INFO_NUM_SIZE);
     memset(&e, 0, sizeof(struct table_entry));
     if(!filter(d->dev))
@@ -322,7 +322,6 @@ show_table_entry(struct device *d, int (*filter)(struct pci_dev *p))
 
      // 6. Device_info
     if (table > 1){
-
         set_dev_info(d, e.dev_info, DEVICE_INFO_SIZE);
         printf("\t%-40.40s",e.dev_info);
     }
@@ -330,7 +329,7 @@ show_table_entry(struct device *d, int (*filter)(struct pci_dev *p))
 
         sprintf(e.dev_id ,"%4.4x", d->dev->device_id);
         sprintf(e.ven_id ,"%4.4x", d->dev->vendor_id);
-        sprintf(dev_info_num,"[%s:%s]", e.ven_id, e.dev_id);
+        sprintf(dev_info_num," [%s:%s]", e.ven_id, e.dev_id);
         printf("%s",dev_info_num);
     }
     // Show versions
