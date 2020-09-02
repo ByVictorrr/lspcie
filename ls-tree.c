@@ -65,19 +65,68 @@ insert_dev(struct device *d, struct bridge *b)
   d->bus_next = NULL;
   d->parent_bus = bus;
 }
+struct freed_bus{
+    struct bus *bus;
+    struct freed_bus *next;
+};
+
+static 
+int in_freed_bus_table(struct freed_bus *fb_table, struct bus *b){
+  struct freed_bus *fb = NULL;
+  for(fb = fb_table; fb; fb=fb->next)
+    if(fb->bus == b)
+      return 1;
+  return 0;
+}
+static 
+void insert_freed_bus(struct freed_bus **fb_table, struct bus *b){
+  struct freed_bus *curr, *prev;
+  if(*fb_table == NULL){
+    curr = *fb_table = xmalloc(sizeof(struct freed_bus));
+    curr->bus = b;
+    return;
+  }
+  // look for tail and insert there
+  for(curr=*fb_table; curr; curr=curr->next){
+    prev=curr;
+  }
+  prev->next = xmalloc(sizeof(struct freed_bus));
+  prev->next->bus = b;
+}
+
+
+// Deallocs bus and bridge structures
 void
 delete_tree(void){
   struct device *d, *next;
   struct bridge *br;
-  struct bus *bu;
+  struct bus *bus;
+  struct freed_bus *fb_table = NULL;
+ 
+  for (br=&host_bridge; br; br=br->chain){
+      for(bus=br->first_bus; bus; bus=bus->sibling){
+        if(!in_freed_bus_table(fb_table, bus)){
+          insert_freed_bus(&fb_table, bus);
+          free(bus);
+        }
 
+      }
+      if(br!=&host_bridge){
+        free(br);
+      }
+  }
+/*
   for(d=first_dev; d; d=d->next){
     if((br = d->bridge)){
       if ((bu=find_bus(br, br->domain, br->secondary)))
         free(bu);
+        if((bus=br->first_bus))
+          free(bu);
       free(br);
     }
   }
+  */
+  
 }
 
 void
