@@ -9,7 +9,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
-
+#include <stdlib.h>
 #include "lspci.h"
 
 struct bridge host_bridge = { NULL, NULL, NULL, NULL, 0, ~0, 0, ~0, NULL };
@@ -65,19 +65,27 @@ insert_dev(struct device *d, struct bridge *b)
   d->bus_next = NULL;
   d->parent_bus = bus;
 }
+
 struct freed_bus{
     struct bus *bus;
     struct freed_bus *next;
 };
 
+struct freed_br{
+  struct bridge *br;
+  struct freed_br *next;
+};
+
 static 
 int in_freed_bus_table(struct freed_bus *fb_table, struct bus *b){
   struct freed_bus *fb = NULL;
-  for(fb = fb_table; fb; fb=fb->next)
+  for(fb = fb_table; fb; fb=fb->next){
     if(fb->bus == b)
       return 1;
+  }
   return 0;
 }
+
 static 
 void insert_freed_bus(struct freed_bus **fb_table, struct bus *b){
   struct freed_bus *curr, *prev;
@@ -94,40 +102,56 @@ void insert_freed_bus(struct freed_bus **fb_table, struct bus *b){
   prev->next->bus = b;
 }
 
+static 
+int in_freed_br_table(struct freed_br *fbr_table, struct bridge *b){
+  struct freed_br *fbr = NULL;
+  for(fbr = fbr_table; fbr; fbr=fbr->next)
+    if(fbr->br == b)
+      return 1;
+  return 0;
+}
 
-// Deallocs bus and bridge structures
+static 
+void insert_freed_br(struct freed_br **fbr_table, struct bridge *b){
+  struct freed_br *curr, *prev;
+  if(*fbr_table == NULL){
+    curr = *fbr_table = xmalloc(sizeof(struct freed_br));
+    curr->br = b;
+    return;
+  }
+  // look for tail and insert there
+  for(curr=*fbr_table; curr; curr=curr->next){
+    prev=curr;
+  }
+  prev->next = xmalloc(sizeof(struct freed_br));
+  prev->next->br = b;
+}
+
+
 void
 delete_tree(void){
-  struct device *d, *next;
-  struct bridge *br;
+  /*
+  struct device *d;
+  struct bridge *first_bridge, *br;
   struct bus *bus;
   struct freed_bus *fb_table = NULL;
- 
-  for (br=&host_bridge; br; br=br->chain){
-      for(bus=br->first_bus; bus; bus=bus->sibling){
-        if(!in_freed_bus_table(fb_table, bus)){
-          insert_freed_bus(&fb_table, bus);
+  struct freed_br *fbr_table = NULL;
+      for(br=&host_bridge; br; br=br->chain){
+        if(!in_freed_br_table(fbr_table, br)){
+          for(bus=br->first_bus; bus; bus=bus->sibling){
+            if(!in_freed_bus_table(fb_table, bus)){
+              insert_freed_bus(&fb_table, bus);
+              free(bus);
+            }
+          }
+          insert_freed_br(&fbr_table, br);
           free(bus);
         }
-
-      }
-      if(br!=&host_bridge){
-        free(br);
-      }
-  }
-/*
-  for(d=first_dev; d; d=d->next){
-    if((br = d->bridge)){
-      if ((bu=find_bus(br, br->domain, br->secondary)))
-        free(bu);
-        if((bus=br->first_bus))
-          free(bu);
-      free(br);
     }
+    */
   }
-  */
   
-}
+
 
 void
 grow_tree(void)
