@@ -33,7 +33,7 @@ static void
 address_set_insert(struct address_set *set, void *addr){
   struct address *prev, *tail;
   // Case 0 - check to see if addr in set and parms
-  if(!addr || in_set(set, addr))
+  if(!addr || set->in_set(set, addr))
     return;
   // Case 1 - head has not been initalized
   if(set->head == NULL){

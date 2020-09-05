@@ -10,8 +10,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <mcheck.h>
 #include "lspci.h"
+#include "garbage_collector/free_guard.h"
 
 struct bridge host_bridge = { NULL, NULL, NULL, NULL, 0, ~0, 0, ~0, NULL };
 
@@ -72,17 +72,20 @@ void
 delete_tree(void){
   struct bus *bus, *next_bus;
   struct bridge *br, *next_br;
+  struct free_guard fg;
 
-  for(br=&host_bridge; br; br=next_br, i++){
+  fg_setup(&fg);
+  for(br=&host_bridge; br; br=next_br){
       for(bus=br->first_bus; bus; bus=next_bus){
         next_bus = bus->sibling;
+        fg_free(&fg, bus);
       }
 
       next_br = br->chain;
-      if((br != &host_bridge) && (br_status=mprobe(br)) !=  MCHECK_FREE)
-        free(br);
-
+      if(br != &host_bridge)
+        fg_free(&fg, br);
   }
+  fg_cleanup(&fg);
 }
   
 

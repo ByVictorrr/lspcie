@@ -70,7 +70,7 @@ force:
 lib/config.h lib/config.mk:
 	cd lib && ./configure
 
-lspci: lspci.o ls-vpd.o ls-caps.o ls-caps-vendor.o ls-ecaps.o ls-kernel.o ls-tree.o ls-map.o ls-table.o common.o lib/$(PCILIB) dmi_phy_slots/util.o dmi_phy_slots/dmi_phy_slots.o json-builder.o json.o
+lspci: lspci.o ls-vpd.o ls-caps.o ls-caps-vendor.o ls-ecaps.o ls-kernel.o ls-tree.o ls-map.o ls-table.o common.o lib/$(PCILIB) dmi_phy_slots/util.o dmi_phy_slots/dmi_phy_slots.o json-builder.o json.o garbage_collector/free_guard.o
 setpci: setpci.o common.o lib/$(PCILIB)
 
 LSPCIINC=lspci.h pciutils.h $(PCIINC) 
@@ -80,13 +80,17 @@ ls-vpd.o: ls-vpd.c $(LSPCIINC)
 ls-caps.o: ls-caps.c $(LSPCIINC)
 ls-ecaps.o: ls-ecaps.c $(LSPCIINC)
 ls-kernel.o: ls-kernel.c $(LSPCIINC)
-ls-tree.o: ls-tree.c $(LSPCIINC)
+ls-tree.o: ls-tree.c $(LSPCIINC) garbage_collector/free_guard.h
 ls-map.o: ls-map.c $(LSPCIINC)
 
+# For special slots
 dmi_phy_slots/dmi_phy_slots.o: dmi_phy_slots/dmi_phy_slots.c dmi_phy_slots/dmi_phy_slots.h dmi_phy_slots/types.h dmi_phy_slots/util.h dmi_phy_slots/config.h
 dmi_phy_slots/util.o: dmi_phy_slots/util.c dmi_phy_slots/types.h dmi_phy_slots/util.h dmi_phy_slots/config.h
+# For json output
 json.o: json.c json.h
 json-builder.o: json-builder.c json-builder.h
+# For free guard
+garbage_collector/free_guard.o: garbage_collector/free_guard.c garbage_collector/free_guard.h
 
 setpci.o: setpci.c pciutils.h $(PCIINC)
 common.o: common.c pciutils.h $(PCIINC)
