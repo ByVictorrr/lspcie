@@ -14,7 +14,7 @@ struct address_set{
   void (*cleanup)(struct address_set *set);
 };
 static void 
-cleanup(struct address_set *set){
+address_set_cleanup(struct address_set *set){
     struct address *curr, *next;
     for(curr=set->head; curr; curr=next){
         next=curr->next;
@@ -22,23 +22,18 @@ cleanup(struct address_set *set){
     }
 }
 static int 
-in_set(struct address_set *set, void *addr){
-  struct address *head = set->head;
+address_set_in_set(struct address_set *set, void *addr){
   struct address *curr;
-  if(head == NULL)
-    return 0;
-
-  for(curr=head; curr; curr=curr->next){
+  for(curr=set->head; curr; curr=curr->next)
     if(curr->addr == addr)
       return 1;
-  }
   return 0;
 }
 static void 
-insert(struct address_set *set, void *addr){
+address_set_insert(struct address_set *set, void *addr){
   struct address *prev, *tail;
   // Case 0 - check to see if addr in set and parms
-  if(!set || !addr || in_set(set, addr))
+  if(!addr || in_set(set, addr))
     return;
   // Case 1 - head has not been initalized
   if(set->head == NULL){
@@ -73,9 +68,9 @@ insert(struct address_set *set, void *addr){
 void fg_setup(struct free_guard *g){
     g->set = calloc(1, sizeof(struct address_set));
     g->set->head = NULL;
-    g->set->insert = insert;
-    g->set->in_set = in_set;
-    g->set->cleanup = cleanup;
+    g->set->insert = address_set_insert;
+    g->set->in_set = address_set_in_set;
+    g->set->cleanup = address_set_cleanup;
 }
 
 void fg_cleanup(struct free_guard *g){
