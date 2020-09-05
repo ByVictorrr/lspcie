@@ -30,6 +30,8 @@ struct table_entry{
     char pci_addr[PCI_ADDR_SIZE];
     char phy_slot[PHYS_SLOT_SIZE];
     char card_info[CARD_INFO_SIZE];
+    char sven_id[VENDOR_ID_SIZE];
+    char sdev_id[DEVICE_ID_SIZE];
     char vendor[VENDOR_INFO_SIZE];
     char driver[DRIVER_SIZE];
     char dev_info[DEVICE_INFO_SIZE];
@@ -216,9 +218,15 @@ show_json_obj(struct device *d, int (*filter)(struct pci_dev *p))
     // Step 5 - driver
     set_driver(d, e.driver);
 
+    char buff[100] = {0};
     json_object_push(dev_obj, "PCI Address", json_string_new(e.pci_addr));
     json_object_push(dev_obj, "Slot #", json_string_new(e.phy_slot));
     json_object_push(dev_obj, "Card Info", json_string_new(e.card_info));
+
+    sprintf(e.sven_id, "%4.4x", d->dev->svendor_id);
+    sprintf(e.sdev_id, "%4.4x", d->dev->sdevice_id);
+    json_object_push(dev_obj, "Subsystem Vendor ID", json_string_new(e.sven_id));
+    json_object_push(dev_obj, "Subsystem Vendor ID", json_string_new(e.sdev_id));
     json_object_push(dev_obj, "Vendor", json_string_new(e.vendor));
     json_object_push(dev_obj, "Driver", json_string_new(e.driver));
     // Step 6 - device info
@@ -306,17 +314,24 @@ show_table_entry(struct device *d, int (*filter)(struct pci_dev *p))
     set_phy_slot(d, e.phy_slot);
     // 3. Card info
     set_card_info(d, e.card_info);
+    // 3.1 - vndor id
+    sprintf(e.sdev_id ,"%4.4x", d->dev->sdevice_id);
+    sprintf(e.sven_id ,"%4.4x", d->dev->svendor_id);
+        
     // 4. Vendor (name of vender)
     set_vendor(d, e.vendor);
     // 5. Driver (driver name)
     set_driver(d, e.driver);
     /* Could it be the case that we want json object format*/
+
    
 
-    printf("%-12.12s\t%-20.20s\t%-40.40s\t%-12.12s\t%-12.12s", 
+    printf("%-12.12s\t%-20.20s\t%-40.40s[%s:%s]\t%-12.12s\t%-12.12s", 
             e.pci_addr, 
             e.phy_slot, 
             e.card_info,
+            e.sven_id,
+            e.sdev_id,
             e.vendor,
             e.driver);
 
@@ -372,11 +387,13 @@ print_hdr(int line_width){
     printf("%-12.12s\t%-20.20s\t%-40.40s\t%-12.12s\t%-12.12s", 
             "PCI_Address", 
             "Slot#", 
-            "Card_info",
+            "Card_info[Sub Vendor ID:Sub Device ID]",
             "Vendor",
             "Driver");
     if(table > 1)
         printf("\t%-40.40s", "Device_info");
+    if(table > 2 )
+        printf("[Vendor ID:Device ID]");
     if(table > 3)
         printf("\t%-20.20s", "Driver_Version");
     if(table > 4)

@@ -308,6 +308,8 @@ sysfs_fill_info(struct pci_dev *d, unsigned int flags)
 	{
 	  d->vendor_id = sysfs_get_value(d, "vendor", 1);
 	  d->device_id = sysfs_get_value(d, "device", 1);
+	  d->svendor_id = sysfs_get_value(d, "subsystem_vendor", 1);
+	  d->sdevice_id = sysfs_get_value(d, "subsystem_device", 1);
 	  done |= PCI_FILL_IDENT;
 	}
       if (flags & PCI_FILL_CLASS)

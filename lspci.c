@@ -43,7 +43,7 @@ static char help_msg[] =
 "-t\t\tShow bus tree\n"
 "-T\t\tShow table of IO card (-TT for more info; -TTT for even more info;)\n"
 "-j\t\tShow an array of pci devices as json objects\n"
-// COME back
+"-[j|T]v\t\tShow slot # stored in the dmi/smbios\n"
 "-[j|T]*n\tDisplay for:\n"
 "n=1:\t\tPCI Address, Slot #, Vendor name, Driver name\n"
 "n=2:\t\tSame as n=1, but with an addtional field of Device info\n"

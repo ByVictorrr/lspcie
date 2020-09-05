@@ -135,6 +135,7 @@ struct pci_dev {
   /* These fields are set by pci_fill_info() */
   unsigned int known_fields;		/* Set of info fields already known (see pci_fill_info()) */
   u16 vendor_id, device_id;		/* Identity of the device */
+  u16 svendor_id, sdevice_id;
   u16 device_class;			/* PCI device class */
   int irq;				/* IRQ number */
   pciaddr_t base_addr[6];		/* Base addresses including flags in lower bits */
