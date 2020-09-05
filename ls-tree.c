@@ -66,25 +66,16 @@ insert_dev(struct device *d, struct bridge *b)
   d->bus_next = NULL;
   d->parent_bus = bus;
 }
-struct address{
-  struct address *next;
-  void *addr;
-};
-struct list{
-  struct address **head;
-};
+
 
 void
 delete_tree(void){
   struct bus *bus, *next_bus;
   struct bridge *br, *next_br;
-  enum mcheck_status bus_status, br_status;
-  int i=0;
+
   for(br=&host_bridge; br; br=next_br, i++){
       for(bus=br->first_bus; bus; bus=next_bus){
         next_bus = bus->sibling;
-        if((bus_status=mprobe(bus)) !=  MCHECK_FREE)
-          free(bus);
       }
 
       next_br = br->chain;
