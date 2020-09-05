@@ -91,7 +91,7 @@ json-builder.o: json-builder.c json-builder.h
 setpci.o: setpci.c pciutils.h $(PCIINC)
 common.o: common.c pciutils.h $(PCIINC)
 
-lspci: LDLIBS+=$(LIBKMOD_LIBS) -lm
+lspci: LDLIBS+=$(LIBKMOD_LIBS) -lm 
 ls-kernel.o: CFLAGS+=$(LIBKMOD_CFLAGS)
 
 update-pciids: update-pciids.sh

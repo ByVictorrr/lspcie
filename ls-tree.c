@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <mcheck.h>
 #include "lspci.h"
 
 struct bridge host_bridge = { NULL, NULL, NULL, NULL, 0, ~0, 0, ~0, NULL };
@@ -65,91 +66,33 @@ insert_dev(struct device *d, struct bridge *b)
   d->bus_next = NULL;
   d->parent_bus = bus;
 }
-
-struct freed_bus{
-    struct bus *bus;
-    struct freed_bus *next;
+struct address{
+  struct address *next;
+  void *addr;
 };
-
-struct freed_br{
-  struct bridge *br;
-  struct freed_br *next;
+struct list{
+  struct address **head;
 };
-
-static 
-int in_freed_bus_table(struct freed_bus *fb_table, struct bus *b){
-  struct freed_bus *fb = NULL;
-  for(fb = fb_table; fb; fb=fb->next){
-    if(fb->bus == b)
-      return 1;
-  }
-  return 0;
-}
-
-static 
-void insert_freed_bus(struct freed_bus **fb_table, struct bus *b){
-  struct freed_bus *curr, *prev;
-  if(*fb_table == NULL){
-    curr = *fb_table = xmalloc(sizeof(struct freed_bus));
-    curr->bus = b;
-    return;
-  }
-  // look for tail and insert there
-  for(curr=*fb_table; curr; curr=curr->next){
-    prev=curr;
-  }
-  prev->next = xmalloc(sizeof(struct freed_bus));
-  prev->next->bus = b;
-}
-
-static 
-int in_freed_br_table(struct freed_br *fbr_table, struct bridge *b){
-  struct freed_br *fbr = NULL;
-  for(fbr = fbr_table; fbr; fbr=fbr->next)
-    if(fbr->br == b)
-      return 1;
-  return 0;
-}
-
-static 
-void insert_freed_br(struct freed_br **fbr_table, struct bridge *b){
-  struct freed_br *curr, *prev;
-  if(*fbr_table == NULL){
-    curr = *fbr_table = xmalloc(sizeof(struct freed_br));
-    curr->br = b;
-    return;
-  }
-  // look for tail and insert there
-  for(curr=*fbr_table; curr; curr=curr->next){
-    prev=curr;
-  }
-  prev->next = xmalloc(sizeof(struct freed_br));
-  prev->next->br = b;
-}
-
 
 void
 delete_tree(void){
-  /*
-  struct device *d;
-  struct bridge *first_bridge, *br;
-  struct bus *bus;
-  struct freed_bus *fb_table = NULL;
-  struct freed_br *fbr_table = NULL;
-      for(br=&host_bridge; br; br=br->chain){
-        if(!in_freed_br_table(fbr_table, br)){
-          for(bus=br->first_bus; bus; bus=bus->sibling){
-            if(!in_freed_bus_table(fb_table, bus)){
-              insert_freed_bus(&fb_table, bus);
-              free(bus);
-            }
-          }
-          insert_freed_br(&fbr_table, br);
+  struct bus *bus, *next_bus;
+  struct bridge *br, *next_br;
+  enum mcheck_status bus_status, br_status;
+  int i=0;
+  for(br=&host_bridge; br; br=next_br, i++){
+      for(bus=br->first_bus; bus; bus=next_bus){
+        next_bus = bus->sibling;
+        if((bus_status=mprobe(bus)) !=  MCHECK_FREE)
           free(bus);
-        }
-    }
-    */
+      }
+
+      next_br = br->chain;
+      if((br != &host_bridge) && (br_status=mprobe(br)) !=  MCHECK_FREE)
+        free(br);
+
   }
+}
   
 
 

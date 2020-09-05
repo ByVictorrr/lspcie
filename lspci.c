@@ -12,6 +12,7 @@
 #include <stdarg.h>
 #include "dmi_phy_slots/dmi_phy_slots.h"
 #include "lspci.h"
+#include <mcheck.h>
 /* Options */
 
 int json;           /* Show json format of table */
@@ -1147,6 +1148,10 @@ int main(int argc, char **argv)
       puts("lspci version " PCIUTILS_VERSION);
       return 0;
     }
+  // NEED TO ADD stderr here
+  // MCHECK
+  if(mcheck(NULL) != 0)
+    fprintf(stderr, "mcheck() failed\n");
 
   pacc = pci_alloc();
   pacc->error = die;
@@ -1274,7 +1279,6 @@ int main(int argc, char **argv)
   device_cleanup();
   show_kernel_cleanup();
   pci_cleanup(pacc);
-  // delete_tree();
 
   return (seen_errors ? 2 : 0);
 }
