@@ -60,7 +60,7 @@ PCIINC_INS=lib/config.h lib/header.h lib/pci.h lib/types.h
 
 export
 
-all: lib/$(PCILIB) lspci setpci example lspci.8 setpci.8 pcilib.7 pci.ids.5 update-pciids update-pciids.8 $(PCI_IDS) 
+all: lib/$(PCILIB) lspcie setpci example lspci.8 setpci.8 pcilib.7 pci.ids.5 update-pciids update-pciids.8 $(PCI_IDS) 
 
 lib/$(PCILIB): $(PCIINC) force
 	$(MAKE) -C lib all
@@ -70,11 +70,11 @@ force:
 lib/config.h lib/config.mk:
 	cd lib && ./configure
 
-lspci: lspci.o ls-vpd.o ls-caps.o ls-caps-vendor.o ls-ecaps.o ls-kernel.o ls-tree.o ls-table.o ls-map.o  common.o lib/$(PCILIB) dmi_phy_slots/util.o dmi_phy_slots/dmi_phy_slots.o json-builder.o json.o garbage_collector/free_guard.o
+lspcie: lspcie.o ls-vpd.o ls-caps.o ls-caps-vendor.o ls-ecaps.o ls-kernel.o ls-tree.o ls-table.o ls-map.o  common.o lib/$(PCILIB) dmi_phy_slots/util.o dmi_phy_slots/dmi_phy_slots.o json-builder.o json.o garbage_collector/free_guard.o
 setpci: setpci.o common.o lib/$(PCILIB)
 
 LSPCIINC=lspci.h pciutils.h $(PCIINC) 
-lspci.o: lspci.c $(LSPCIINC) dmi_phy_slots/dmi_phy_slots.h
+lspcie.o: lspcie.c $(LSPCIINC) dmi_phy_slots/dmi_phy_slots.h
 ls-table.o: ls-table.c $(LSPCIINC) json-builder.h
 ls-vpd.o: ls-vpd.c $(LSPCIINC)
 ls-caps.o: ls-caps.c $(LSPCIINC)
@@ -95,7 +95,7 @@ garbage_collector/free_guard.o: garbage_collector/free_guard.c garbage_collector
 setpci.o: setpci.c pciutils.h $(PCIINC)
 common.o: common.c pciutils.h $(PCIINC)
 
-lspci: LDLIBS+=$(LIBKMOD_LIBS) -lm 
+lspcie: LDLIBS+=$(LIBKMOD_LIBS) -lm 
 ls-kernel.o: CFLAGS+=$(LIBKMOD_CFLAGS)
 
 update-pciids: update-pciids.sh
@@ -134,7 +134,7 @@ distclean: clean
 install: all
 # -c is ignored on Linux, but required on FreeBSD
 	$(DIRINSTALL) -m 755 $(DESTDIR)$(SBINDIR) $(DESTDIR)$(IDSDIR) $(DESTDIR)$(MANDIR)/man8 $(DESTDIR)$(MANDIR)/man7 $(DESTDIR)/$(MANDIR)/man5
-	$(INSTALL) -c -m 755 $(STRIP) lspci setpci $(DESTDIR)$(SBINDIR)
+	$(INSTALL) -c -m 755 $(STRIP) lspcie setpci $(DESTDIR)$(SBINDIR)
 	$(INSTALL) -c -m 755 update-pciids $(DESTDIR)$(SBINDIR)
 	$(INSTALL) -c -m 644 $(PCI_IDS) $(DESTDIR)$(IDSDIR)
 	$(INSTALL) -c -m 644 lspci.8 setpci.8 update-pciids.8 $(DESTDIR)$(MANDIR)/man8
