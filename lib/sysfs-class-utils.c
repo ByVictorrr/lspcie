@@ -258,7 +258,7 @@ get_version_info(const char *string)
     }
     int status = regexec(&re, string, 1, &pmatch, 0); 
     if (status != 0){
-        fprintf(stderr, "get_version_info: no match found\n");
+        regfree(&re);
         return NULL; 
     }
     cursor=string;

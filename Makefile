@@ -70,7 +70,7 @@ force:
 lib/config.h lib/config.mk:
 	cd lib && ./configure
 
-lspci: lspci.o ls-vpd.o ls-caps.o ls-caps-vendor.o ls-ecaps.o ls-kernel.o ls-tree.o ls-map.o ls-table.o common.o lib/$(PCILIB) dmi_phy_slots/util.o dmi_phy_slots/dmi_phy_slots.o json-builder.o json.o garbage_collector/free_guard.o
+lspci: lspci.o ls-vpd.o ls-caps.o ls-caps-vendor.o ls-ecaps.o ls-kernel.o ls-tree.o ls-table.o ls-map.o  common.o lib/$(PCILIB) dmi_phy_slots/util.o dmi_phy_slots/dmi_phy_slots.o json-builder.o json.o garbage_collector/free_guard.o
 setpci: setpci.o common.o lib/$(PCILIB)
 
 LSPCIINC=lspci.h pciutils.h $(PCIINC) 

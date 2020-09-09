@@ -82,9 +82,11 @@ pci_free_properties(struct pci_dev *d)
 
 void pci_free_dev(struct pci_dev *d)
 {
+  int flag;
   if (d->methods->cleanup_dev)
     d->methods->cleanup_dev(d);
-
+   if(d->domain_16 == 1 && d->bus == 193 && d->dev == 0 && d->func == 0)
+       flag=1;
   pci_free_caps(d);
   pci_free_properties(d);
   pci_mfree(d);

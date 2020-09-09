@@ -12,7 +12,7 @@
 #include <stdarg.h>
 #include "dmi_phy_slots/dmi_phy_slots.h"
 #include "lspci.h"
-#include <mcheck.h>
+#include <regex.h>
 /* Options */
 
 int json;           /* Show json format of table */
@@ -1070,7 +1070,29 @@ int get_num_io_devs(int (*is_io)(struct pci_dev *p)){
   return num; 
 }
 
+static const char *
+get_geo_id(const char *string)
+{ 
+    const char *RACK_SLOT_PATTN = "r[0-9]{1,}(i|u)[0-9]{1,}(s|p)[0-9]{1,}((i)?[0-9]{1,})?";
+    regex_t re; 
+    regmatch_t pmatch;
+    const char *cursor;
+    if(string == NULL)
+      return NULL;
+    if (regcomp(&re, RACK_SLOT_PATTN, REG_EXTENDED) != 0){
+        fprintf(stderr, "get_rack_slot: regcomp error\n");
+        return NULL; 
+    }
+    int status = regexec(&re, string, 1, &pmatch, 0); 
+    if (status != 0){
+        regfree(&re);
+        return NULL; 
+    }
+    cursor=string;
+    regfree(&re);
 
+   return &cursor[pmatch.rm_so];
+} 
 
  
 static void
@@ -1079,6 +1101,7 @@ show(void)
   struct device *d;
   struct dmi_physlot_bus_pair *slot_bus_table = NULL;
   int use_special_slotn=0;
+  
   if(!freopen("/dev/null", "w", stderr))
       fprintf(stderr, "show: no able to redirect stderr to /dev/null");
  
@@ -1093,13 +1116,16 @@ show(void)
 
   /* if -v<T|j> (show special slot number) */
   if(verbose && (table || json))
-    if(!dmi_fill_physlot_bus_pairs(&slot_bus_table))
+    if(!dmi_fill_physlot_bus_pairs(&slot_bus_table)){
       use_special_slotn=1;
+    }
 
   // Assume the devices are sorted 
   for (d=first_dev; d; d=d->next){
-    if(use_special_slotn)
-      d->dev->phy_slot = get_dmi_physlot(slot_bus_table, d);
+    char *raw_phy_slot;
+    if(use_special_slotn){
+      d->dev->phy_slot = get_geo_id(get_dmi_physlot(slot_bus_table, d));
+    }
     if (pci_filter_match(&filter, d->dev))
       show_device(d);
     }
@@ -1148,11 +1174,6 @@ int main(int argc, char **argv)
       puts("lspci version " PCIUTILS_VERSION);
       return 0;
     }
-  // NEED TO ADD stderr here
-  // MCHECK
-  if(mcheck(NULL) != 0)
-    fprintf(stderr, "mcheck() failed\n");
-
   pacc = pci_alloc();
   pacc->error = die;
   pci_filter_init(pacc, &filter);
