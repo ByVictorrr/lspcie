@@ -1,7 +1,7 @@
 CFLAGS=-g -O0
 
-main: json.o
-main.o: main.c json.h
+filter_array: json.o
+filter_array.o: filter_array.c json.h
 json.o: json.c json.h
 
 

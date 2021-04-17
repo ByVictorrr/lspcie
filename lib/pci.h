@@ -264,6 +264,12 @@ struct pci_filter
   int vendor, device, device_class; /* device_class = class | sclass */
   int rfu[3];
 };
+// Added
+struct pci_filter_list
+{
+  struct pci_filter *list;
+  int len;
+};
 
 void pci_filter_init(struct pci_access *, struct pci_filter *) PCI_ABI;
 char *pci_filter_parse_slot(struct pci_filter *, char *) PCI_ABI;
