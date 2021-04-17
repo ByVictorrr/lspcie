@@ -1,0 +1,31 @@
+
+{
+    "comments": [
+        "This file is used with -f option to express set of filters",
+        "vendor: is the vendor ID (four hexadecimal digits)",
+        "device: should be your device ID (four hexadecimal digits)",
+        "device_superclass: this is the class of your device type (2 hexadecimal digits)",
+        "device_subclass this is the subclass of your device type (2 hexadecimal digits)",
+        "eventually add in domain / bus/ slot/func filtering"
+    ],
+
+    "filters": [
+        {
+            "vendor": 8086,
+            "device": 8086,
+            "device_superclass": 02,
+            "device_subclass": 02
+        {
+
+        },
+        {
+            "vendor": 8052
+            
+        }
+    ]
+}
+
+   
+
+
+

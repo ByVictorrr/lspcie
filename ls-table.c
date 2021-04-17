@@ -49,43 +49,15 @@ is_io_dev(struct pci_dev *p){
   u8 sclass = p->device_class & 0x00FF;
   u16 vendor = p->vendor_id;
   switch(class){
-    case 0x01: /* mass storage controller */
-      /* scsi or raid or sata or nvme*/
-      if(sclass == 0x00 || sclass == 0x06 || sclass == 0x04 || sclass == 0x08)
-        is_io = 1;
-      break;
-    case 0x02: /* nic */
-      /* eth or ib or network */
-      if(sclass == 0x00 || sclass == 0x07 || sclass == 0x80)
-        is_io = 1;
-      break;
-    case 0x03: /* display controller */
-      /* vga or 3d */
-      if(sclass == 0x00 || sclass == 0x02)
-        is_io = 1;
-      break;
-    case 0x04: /* multimedia controller */
-      is_io = 1;
-      /*bridge */
-      break;
-    case 0x06: 
-      /* not intel */
-      if(vendor != 0x8086) 
-        is_io = 1;
-      break;
-    case 0x09: /* input device */
-      is_io = 1;
-      break;
-    case 0x0c: /* serial bus controller */
-      /* firbre channel or usb */
-      if(sclass == 0x03 || sclass == 0x04)
-        is_io = 1;
-      break;
-    case 0x40: /* co processor */
-      is_io = 1;
-      break;
-     }
-  return is_io;
+    case 0x05: return 0; /* memory controller */
+    case 0x06: return 0; /* bridge */    /*if(!sclass) return 0; /* dont show host bridge */
+    case 0x08: return 0; /* Generic system periphral*/
+    case 0x0b: return 0; /* Processor */
+    case 0x11: return 0; /* Signal processing controller */
+    case 0xff: return 0; /* Unassigned class */
+
+  }
+  return 1;
 }
 
 /*===================Tabulated entry (for printing)===============*/

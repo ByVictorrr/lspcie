@@ -223,6 +223,7 @@ pci_filter_match_v30(struct pci_filter_v30 *f, struct pci_dev *d)
   return pci_filter_match_v33(&new, d);
 }
 
+
 STATIC_ALIAS(void pci_filter_init(struct pci_access *a, struct pci_filter *f), pci_filter_init_v33(a, f));
 SYMBOL_VERSION(pci_filter_init_v30, pci_filter_init@LIBPCI_3.0);
 SYMBOL_VERSION(pci_filter_init_v33, pci_filter_init@@LIBPCI_3.3);

@@ -1,0 +1,28 @@
+# Filter for specific devices (using -f)
+# Usage: lspcie -f <filter-file> - only looks for devices of ids and types and location
+
+
+struct pci_filter
+{
+  int domain, bus, slot, func;      /* -1 = ANY */
+  int vendor, device, device_class; /* device_class = class | sclass */
+};
+
+filters = [
+    { /*specific device */
+        .domain = 10,
+        .bus = 10;
+        .slot = 1,
+        .func = 1
+        .vendor = 10,
+        .device = 10,
+        .device_class = 1;
+    },
+    {
+        .bus =
+    }
+
+
+
+
+];
