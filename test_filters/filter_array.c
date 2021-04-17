@@ -36,6 +36,17 @@ void pci_filter_array_init(struct pci_access *a, struct pci_filter_array *fa)
     fa->filters = NULL;
     fa->len = 0;
 }
+void pci_filter_array_delete(struct pci_filter_array *arr)
+{
+    int i;
+    if(arr->len == 0)
+        return;
+    
+    for(i=0; i < arr->len; i++)
+        free(arr->filters[i]);
+
+}
+
 struct pci_filter *pci_filter_alloc(){
     struct pci_filter *f;
     if((f = (struct pci_filter*)malloc(sizeof(struct pci_filter) ))){
@@ -61,7 +72,6 @@ char *pci_filter_array_parse_file(const char * filter_file, struct pci_filter_ar
     struct _json_value ** json_filters, *field; 
     json_settings settings = {0};
     
-
 
     if((fd=open(filter_file, O_RDONLY)) < 0)
         return "Unable to open the file submitted";
@@ -106,6 +116,7 @@ char *pci_filter_array_parse_file(const char * filter_file, struct pci_filter_ar
     }
     fa->filters = arr;
     fa->len =  len_array;
+    /* CLEANUP : close mmap and fd*/
     return NULL;
 }
         

@@ -20,7 +20,7 @@ int num_io_devs;    /* For json array format */
 int table;          /* Show table of IO card */
 int verbose;				/* Show detailed information */
 static int opt_hex;			/* Show contents of config space as hexadecimal numbers */
-struct pci_filter filter;		/* Device filter */
+struct pci_filter_array filters;		/* Device filter(s) */
 static int opt_filter;			/* Any filter was given */
 static int opt_tree;			/* Show bus tree */
 static int opt_path;			/* Show bridge path */
@@ -131,6 +131,7 @@ scan_device(struct pci_dev *p)
 
   if (p->domain && !opt_domains)
     opt_domains = 1;
+    // write wrapper code 
   if (!pci_filter_match(&filter, p) && !need_topology)
     return NULL;
   d = xmalloc(sizeof(struct device));
