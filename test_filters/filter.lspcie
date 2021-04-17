@@ -1,7 +1,8 @@
 
 {
     "comments": [
-        "This file is used with -f option to express set of filters",
+        "This file is used with -f option to express set of filters.
+         Also dont put leading zero's for the filter keys",
         "vendor: is the vendor ID (four hexadecimal digits)",
         "device: should be your device ID (four hexadecimal digits)",
         "device_superclass: this is the class of your device type (2 hexadecimal digits)",
@@ -13,10 +14,8 @@
         {
             "vendor": 8086,
             "device": 8086,
-            "device_superclass": 02,
-            "device_subclass": 02
-        {
-
+            "super_class": 2,
+            "sub_class": 2
         },
         {
             "vendor": 8052

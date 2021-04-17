@@ -968,9 +968,11 @@ e_failed:
       alloc = top;
    }
 
+   printf(error); // ccomback
    if (!state.first_pass)
       json_value_free_ex (&state.settings, root);
 
+   
    return 0;
 }
 
