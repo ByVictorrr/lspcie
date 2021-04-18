@@ -131,9 +131,13 @@ char *pci_filter_array_parse_file(const char * filter_file, struct pci_filter_ar
 int pci_filter_array_match(struct pci_filter_array *filters, struct pci_dev *p)
 {
     int i;
+    if(filters->len == 0)
+        return 1;
+
     for(i=0; i < filters->len; i++)
         if(pci_filter_match(&filters->filters[i], p))
             return 1;
+
     return 0;
 }        
 //int pci_filter_array_in(char *field, )

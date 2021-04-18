@@ -1011,11 +1011,10 @@ show_device(struct device *d)
   if (opt_machine){
     show_machine(d);
   }else if (json){
-    show_json_obj(d, is_io_dev);
+    show_json_obj(d);
     return;
   }else if (table){
-    if(is_io_dev(d->dev))
-      show_table_entry(d, is_io_dev);
+      show_table_entry(d);
     return;
   }else
     {
@@ -1063,14 +1062,7 @@ get_dmi_physlot(const struct dmi_physlot_bus_pair *dtable, struct device *d){
   return phy_slot;
 }
 
-int get_num_io_devs(int (*is_io)(struct pci_dev *p)){
-  int num=0;
-  struct device *d;
-  for (d=first_dev; d; d=d->next)
-    if (pci_filter_array_match(&filters, d->dev) && is_io(d->dev))
-        num++;
-  return num; 
-}
+
 
 static const char *
 get_geo_id(const char *string)
@@ -1107,8 +1099,6 @@ show(void)
   if(!freopen("/dev/null", "w", stderr))
       fprintf(stderr, "show: no able to redirect stderr to /dev/null");
  
-  // Step 1 - count how many json || table will show
-  num_io_devs = get_num_io_devs(is_io_dev);
 
   if(json)
     printf("[\n"); 
@@ -1210,8 +1200,8 @@ int main(int argc, char **argv)
 	opt_filter = 1;
 	break;
       case 'f':
-  if(msg = pci_filter_array_parse_file(argv[2], &filters))
-	  die("-f %s: %s", argv[2], msg);
+  if(msg = pci_filter_array_parse_file(optarg, &filters))
+	  die("-f %s: %s", optarg, msg);
 	opt_filter = 1;
   break;
       case 'x':

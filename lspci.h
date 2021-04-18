@@ -102,9 +102,8 @@ char * find_driver(struct device *d, char *buf);
 
 /* ls-table.c */
 
-void show_table_entry(struct device *d, int (*filter)(struct pci_dev *p));
-void show_json_obj(struct device *d, int (*filter)(struct pci_dev *p));
-int is_io_dev(struct pci_dev *p);
+void show_table_entry(struct device *d);
+void show_json_obj(struct device *d);
  
 void print_hdr(int line_width);
 

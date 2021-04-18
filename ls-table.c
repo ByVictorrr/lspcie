@@ -41,24 +41,6 @@ struct table_entry{
     char fw_v[FW_VERSION_SIZE];
     char opt_v[OPT_VERSION_SIZE];
 };
-/* Following the same output as topology io dev */
-int 
-is_io_dev(struct pci_dev *p){
-  int is_io = 0;
-  u8 class = p->device_class >> 8;
-  u8 sclass = p->device_class & 0x00FF;
-  u16 vendor = p->vendor_id;
-  switch(class){
-    case 0x05: return 0; /* memory controller */
-    case 0x06: return 0; /* bridge */    /*if(!sclass) return 0; /* dont show host bridge */
-    case 0x08: return 0; /* Generic system periphral*/
-    case 0x0b: return 0; /* Processor */
-    case 0x11: return 0; /* Signal processing controller */
-    case 0xff: return 0; /* Unassigned class */
-
-  }
-  return 1;
-}
 
 /*===================Tabulated entry (for printing)===============*/
 /* Come back to */
@@ -167,15 +149,12 @@ static void free_version_items(struct version_item* vitems){
     }
 }
 void 
-show_json_obj(struct device *d, int (*filter)(struct pci_dev *p))
+show_json_obj(struct device *d)
 {
-    static int device_num = 0;
     struct version_item *vitemss[3]={NULL}, *vitems=NULL; /* 0= drv, 1=fwv, 2=optv*/
     #define MAX_BUFF 1024
     struct table_entry e;
     json_value *dev_obj;
-    if(!filter(d->dev))
-        return;
     
     dev_obj = json_object_new(0);
     memset(&e, 0, sizeof(struct table_entry));
@@ -259,16 +238,11 @@ show_json_obj(struct device *d, int (*filter)(struct pci_dev *p))
     json_builder_free(dev_obj);
     if(print)
         free(print);
-    device_num++;
-    if(device_num != num_io_devs){
-        printf(",\n");
-    }else{
-        printf("\n");
-    }
+    printf(",\n");
 }
 
 void 
-show_table_entry(struct device *d, int (*filter)(struct pci_dev *p))
+show_table_entry(struct device *d)
 {
     char dev_info_num[DEV_INFO_NUM_SIZE];
     struct table_entry e;
@@ -276,8 +250,6 @@ show_table_entry(struct device *d, int (*filter)(struct pci_dev *p))
     struct version_item *vitemss[3]={NULL, NULL, NULL}, *vitems=NULL; /* 0= drv, 1=fwv, 2=optv*/
     memset(dev_info_num, 0, DEV_INFO_NUM_SIZE);
     memset(&e, 0, sizeof(struct table_entry));
-    if(!filter(d->dev))
-        return;
 
     // Setting tab_entry
     // 1. PCI Adress Ouput
