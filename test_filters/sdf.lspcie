@@ -1,0 +1,80 @@
+
+/*  
+    Super Dome Flex : io configuration (topology --io)
+
+    This file is used with -f option to express set of filters.
+    Here are some of the fields you can filter on: 
+        vendor: is the vendor ID (four hexadecimal digits),
+        device: should be your device ID (four hexadecimal digits),
+        super_class: this is the class of your device type (2 hexadecimal digits),
+        sub_class: this is the subclass of your device type (2 hexadecimal digits),
+        (eventually add in domain / bus/ slot/func filtering)
+
+*/
+[
+    /* Mass storage controllers */
+    {
+        "super_class": "0x01",
+        "sub_class": "0x00"
+    },
+    {
+        "super_class": "0x01",
+        "sub_class": "0x06"
+    },
+    {
+        "super_class": "0x01",
+        "sub_class": "0x04"
+    },
+    {
+        "super_class": "0x01",
+        "sub_class": "0x08"
+    },
+    /* NiCS */
+    {
+        "super_class": "0x02",
+        "sub_class":"0x0"
+    },
+    {
+        "super_class": "0x02",
+        "sub_class":"0x07"
+    },
+    {
+        "super_class": "0x02",
+        "sub_class":"0x80"
+    },
+    /* Display controllers */
+    {
+        "super_class": "0x3",
+        "sub_class": "0x0"
+    },
+    {
+        "super_class": "0x3",
+        "sub_class": "0x2"
+    },
+    /* Multimedia controllers */
+    {
+        "super_class": "0x04"
+    },
+    /* bridges (come back to) */
+    {
+        "super_class" : "0x09"
+    },
+    /* input device*/
+    {
+        "super_class": "0x009"
+    },
+    /* serial bus controller*/
+    {
+        "super_class": "0xc",
+        "sub_class": "0x03"
+    },
+    {
+        "super_class": "0xc",
+        "sub_class": "0x04"
+    },
+    /* Co processor */
+    {
+        "super_class": "0x40"
+    }
+
+]

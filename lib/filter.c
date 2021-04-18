@@ -114,7 +114,7 @@ pci_filter_parse_id_v33(struct pci_filter *f, char *str)
       long int x = strtol(c, &e, 16);
       if ((e && *e) || (x < 0 || x > 0xffff))
 	return "Invalid class code";
-      f->super_class = x >> 0xff;
+      f->super_class = x >> 8;
       f->sub_class = x & 0xff;
     }
   return NULL;
@@ -136,11 +136,11 @@ pci_filter_match_v33(struct pci_filter *f, struct pci_dev *d)
 	return 0;
     }
     // change this for condition
-  if (f->sub_class >= 0 && f->super_class >= 0)
+  if (f->sub_class >= 0 || f->super_class >= 0)
     {
       pci_fill_info(d, PCI_FILL_CLASS);
-      if (f->device_class != d->device_class)
-      // split them up -1 means any subclass; if -1
+      if ((f->super_class >= 0 && f->super_class != (d->device_class >> 8)) || 
+      (f->sub_class >= 0 && f->sub_class != (d->device_class & 0xff)))
 	return 0;
     }
   return 1;
@@ -170,7 +170,8 @@ pci_filter_import_v30(struct pci_filter_v30 *old, struct pci_filter *new)
   new->func = old->func;
   new->vendor = old->vendor;
   new->device = old->device;
-  new->device_class = -1;
+  new->super_class = -1;
+  new->sub_class = -1;
 }
 
 static void
@@ -212,7 +213,7 @@ pci_filter_parse_id_v30(struct pci_filter_v30 *f, char *str)
   pci_filter_import_v30(f, &new);
   if (err = pci_filter_parse_id_v33(&new, str))
     return err;
-  if (new.device_class >= 0)
+  if (new.super_class >= 0 && new.sub_class >= 0) // not sure about this
     return "Filtering by class not supported in this program";
   pci_filter_export_v30(&new, f);
   return NULL;

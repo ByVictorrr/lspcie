@@ -1,0 +1,21 @@
+
+/*  
+    This file is used with -f option to express set of filters.
+    Here are some of the fields you can filter on: 
+        vendor: is the vendor ID (four hexadecimal digits),
+        device: should be your device ID (four hexadecimal digits),
+        super_class: this is the class of your device type (2 hexadecimal digits),
+        sub_class: this is the subclass of your device type (2 hexadecimal digits),
+        (eventually add in domain / bus/ slot/func filtering)
+
+*/
+[
+    {
+        "vendor": "0x8086"
+    }    
+]
+
+   
+
+
+

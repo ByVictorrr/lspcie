@@ -30,7 +30,7 @@ extern int verbose;
 extern int table;
 extern int json;
 extern int num_io_devs;
-extern struct pci_filter filter;
+extern struct pci_filter_array filters;
 extern char *opt_pcimap;
 
 

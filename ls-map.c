@@ -60,11 +60,11 @@ do_map_bus(int bus)
   if (verbose)
     printf("Mapping bus %02x\n", bus);
   for (dev = 0; dev < 32; dev++)
-    if (filter.slot < 0 || filter.slot == dev)
+    //COME BACK TO: if (filters.slot < 0 || filter.slot == dev)
       {
 	int func_limit = 1;
 	for (func = 0; func < func_limit; func++)
-	  if (filter.func < 0 || filter.func == func)
+	  // COME BACK TO: if (filter.func < 0 || filteIr.func == func)
 	    {
 	      /* XXX: Bus mapping supports only domain 0 */
 	      struct pci_dev *p = pci_get_dev(pacc, 0, bus, dev, func);
@@ -169,7 +169,7 @@ map_the_bus(void)
     printf("WARNING: Bus mapping can be reliable only with direct hardware access enabled.\n\n");
   bus_info = xmalloc(sizeof(struct bus_info) * 256);
   memset(bus_info, 0, sizeof(struct bus_info) * 256);
-  if (filter.bus >= 0)
+  /*COME BACK TO if (filter.bus >= 0)
     do_map_bus(filter.bus);
   else
     {
@@ -177,5 +177,6 @@ map_the_bus(void)
       for (bus=0; bus<256; bus++)
 	do_map_bus(bus);
     }
+    */
   map_bridges();
 }

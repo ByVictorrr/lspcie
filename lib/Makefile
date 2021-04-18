@@ -10,6 +10,8 @@ ifdef PCI_HAVE_PM_LINUX_SYSFS
 OBJS += sysfs
 OBJS += sysfs-class
 OBJS += sysfs-class-utils
+OBJS += json-parser
+OBJS += filter_array
 endif
 
 
@@ -91,6 +93,8 @@ proc.o: proc.c $(INCL) pread.h
 sysfs.o: sysfs.c $(INCL) pread.h sysfs-class.h
 sysfs-class.o: sysfs-class.c $(INCL) sysfs-class.h 
 sysfs-class-utils.o: sysfs-class-utils.c $(INCL) sysfs-class.h 
+
+
 generic.o: generic.c $(INCL)
 syscalls.o: syscalls.c $(INCL)
 obsd-device.o: obsd-device.c $(INCL)
@@ -104,5 +108,9 @@ names-net.o: names-net.c $(INCL) names.h
 names-parse.o: names-parse.c $(INCL) names.h
 names-hwdb.o: names-hwdb.c $(INCL) names.h
 filter.o: filter.c $(INCL)
+# added
+filter_array.o: filter_array.c $(INCL) json-parser.h
+json-parser.o: json-parser.c json-parser.h
+#
 nbsd-libpci.o: nbsd-libpci.c $(INCL)
 hurd.o: hurd.c $(INCL)

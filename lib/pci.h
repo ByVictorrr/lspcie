@@ -264,17 +264,27 @@ struct pci_filter
   int vendor, device, super_class, sub_class; /* device_class = class | sclass */
   int rfu[3];
 };
-// Added
-struct pci_filter_array{
-    struct pci_filter **filters;
-    int len;
-};
-
 void pci_filter_init(struct pci_access *, struct pci_filter *) PCI_ABI;
 char *pci_filter_parse_slot(struct pci_filter *, char *) PCI_ABI;
 char *pci_filter_parse_id(struct pci_filter *, char *) PCI_ABI;
 int pci_filter_match(struct pci_filter *, struct pci_dev *) PCI_ABI;
 
+
+// Added
+struct pci_filter_array{
+    struct pci_filter *filters;
+    int len;
+};
+
+
+void pci_filter_array_init(struct pci_access *a, struct pci_filter_array *fa);
+
+char *pci_filter_array_parse_id(struct pci_filter_array *arr,char *str);
+char *pci_filter_array_parse_slot(struct pci_filter_array *arr,char *str);
+
+char *pci_filter_array_parse_file(const char * filter_file, struct pci_filter_array *fa);
+void pci_filter_array_delete(struct pci_filter_array *arr);
+int pci_filter_array_match(struct pci_filter_array *filters, struct pci_dev *p);
 /*
  *	Conversion of PCI ID's to names (according to the pci.ids file)
  *

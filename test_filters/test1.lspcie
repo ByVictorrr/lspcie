@@ -1,0 +1,32 @@
+
+/*  
+    This file is used with -f option to express set of filters.
+    Here are some of the fields you can filter on: 
+        vendor: is the vendor ID (four hexadecimal digits),
+        device: should be your device ID (four hexadecimal digits),
+        super_class: this is the class of your device type (2 hexadecimal digits),
+        sub_class: this is the subclass of your device type (2 hexadecimal digits),
+        (eventually add in domain / bus/ slot/func filtering)
+
+    Test1: search for all devices that are made by intel and that are
+        super_class: bridge and subclass: HOST bridge
+*/
+[
+    /*
+    {
+        "vendor": "0x8086",
+        "super_class": "0x2"
+    },
+    */
+    {
+        "super_class": "0x6",
+        "sub_class":"0x0"
+    }
+
+    
+]
+
+   
+
+
+

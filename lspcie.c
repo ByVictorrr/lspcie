@@ -34,7 +34,7 @@ char *opt_pcimap;			/* Override path to Linux modules.pcimap */
 
 const char program_name[] = "lspci";
 
-static char options[] = "Tjnvbxs:d:tPi:mgp:qkMDQ" GENERIC_OPTIONS ;
+static char options[] = "Tjnvbxsf:d:tPi:mgp:qkMDQ" GENERIC_OPTIONS ;
 
 static char help_msg[] =
 "Usage: lspci [<switches>]\n"
@@ -77,6 +77,7 @@ static char help_msg[] =
 "Selection of devices:\n"
 "-s [[[[<domain>]:]<bus>]:][<slot>][.[<func>]]\tShow only devices in selected slots\n"
 "-d [<vendor>]:[<device>][:<class>]\t\tShow only devices with specified ID's\n"
+"-f <filter-file>"
 "\n"
 "Other options:\n"
 "-i <file>\tUse specified ID database instead of %s\n"
@@ -132,7 +133,7 @@ scan_device(struct pci_dev *p)
   if (p->domain && !opt_domains)
     opt_domains = 1;
     // write wrapper code 
-  if (!pci_filter_match(&filter, p) && !need_topology)
+  if (!pci_filter_array_match(&filters, p) && !need_topology)
     return NULL;
   d = xmalloc(sizeof(struct device));
   memset(d, 0, sizeof(*d));
@@ -1066,7 +1067,7 @@ int get_num_io_devs(int (*is_io)(struct pci_dev *p)){
   int num=0;
   struct device *d;
   for (d=first_dev; d; d=d->next)
-    if (pci_filter_match(&filter, d->dev) && is_io(d->dev))
+    if (pci_filter_array_match(&filters, d->dev) && is_io(d->dev))
         num++;
   return num; 
 }
@@ -1127,7 +1128,7 @@ show(void)
     if(use_special_slotn){
       d->dev->phy_slot = get_geo_id(get_dmi_physlot(slot_bus_table, d));
     }
-    if (pci_filter_match(&filter, d->dev))
+    if (pci_filter_array_match(&filters, d->dev))
       show_device(d);
     }
     free_dmi_physlot_bus_pairs(slot_bus_table);
@@ -1177,7 +1178,7 @@ int main(int argc, char **argv)
     }
   pacc = pci_alloc();
   pacc->error = die;
-  pci_filter_init(pacc, &filter);
+  pci_filter_array_init(pacc, &filters);
 
 
   while ((i = getopt(argc, argv, options)) != -1)
@@ -1199,15 +1200,20 @@ int main(int argc, char **argv)
 	pacc->buscentric = 1;
 	break;
       case 's':
-	if (msg = pci_filter_parse_slot(&filter, optarg))
+	if (msg = pci_filter_array_parse_slot(&filters, optarg))
 	  die("-s: %s", msg);
 	opt_filter = 1;
 	break;
       case 'd':
-	if (msg = pci_filter_parse_id(&filter, optarg))
+	if (msg = pci_filter_array_parse_id(&filters, optarg))
 	  die("-d: %s", msg);
 	opt_filter = 1;
 	break;
+      case 'f':
+  if(msg = pci_filter_array_parse_file(argv[2], &filters))
+	  die("-f %s: %s", argv[2], msg);
+	opt_filter = 1;
+  break;
       case 'x':
 	opt_hex++;
 	break;
@@ -1292,7 +1298,7 @@ int main(int argc, char **argv)
       if (need_topology)
 	grow_tree();
       if (opt_tree)
-	show_forest(opt_filter ? &filter : NULL);
+	show_forest(opt_filter ? &filters : NULL);
       else
 	show();
     }

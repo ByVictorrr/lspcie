@@ -294,7 +294,7 @@ show_forest(struct pci_filter *filter)
       struct bridge *b;
       for (b=&host_bridge; b; b=b->chain)
         {
-          if (b->br_dev && pci_filter_match(filter, b->br_dev->dev))
+          if (b->br_dev && pci_filter_array_match(&filters, b->br_dev->dev))
             {
                 struct pci_dev *d = b->br_dev->dev;
                 char *p = line;
