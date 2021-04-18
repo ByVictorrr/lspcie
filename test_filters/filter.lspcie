@@ -1,7 +1,8 @@
 
 [
     {
-        "vendor": "0x8086"
+        /*"vendor": "0x8086",*/
+        "super_class": "0x06"
     }    
 ]
 

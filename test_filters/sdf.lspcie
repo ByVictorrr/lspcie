@@ -19,11 +19,15 @@
     },
     {
         "super_class": "0x01",
+        "sub_class": "0x04"
+    },
+    {
+        "super_class": "0x01",
         "sub_class": "0x06"
     },
     {
         "super_class": "0x01",
-        "sub_class": "0x04"
+        "sub_class": "0x07"
     },
     {
         "super_class": "0x01",
@@ -32,7 +36,7 @@
     /* NiCS */
     {
         "super_class": "0x02",
-        "sub_class":"0x0"
+        "sub_class": "0x0"
     },
     {
         "super_class": "0x02",
@@ -40,7 +44,7 @@
     },
     {
         "super_class": "0x02",
-        "sub_class":"0x80"
+        "sub_class":"0x08"
     },
     /* Display controllers */
     {
@@ -57,11 +61,18 @@
     },
     /* bridges (come back to) */
     {
-        "super_class" : "0x09"
+        "super_class" : "0x06",
+        "sub_class": "0x04",
+        "vendor": "19a2"
     },
     /* input device*/
     {
         "super_class": "0x009"
+    },
+    /* processor */
+    {
+        "super_class": "0xb",
+        "sub_class": "0x40"
     },
     /* serial bus controller*/
     {
@@ -72,9 +83,8 @@
         "super_class": "0xc",
         "sub_class": "0x04"
     },
-    /* Co processor */
     {
-        "super_class": "0x40"
+        "super_class": "0x0c",
+        "sub_class": "0x80"
     }
-
 ]

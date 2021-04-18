@@ -1,0 +1,44 @@
+No topology file found. Is the hwperf module installed?
+Falling back to SMBIOS info (less info)
+
+ Location      PCI Address     Device
+ ---------------------------------------------------
+   r001i01s00  0000:00:11.5    Intel C620 Family SSATA Controller [AHCI]
+            .  0000:00:14.0    Intel C620 Family USB 3.0 xHCI Controller
+            .  0000:00:17.0    Intel C600/X79 SATA RAID Controller
+            .  0000:00:1f.5    Intel C620 Family SPI Controller
+            .  0000:01:00.0    Emulex x1 PCIe Gen2 Bridge[Pilot4]
+            .  0000:02:00.0    Matrox MGA G200e [Pilot] ServerEngines (SEP1)
+            .  0000:02:01.0    Emulex ServerView iRMC HTI
+   r001i01s02  0000:41:00.0    Intel Omni-Path HFI Silicon 100 [discrete]
+   r001i01s03  0000:81:00.0    QLogic ISP2722-based 16/32Gb Fibre to PCIe Adapter
+            .  0000:81:00.1    QLogic ISP2722-based 16/32Gb Fibre to PCIe Adapter
+   r001i01s01  0000:82:00.0    Mellanox MT27710 Family [ConnectX-4 Lx]
+            .  0000:82:00.1    Mellanox MT27710 Family [ConnectX-4 Lx]
+   r001i01s00  0000:c3:00.0    Intel Ethernet Connection X722 for 10GBASE-T
+            .  0000:c3:00.1    Intel Ethernet Connection X722 for 10GBASE-T
+            .  0000:c3:00.2    Intel Ethernet Connection X722 for 10GBASE-T
+            .  0000:c3:00.3    Intel Ethernet Connection X722 for 10GBASE-T
+   r001i01s05  0000:c5:00.0    Intel Ethernet Controller X710 for 10GbE SFP+
+            .  0000:c5:00.1    Intel Ethernet Controller X710 for 10GbE SFP+
+   r001i01s07  0001:41:00.0    Emulex LPe31000/LPe32000 16Gb/32Gb Fibre Adapter
+            .  0001:41:00.1    Emulex LPe31000/LPe32000 16Gb/32Gb Fibre Adapter
+   r001i01s06  0001:81:00.0    Solarflare XtremeScale SFC9250 10/25/40/50/100G Ethernet
+            .  0001:81:00.1    Solarflare XtremeScale SFC9250 10/25/40/50/100G Ethernet
+   r001i01s08  0001:83:00.0    QLogic FastLinQ QL41000 10/25/40/50GbE Controller
+            .  0001:83:00.1    QLogic FastLinQ QL41000 10/25/40/50GbE Controller
+   r001i01s04  0001:c1:00.0    Intel Ethernet Controller 10G X550T
+            .  0001:c1:00.1    Intel Ethernet Controller 10G X550T
+   r001i01s10  0002:41:00.0    Mellanox MT28908 Family [ConnectX-6]
+            .  0002:41:00.1    Mellanox MT28908 Family [ConnectX-6]
+   r001i01s11  0002:81:00.0    Intel NVMe Datacenter SSD [Optane]
+   r001i01s09  0002:82:00.0    Broadcom BCM57414 NetXtreme-E 10Gb/25Gb RDMA Ethernet
+            .  0002:82:00.1    Broadcom BCM57414 NetXtreme-E 10Gb/25Gb RDMA Ethernet
+   r001i01s13  0002:c1:00.0    Smart Storage PQI SAS
+   r001i01s15  0003:41:00.0    Mellanox MT28908 Family [ConnectX-6]
+   r001i01s14  0003:81:00.0    Intel Ethernet Controller 10-Gigabit X540-AT2
+            .  0003:81:00.1    Intel Ethernet Controller 10-Gigabit X540-AT2
+   r001i01s16  0003:83:00.0    Mellanox MT27710 Family [ConnectX-4 Lx]
+            .  0003:83:00.1    Mellanox MT27710 Family [ConnectX-4 Lx]
+   r001i01s12  0003:c1:00.0    Mellanox MT28908 Family [ConnectX-6]
+
