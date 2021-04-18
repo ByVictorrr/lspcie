@@ -1,8 +1,8 @@
 CFLAGS=-g -O0
 
-filter_array: json.o
-filter_array.o: filter_array.c json.h
-json.o: json.c json.h
+filter_array: json-parser.o
+filter_array.o: filter_array.c json-parser.h
+json-parser.o: json-parser.c json-parser.h
 
 
 %: %.o

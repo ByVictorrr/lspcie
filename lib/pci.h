@@ -261,14 +261,13 @@ struct pci_cap *pci_find_cap_nr(struct pci_dev *, unsigned int id, unsigned int 
 struct pci_filter
 {
   int domain, bus, slot, func;      /* -1 = ANY */
-  int vendor, device, device_class; /* device_class = class | sclass */
+  int vendor, device, super_class, sub_class; /* device_class = class | sclass */
   int rfu[3];
 };
 // Added
-struct pci_filter_list
-{
-  struct pci_filter *list;
-  int len;
+struct pci_filter_array{
+    struct pci_filter **filters;
+    int len;
 };
 
 void pci_filter_init(struct pci_access *, struct pci_filter *) PCI_ABI;

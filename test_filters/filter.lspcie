@@ -12,13 +12,13 @@
 
     "filters": [
         {
-            "vendor": 8086,
-            "device": 8086,
-            "super_class": 2,
-            "sub_class": 2
+            "vendor": "0x8086",
+            "device": "8086",
+            "super_class": "2",
+            "sub_class": "2"
         },
         {
-            "vendor": 8052
+            "vendor": "8052"
             
         }
     ]

@@ -15,10 +15,6 @@ struct pci_filter{
 };
 // TODO (2) - example of what you can do 
 
-struct pci_filter_array{
-    struct pci_filter **filters;
-    int len;
-};
 
 /*
 TODO: 
@@ -99,28 +95,18 @@ char *pci_filter_array_parse_file(const char * filter_file, struct pci_filter_ar
         for(j=0; j < num_of_fields && j < PCI_FILTER_FIELDS; j++){
             field = json_filters[i]->u.object.values[j].value;
             field_name = json_filters[i]->u.object.values[j].name;
+            // json_filters[i]->u.object.values[j].<name, name_len> = key, string length
             
-            long int val = strtol(field->u.integer, NULL, 16);
+            if (strcmp(field_name,"vendor") == 0)
+                arr[i]->vendor =  field->u.integer; // #TODO: conversion to decimal
+            else if(strcmp(field_name,"device") == 0)
+                arr[i]->device = field->u.integer;
 
-            
-            if (!strcmp(field_name,"vendor")){
-                if(val < 0 || val > 0xffff) return "Invalid vendor ID";
-                arr[i]->vendor =  val; // #TODO: conversion to decimal
-            }
+            else if(strcmp(field_name, "super_class") == 0)
+                arr[i]->super_class = field->u.integer;
 
-            else if(!strcmp(field_name,"device")){
-                if(val < 0 || val > 0xffff) return "Invalid device ID";
-                arr[i]->device = val; 
-            }
-
-            else if(!strcmp(field_name, "super_class")){
-                if(val < 0 || val > 0xff) return "Invalid super class";
-                arr[i]->super_class = val;
-            }
-            else if(!strcmp(field_name, "sub_class")){
-                if(val < 0 || val > 0xff) return "Invalid sub class";
-                arr[i]->sub_class = val; 
-            }
+            else if(strcmp(field_name, "sub_class") == 0)
+                arr[i]->sub_class = field->u.integer;
 
         }
     }

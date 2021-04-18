@@ -27,7 +27,7 @@
  * SUCH DAMAGE.
  */
 
-#include "json.h"
+#include "json-parser.h"
 
 #ifdef _MSC_VER
    #ifndef _CRT_SECURE_NO_WARNINGS
@@ -968,9 +968,11 @@ e_failed:
       alloc = top;
    }
 
+   printf(error); // ccomback
    if (!state.first_pass)
       json_value_free_ex (&state.settings, root);
 
+   
    return 0;
 }
 

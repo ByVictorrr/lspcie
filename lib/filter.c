@@ -20,7 +20,7 @@ void
 pci_filter_init_v33(struct pci_access *a UNUSED, struct pci_filter *f)
 {
   f->domain = f->bus = f->slot = f->func = -1;
-  f->vendor = f->device = f->device_class = -1;
+  f->vendor = f->device = f->super_class = f->sub_class = -1;
 }
 
 /* Slot filter syntax: [[[domain]:][bus]:][slot][.[func]] */
@@ -114,7 +114,8 @@ pci_filter_parse_id_v33(struct pci_filter *f, char *str)
       long int x = strtol(c, &e, 16);
       if ((e && *e) || (x < 0 || x > 0xffff))
 	return "Invalid class code";
-      f->device_class = x;
+      f->super_class = x >> 0xff;
+      f->sub_class = x & 0xff;
     }
   return NULL;
 }
@@ -134,10 +135,12 @@ pci_filter_match_v33(struct pci_filter *f, struct pci_dev *d)
 	  (f->vendor >= 0 && f->vendor != d->vendor_id))
 	return 0;
     }
-  if (f->device_class >= 0)
+    // change this for condition
+  if (f->sub_class >= 0 && f->super_class >= 0)
     {
       pci_fill_info(d, PCI_FILL_CLASS);
       if (f->device_class != d->device_class)
+      // split them up -1 means any subclass; if -1
 	return 0;
     }
   return 1;
