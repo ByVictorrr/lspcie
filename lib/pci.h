@@ -273,18 +273,31 @@ int pci_filter_match(struct pci_filter *, struct pci_dev *) PCI_ABI;
 // Added
 struct pci_filter_array{
     struct pci_filter *filters;
+    int cmd_line_index;
     int len;
+};
+
+enum pci_filter_fields
+{
+  PCI_FILTER_DOMAIN,
+  PCI_FILTER_BUS,
+  PCI_FILTER_FUNC,
+  PCI_FILTER_VENDOR,
+  PCI_FILTER_SUPER_CLASS,
+  PCI_FILTER_SUB_CLASS
 };
 
 
 void pci_filter_array_init(struct pci_access *a, struct pci_filter_array *fa);
-
 char *pci_filter_array_parse_id(struct pci_filter_array *arr,char *str);
 char *pci_filter_array_parse_slot(struct pci_filter_array *arr,char *str);
-
-char *pci_filter_array_parse_file(const char * filter_file, struct pci_filter_array *fa);
+char *pci_filter_array_parse_file(struct pci_filter_array *fa, const char * filter_file);
 void pci_filter_array_delete(struct pci_filter_array *arr);
 int pci_filter_array_match(struct pci_filter_array *filters, struct pci_dev *p);
+int pci_filter_array_in(int val,
+                        enum pci_filter_fields field, 
+                        struct pci_filter_array *fils);
+
 /*
  *	Conversion of PCI ID's to names (according to the pci.ids file)
  *

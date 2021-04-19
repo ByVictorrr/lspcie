@@ -169,14 +169,14 @@ map_the_bus(void)
     printf("WARNING: Bus mapping can be reliable only with direct hardware access enabled.\n\n");
   bus_info = xmalloc(sizeof(struct bus_info) * 256);
   memset(bus_info, 0, sizeof(struct bus_info) * 256);
-  /*COME BACK TO if (filter.bus >= 0)
-    do_map_bus(filter.bus);
-  else
-    {
-      int bus;
-      for (bus=0; bus<256; bus++)
-	do_map_bus(bus);
+  int bus;
+  for (bus=0; bus<256; bus++){
+    if( filters.len > 0 ){
+      if(pci_filter_array_in(bus, PCI_FILTER_BUS, &filters))
+        do_map_bus(&bus);
+    }else{
+        do_map_bus(&bus);
     }
-    */
+  }
   map_bridges();
 }

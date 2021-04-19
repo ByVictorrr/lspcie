@@ -15,6 +15,7 @@
 void pci_filter_array_init(struct pci_access *a, struct pci_filter_array *fa)
 {
     fa->filters = NULL;
+    fa->cmd_line_index = -1;
     fa->len = 0;
 }
 void pci_filter_array_delete(struct pci_filter_array *arr)
@@ -25,34 +26,53 @@ void pci_filter_array_delete(struct pci_filter_array *arr)
     free(arr->filters);
 
 }
-char *pci_filter_array_parse_id(struct pci_filter_array *arr,char *str)
+char *pci_filter_array_parse_id(struct pci_filter_array *arr, char *str)
 {
-    if(arr->len == 0){
+    struct pci_filter *cmd_line_f;
+    if(arr->cmd_line_index != -1){
+        cmd_line_f = &arr->filters[arr->cmd_line_index];
+    }else if(arr->len == 0){
         arr->filters=malloc(sizeof(struct pci_filter));
-        arr->len=1;
+        cmd_line_f = &arr->filters[arr->len];
+        memset(cmd_line_f, -1, sizeof(struct pci_filter));
+        arr->cmd_line_index = 0;
+        arr->len++;
     }else{
         arr->filters=realloc(arr->filters, arr->len+1); 
+        cmd_line_f = &arr->filters[arr->len];
+        memset(cmd_line_f, -1, sizeof(struct pci_filter));
+        arr->cmd_line_index = arr->len;
         arr->len++;
     }
-    return pci_filter_parse_id(&arr->filters[arr->len-1], str);
+    return pci_filter_parse_id(cmd_line_f, str);
 }
 
-char *pci_filter_array_parse_slot(struct pci_filter_array *arr,char *str)
+char *pci_filter_array_parse_slot(struct pci_filter_array *arr, char *str)
 {
-    if(arr->len == 0){
+    struct pci_filter *cmd_line_f;
+
+    if(arr->cmd_line_index != -1){
+        cmd_line_f = &arr->filters[arr->cmd_line_index];
+    }else if(arr->len == 0){
         arr->filters=malloc(sizeof(struct pci_filter));
-        arr->len=1;
+        cmd_line_f = &arr->filters[arr->len];
+        memset(cmd_line_f, -1, sizeof(struct pci_filter));
+        arr->cmd_line_index = arr->len;
+        arr->len++;
     }else{
         arr->filters=realloc(arr->filters, arr->len+1); 
+        cmd_line_f = &arr->filters[arr->len];
+        memset(cmd_line_f, -1, sizeof(struct pci_filter));
+        arr->cmd_line_index = arr->len;
         arr->len++;
     }
-    return pci_filter_parse_slot(&arr->filters[arr->len-1], str);
+    return pci_filter_parse_slot(cmd_line_f, str);
 }
 
 
 
 // return error 
-char *pci_filter_array_parse_file(const char * filter_file, struct pci_filter_array *fa)
+char *pci_filter_array_parse_file(struct pci_filter_array *fa, const char * filter_file)
 {
 
     #define ERROR_BUFF_MAX 20
@@ -140,7 +160,22 @@ int pci_filter_array_match(struct pci_filter_array *filters, struct pci_dev *p)
 
     return 0;
 }        
-//int pci_filter_array_in(char *field, )
+int pci_filter_array_in(int val,
+                        enum pci_filter_fields field, 
+                        struct pci_filter_array *fils)
+{
+    int i, *cursor;
+    cursor = fils->filters;
+    struct pci_filter *filters = fils->filters;
+    for(i=0; i< fils->len; i++){
+        cursor = (int *)&filters[i];
+        cursor += field;
+        if(*cursor == val)
+            return 1;
+    }
+    return 0;
+
+}
 
 /*
 int main(int argc, char **argv){

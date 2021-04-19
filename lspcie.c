@@ -16,7 +16,6 @@
 /* Options */
 
 int json;           /* Show json format of table */
-int num_io_devs;    /* For json array format */
 int table;          /* Show table of IO card */
 int verbose;				/* Show detailed information */
 static int opt_hex;			/* Show contents of config space as hexadecimal numbers */
@@ -34,7 +33,7 @@ char *opt_pcimap;			/* Override path to Linux modules.pcimap */
 
 const char program_name[] = "lspci";
 
-static char options[] = "Tjnvbxsf:d:tPi:mgp:qkMDQ" GENERIC_OPTIONS ;
+static char options[] = "Tjnvbxs:f:d:tPi:mgp:qkMDQ" GENERIC_OPTIONS ;
 
 static char help_msg[] =
 "Usage: lspci [<switches>]\n"
@@ -1161,6 +1160,7 @@ int main(int argc, char **argv)
   int i;
   char *msg;
 
+
   if (argc == 2 && !strcmp(argv[1], "--version"))
     {
       puts("lspci version " PCIUTILS_VERSION);
@@ -1200,7 +1200,7 @@ int main(int argc, char **argv)
 	opt_filter = 1;
 	break;
       case 'f':
-  if(msg = pci_filter_array_parse_file(optarg, &filters))
+  if(msg = pci_filter_array_parse_file(&filters, optarg))
 	  die("-f %s: %s", optarg, msg);
 	opt_filter = 1;
   break;
@@ -1295,6 +1295,7 @@ int main(int argc, char **argv)
 
   delete_tree();
   device_cleanup();
+  pci_filter_array_delete(&filters);
   show_kernel_cleanup();
   pci_cleanup(pacc);
 
