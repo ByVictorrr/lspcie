@@ -6,12 +6,17 @@
         device: should be your device ID (four hexadecimal digits),
         super_class: this is the class of your device type (2 hexadecimal digits),
         sub_class: this is the subclass of your device type (2 hexadecimal digits),
-        (eventually add in domain / bus/ slot/func filtering)
-
+        domain: this is the domain number of your pci address (4 hexadecimal)
+        bus: this is the bus number of your pci address ( 2 hexadecimal )
+        slot: this is the device number or slot number ( 2 hexadecimal [0-32])
+        func: this ist the function number or slot number (1 hexadecimal [0-7])
+        
 */
 [
     {
         "vendor": "0x8086"
+        "domain": "0x0000"
+        "slot": "00"
     }    
 ]
 

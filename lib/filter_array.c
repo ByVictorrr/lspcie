@@ -9,7 +9,6 @@
 
 
 #define PCI_FILTER_FIELDS 4
-#define PCI_FILTER_ARRAY_
 
 
 void pci_filter_array_init(struct pci_access *a, struct pci_filter_array *fa)
@@ -121,20 +120,27 @@ char *pci_filter_array_parse_file(struct pci_filter_array *fa, const char * filt
             if (!strcmp(field_name,"vendor")){
                 if(field_int < 0 || field_int > 0xffff) return "Infield_intid vendor ID";
                 arr[i].vendor =  field_int; // #TODO: conversion to decimal
-            }
-
-            else if(!strcmp(field_name,"device")){
+            }else if(!strcmp(field_name,"device")){
                 if(field_int < 0 || field_int > 0xffff) return "Infield_intid device ID";
                 arr[i].device = field_int; 
-            }
-
-            else if(!strcmp(field_name, "super_class")){
+            }else if(!strcmp(field_name, "super_class")){
                 if(field_int < 0 || field_int > 0xff) return "Infield_intid super class";
                 arr[i].super_class = field_int;
-            }
-            else if(!strcmp(field_name, "sub_class")){
+            }else if(!strcmp(field_name, "sub_class")){
                 if(field_int < 0 || field_int > 0xff) return "Infield_intid sub class";
                 arr[i].sub_class = field_int; 
+            }else if(!strcmp(field_name, "domain")){
+                if(field_int < 0 || field_int > 0xffff) return "Infield_int domain";
+                arr[i].domain = field_int; 
+            }else if(!strcmp(field_name, "bus")){
+                if(field_int < 0 || field_int > 0xff) return "Infield_int bus";
+                arr[i].bus = field_int; 
+            }else if(!strcmp(field_name, "slot")){
+                if(field_int < 0 || field_int > 32) return "Infield_int domain";
+                arr[i].slot = field_int; 
+            }else if(!strcmp(field_name, "func")){
+                if(field_int < 0 || field_int > 8) return "Infield_int func";
+                arr[i].func = field_int; 
             }
 
         }
